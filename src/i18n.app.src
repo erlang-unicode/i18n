@@ -1,0 +1,12 @@
+{application, i18n,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { i18n_app, []}},
+  {env, []}
+ ]}.

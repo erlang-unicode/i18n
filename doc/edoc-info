@@ -1,0 +1,4 @@
+{application,i18n}.
+{packages,[]}.
+{modules,[i18n_app,i18n_collation,i18n_locale,i18n_message,i18n_string,
+          i18n_sup]}.
