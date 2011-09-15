@@ -21,49 +21,43 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
--module(i18n_locale).
--include("i18n.hrl").
--export([set_locale/1, set_default_locale/1, get_locale/0]).
--export([base_name/1]).
+-module(i18n_search).
+-include_lib("i18n.hrl").
 
--define(SERVER, 'i18n_locale_server').
-
-set_locale(Value) -> 
-    LName = ?TRY_ATOM(?IM:locale_name(Value)),
-    set_value('i18n_locale', LName).
-
-set_default_locale(Value) -> 
-    set_default_value('i18n_locale', Value).
-
-get_locale() -> 
-    get_value('i18n_locale').
+% NIFs
+-export([open/0, open/1, open/2]).
 
 
 
 
+%%
+%% Types
+%%
+
+-type i18n_locale_id() :: atom(). 
+-type i18n_string() :: binary().
+
+-type resource() :: <<>>.
+-type i18n_collator() :: resource().
+-type i18n_search_option() :: atom().
 
 
-
-set_value(Key, Value) ->
-    erlang:put(Key, Value),
-    Value.
-
-set_default_value(Key, Value) ->
-    ?SERVER:set_default(Key, Value),
-    Value.
+%%
+%% API
+%%
 
 
+-spec open() -> i18n_collator().
+open() ->
+    L = i18n_locale:get_locale(),
+    open(L).
 
-get_value(Key) ->
-    case erlang:get(Key) of
-    'undefined' ->
-        % Get a global value
-        Value = ?SERVER:get_default(Key),
-        erlang:put(Key, Value),
-        Value;
-    Value ->
-        Value
-    end.
+-spec open(i18n_locale_id()) -> i18n_collator().
+open(_Locale) ->
+    ?I18N_NIF_NOT_LOADED.
 
-base_name(LocaleId) ->
-    ?TRY_ATOM(?IM:locale_base_name(LocaleId)).
+-spec open(i18n_locale_id(), [i18n_search_option()]) -> i18n_collator().
+open(L, Options) ->
+    C = open(L).
+%   do_options(C, Options).
+

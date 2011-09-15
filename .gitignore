@@ -1,9 +1,7 @@
 ebin
 *.swp
 *.dump
-fprof.trace  
-erl_crash.dump
-
-c_src/system
-c_src/icu4c
-c_src/*.o
+*.trace  
+*.o
+*.so
+*.dll

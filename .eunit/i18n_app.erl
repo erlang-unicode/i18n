@@ -21,49 +21,19 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
--module(i18n_locale).
--include("i18n.hrl").
--export([set_locale/1, set_default_locale/1, get_locale/0]).
--export([base_name/1]).
+-module(i18n_app).
 
--define(SERVER, 'i18n_locale_server').
+-behaviour(application).
 
-set_locale(Value) -> 
-    LName = ?TRY_ATOM(?IM:locale_name(Value)),
-    set_value('i18n_locale', LName).
+%% Application callbacks
+-export([start/2, stop/1]).
 
-set_default_locale(Value) -> 
-    set_default_value('i18n_locale', Value).
+%% ===================================================================
+%% Application callbacks
+%% ===================================================================
 
-get_locale() -> 
-    get_value('i18n_locale').
+start(_StartType, _StartArgs) ->
+    i18n_sup:start_link().
 
-
-
-
-
-
-
-set_value(Key, Value) ->
-    erlang:put(Key, Value),
-    Value.
-
-set_default_value(Key, Value) ->
-    ?SERVER:set_default(Key, Value),
-    Value.
-
-
-
-get_value(Key) ->
-    case erlang:get(Key) of
-    'undefined' ->
-        % Get a global value
-        Value = ?SERVER:get_default(Key),
-        erlang:put(Key, Value),
-        Value;
-    Value ->
-        Value
-    end.
-
-base_name(LocaleId) ->
-    ?TRY_ATOM(?IM:locale_base_name(LocaleId)).
+stop(_State) ->
+    ok.

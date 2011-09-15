@@ -21,49 +21,37 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
--module(i18n_locale).
--include("i18n.hrl").
--export([set_locale/1, set_default_locale/1, get_locale/0]).
--export([base_name/1]).
+%%% @private
 
--define(SERVER, 'i18n_locale_server').
+-module(i18n_sup).
 
-set_locale(Value) -> 
-    LName = ?TRY_ATOM(?IM:locale_name(Value)),
-    set_value('i18n_locale', LName).
+-behaviour(supervisor).
 
-set_default_locale(Value) -> 
-    set_default_value('i18n_locale', Value).
+%% API
+-export([start_link/0]).
 
-get_locale() -> 
-    get_value('i18n_locale').
+%% Supervisor callbacks
+-export([init/1]).
 
+%% Helper macro for declaring children of supervisor
+-define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
 
+%% ===================================================================
+%% API functions
+%% ===================================================================
 
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
+%% ===================================================================
+%% Supervisor callbacks
+%% ===================================================================
 
+init([]) ->
+    % Provide a global dictionary for this node.
+    DefaultWorker = {i18n_locale_server,
+        {i18n_locale_server, start_link, []},
+        permanent, 10000, worker, [i18n_locale_server]},
 
+    {ok, { {one_for_one, 5, 10}, [DefaultWorker]} }.
 
-set_value(Key, Value) ->
-    erlang:put(Key, Value),
-    Value.
-
-set_default_value(Key, Value) ->
-    ?SERVER:set_default(Key, Value),
-    Value.
-
-
-
-get_value(Key) ->
-    case erlang:get(Key) of
-    'undefined' ->
-        % Get a global value
-        Value = ?SERVER:get_default(Key),
-        erlang:put(Key, Value),
-        Value;
-    Value ->
-        Value
-    end.
-
-base_name(LocaleId) ->
-    ?TRY_ATOM(?IM:locale_base_name(LocaleId)).

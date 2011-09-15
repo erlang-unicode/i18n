@@ -27,6 +27,8 @@
 #define I18N_COLLATION  true
 #define I18N_SEARCH    	true
 #define I18N_MESSAGE   	true
+#define I18N_REGEX   	true
+#define I18N_LOCALE   	true
 
 #define BUF_SIZE 65536 // 2^16, since we're using a 2-byte length header
 #define STR_LEN 32768
@@ -46,6 +48,8 @@
 #include "unicode/msgfmt.h"
 
 #include "unicode/utypes.h"
+
+#include "unicode/uregex.h"
 
 
 #include "erl_nif.h"
@@ -1432,11 +1436,7 @@ static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
             (char *) locale, 
             NULL, 
             &status);
-    if(U_FAILURE(status)) { 
-        return enif_make_badarg(env);
-    } 
-
-
+    CHECK(env, status);
 
 
     res = (cloner*) enif_alloc_resource(message_type, sizeof(cloner));
@@ -1602,6 +1602,250 @@ static int i18n_message_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load
 
 
 
+#ifdef I18N_REGEX
+
+static ErlNifResourceType* regex_type = 0;
+
+
+// Called from erl_nif.
+void regex_dtor(ErlNifEnv* env, void* obj) 
+{
+    // Free memory
+    cloner_destroy((cloner*) obj); 
+}
+
+
+
+// Called from cloner for each thread.
+void regex_destr(char* obj) 
+{ 
+    if (obj != NULL)
+        uregex_close((URegularExpression*) obj);
+}
+char* regex_clone(char* obj) 
+{
+    UErrorCode status = U_ZERO_ERROR;
+
+    obj = (char*) uregex_clone(
+        (URegularExpression*) obj,
+        &status 
+    );
+    if(U_FAILURE(status)) { 
+        return NULL;
+    } 
+    return obj;
+}
+
+int regex_open(URegularExpression * obj, cloner* c)
+{
+    return cloner_open((char *) obj, c, &regex_clone, &regex_destr);
+} 
+
+
+
+
+
+
+
+
+/**
+ * NIFs
+ */
+
+// Get a message format 
+static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM out;
+    ErlNifBinary in;
+    UErrorCode status = U_ZERO_ERROR;
+    UParseError* pe = NULL;
+    URegularExpression* re;
+    cloner* res;
+
+    re = uregex_open((UChar *) in.data, 
+            div(in.size, sizeof(UChar)).quot, 
+            0, 
+            pe, 
+            &status);
+    CHECK(env, status);
+
+    res = (cloner*) enif_alloc_resource(regex_type, sizeof(cloner));
+    if (regex_open(re, res)) {
+        enif_release_resource(res);
+        return enif_make_badarg(env);
+    }
+    out = enif_make_resource(env, res);
+    enif_release_resource(res);
+    /* resource now only owned by "Erlang" */
+    return out;
+}
+
+
+static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in, in2;
+    ERL_NIF_TERM out;
+    int32_t ulen, len; 
+    UChar buf[STR_LEN];
+    unsigned char* bin;
+    URegularExpression* re;
+    cloner* ptr;
+    UErrorCode status = U_ZERO_ERROR;
+
+    // Second argument must be a binary 
+    if(!(enif_inspect_binary(env, argv[1], &in)
+      && enif_inspect_binary(env, argv[2], &in2)
+      && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    re = (URegularExpression*) cloner_get(ptr);
+    uregex_setText(re,
+        (const UChar *) in2.data,
+        (int32_t) div(in2.size, sizeof(UChar)).quot, // in UChars
+        &status); 
+    CHECK(env, status);
+
+    ulen = uregex_replaceAll(re,
+        (UChar*) in.data, 
+        (int32_t) div(in.size, sizeof(UChar)).quot, // in UChars
+        (UChar *) buf,
+        (int32_t) STR_LEN,
+        &status); 
+    CHECK(env, status);
+
+    // length in bytes
+    len = ulen * sizeof(UChar);
+
+
+    bin = enif_make_new_binary(env, (size_t) len, &out);
+    memcpy(bin, &buf, len);
+    return out;
+}
+
+
+
+
+
+
+
+
+static int i18n_regex_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+{
+    regex_type = enif_open_resource_type(env, NULL, "regex_type",
+        regex_dtor, ERL_NIF_RT_CREATE, NULL); 
+    if (regex_type == NULL) return 6;
+    return 0;
+}
+#endif
+
+
+
+
+
+
+
+
+
+
+
+#ifdef I18N_LOCALE
+static ERL_NIF_TERM locale_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+
+    int32_t value_len,         key_len; 
+    char    value[LOCALE_LEN], key[LOCALE_LEN];
+
+
+    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+
+    if (!key_len) {
+        return enif_make_badarg(env);
+    }
+
+    
+    value_len = uloc_getName((const char*) key, // Locale Id
+        (char *)  value, // name
+        (int32_t) LOCALE_LEN,
+        &status);
+    CHECK(env, status);
+
+    return enif_make_atom(env, value);
+}
+static ERL_NIF_TERM locale_parent(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+
+    int32_t value_len,         key_len; 
+    char    value[LOCALE_LEN], key[LOCALE_LEN];
+
+
+    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+
+    if (!key_len) {
+        return enif_make_badarg(env);
+    }
+
+    
+    value_len = uloc_getParent((const char*) key, // Locale Id
+        (char *)  value, // name
+        (int32_t) LOCALE_LEN,
+        &status);
+    CHECK(env, status);
+
+    return enif_make_atom(env, value);
+}
+static ERL_NIF_TERM locale_language_tag(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+
+    int32_t value_len,         key_len; 
+    char    value[LOCALE_LEN], key[LOCALE_LEN];
+
+
+    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+
+    if (!key_len) {
+        return enif_make_badarg(env);
+    }
+
+    
+    value_len = uloc_toLanguageTag((const char*) key, // Locale Id
+        (char *)  value, // name
+        (int32_t) LOCALE_LEN,
+        FALSE,
+        &status);
+    CHECK(env, status);
+
+    return enif_make_atom(env, value);
+}
+static ERL_NIF_TERM locale_base_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+
+    int32_t value_len,         key_len; 
+    char    value[LOCALE_LEN], key[LOCALE_LEN];
+
+
+    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+
+    if (!key_len) {
+        return enif_make_badarg(env);
+    }
+
+    
+    value_len = uloc_getBaseName((const char*) key, // Locale Id
+        (char *)  value, // name
+        (int32_t) LOCALE_LEN,
+        &status);
+    CHECK(env, status);
+
+    return enif_make_atom(env, value);
+}
+#endif
+
+
 
 
 
@@ -1634,6 +1878,12 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 
 #ifdef I18N_MESSAGE
     code = i18n_message_load(env, priv_data, load_info);
+    if (code) return code;
+#endif
+
+
+#ifdef I18N_REGEX
+    code = i18n_regex_load(env, priv_data, load_info);
     if (code) return code;
 #endif
 
@@ -1699,11 +1949,28 @@ static ErlNifFunc nif_funcs[] =
 
 
 
-
 #ifdef I18N_MESSAGE
     {"open_format", 2, open_format},
     {"format",      2, format},
     {"format",      3, format},
+#endif
+
+
+
+
+#ifdef I18N_REGEX
+    {"open_regex", 1, open_regex},
+    {"regex_replace", 3, regex_replace},
+#endif
+
+
+
+
+#ifdef I18N_LOCALE
+    {"locale_name",         1, locale_name},
+    {"locale_parent",       1, locale_parent},
+    {"locale_language_tag", 1, locale_language_tag},
+    {"locale_base_name",    1, locale_base_name},
 #endif
 
 };

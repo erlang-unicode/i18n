@@ -21,49 +21,38 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
--module(i18n_locale).
+-module(i18n_message).
 -include("i18n.hrl").
--export([set_locale/1, set_default_locale/1, get_locale/0]).
--export([base_name/1]).
 
--define(SERVER, 'i18n_locale_server').
+-type i18n_string() :: binary(). 
+-type i18n_locale_id() :: atom(). 
 
-set_locale(Value) -> 
-    LName = ?TRY_ATOM(?IM:locale_name(Value)),
-    set_value('i18n_locale', LName).
+-type resource() :: <<>>.   
+-type i18n_msg_format() :: resource().   
+-type i18n_msg_param() :: {atom(), i18n_msg_arg()}.
+-type i18n_msg_arg() :: any().
 
-set_default_locale(Value) -> 
-    set_default_value('i18n_locale', Value).
-
-get_locale() -> 
-    get_value('i18n_locale').
+% NIFs
+-export([open/1, open/2]).
+-export([format/2, format/3]).
 
 
 
+-spec open(i18n_locale_id(), i18n_string()) -> i18n_msg_format().
+%% @doc Parse a message to a resourse.
+open(L, S) ->
+    ?TRY_RES(?IM:open_format(L, S)).
 
+-spec open(i18n_string()) -> i18n_msg_format().
+open(S) ->
+    L = i18n_locale:get_locale(),
+    open(L, S).
 
+-spec format(i18n_msg_format(), [i18n_msg_param()]) -> i18n_string().
+format(M, P) ->
+    ?TRY_STR(?IM:format(M, P)).
+    
+-spec format(i18n_msg_format(), [i18n_msg_param()], i18n_string()) -> i18n_string().
+format(M, P, A) ->
+    ?TRY_STR(?IM:format(M, P, A)).
 
-
-set_value(Key, Value) ->
-    erlang:put(Key, Value),
-    Value.
-
-set_default_value(Key, Value) ->
-    ?SERVER:set_default(Key, Value),
-    Value.
-
-
-
-get_value(Key) ->
-    case erlang:get(Key) of
-    'undefined' ->
-        % Get a global value
-        Value = ?SERVER:get_default(Key),
-        erlang:put(Key, Value),
-        Value;
-    Value ->
-        Value
-    end.
-
-base_name(LocaleId) ->
-    ?TRY_ATOM(?IM:locale_base_name(LocaleId)).
