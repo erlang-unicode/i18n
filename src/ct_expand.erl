@@ -14,7 +14,7 @@
 %%% AB. Portions created by Ericsson are Copyright (C), 1998, Ericsson
 %%% Telecom AB. All Rights Reserved.
 %%%
-%%% Contributor(s): ______________________________________.
+%%% Contributor(s): Uvarov Michael.
 %%%
 %%% ------------------------------------------------------------------
 -module(ct_expand).
@@ -49,8 +49,10 @@
 -define(ERROR(R, T, F, I),
 	begin
 	    rpt_error(R, T, F, I),
-	    throw({error,erl_syntax:get_pos(
-			   proplists:get_value(form,I)),{unknown,R}})
+	    erlang:error({R,
+				erl_syntax:get_pos(
+			   		proplists:get_value(form,I))}, 
+				erlang:get_stacktrace())
 	end).
 
 -import(erl_syntax, [clause/3,
@@ -112,9 +114,15 @@ parse_transform(Forms, Options) ->
 %%%                                  % function arguments.
 %%%                                  % length(Vars) == Arity
 %%%
-function({_Module, _Function, _Arity} = MFA, F,
-	 Forms, Options) when is_function(F) ->
-    parse_transform(MFA, F, Forms, Options).
+function({M, F, A}, Fun,
+	 Forms, Options) when is_function(Fun) ->
+	Match = fun(M2, F2, A2) -> 
+				M2 =:= M andalso F2 =:= F andalso A2 =:= A 
+			end,
+    parse_transform(Match, Fun, Forms, Options);
+function(Match, Fun,
+	 Forms, Options) when is_function(Fun), is_function(Match) ->
+    parse_transform(Match, Fun, Forms, Options).
 
 parse_transform(MFA, Fun, Forms, _Options) ->
     [File|_] = [F || {attribute,_,file,{F,_}} <- Forms],
@@ -138,7 +146,7 @@ format_error(Other) ->
 
 
 
-xform({M,F,A}, Fun, Forms, Context0) ->
+xform(Match, Fun, Forms, Context0) ->
     Bef = fun(function, Form, Ctxt) ->
 		  {Fname, Arity} = erl_syntax_lib:analyze_function(Form),
 		  VarNames = erl_syntax_lib:new_variable_names(
@@ -153,9 +161,14 @@ xform({M,F,A}, Fun, Forms, Context0) ->
     Aft = fun(application, Form, Context) ->
 		  case erl_syntax_lib:analyze_application(Form) of
 		      {M, {F, A}} ->
-			  add_ann(
-			    bind_state,
-			    Fun(Form, Context));
+				  case Match(M, F, A) of
+				  true ->
+						add_ann(
+					    	bind_state,
+					    	Fun(Form, Context));
+				  false ->
+					  	Form
+				  end;
 		      _ ->
 			  Form
 		  end;

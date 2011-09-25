@@ -36,7 +36,7 @@ simple_open_test() ->
 
 simple_sort_key_test() ->
     C = i18n_collation:open(),
-    F = i18n_collation:sort_key(C, ?ISTR("A")).
+    i18n_collation:sort_key(C, ?ISTR("A")).
 
 simple_sort_test_() ->
     C = i18n_collation:open(),
@@ -128,7 +128,7 @@ natural_sort_test_() ->
          "Xiph Xlater 10000"],
 
     C = i18n_collation:open('root', [numeric]),
-    KeyFn = fun(X) -> i18n_collation:sort_key(C, ?_ISTR(X)) end,
+    KeyFn = fun(X) -> i18n_collation:sort_key(C, ?ISTR(X)) end,
     F = fun(X) -> i18n_collation:map_sort(KeyFn, X) end,
 
 

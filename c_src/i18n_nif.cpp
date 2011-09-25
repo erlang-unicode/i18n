@@ -60,7 +60,35 @@ extern "C" {
 
 #include <string.h>
 
-#define CHECK(ENV, X) if (U_FAILURE(X)) return get_error_code(ENV, X); 
+// from http://cplusplus.co.il/2010/07/17/variadic-macro-to-count-number-of-arguments/
+
+#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 5,4,3,2,1)
+#define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5,N,...) N
+
+#define macro_dispatcher(func, ...) \
+            macro_dispatcher_(func, VA_NUM_ARGS(__VA_ARGS__))
+#define macro_dispatcher_(func, nargs) \
+            macro_dispatcher__(func, nargs)
+#define macro_dispatcher__(func, nargs) \
+            func ## nargs
+
+
+#define CHECK(...) macro_dispatcher(CHECK, __VA_ARGS__)(__VA_ARGS__)
+
+#define CHECK2(ENV, X) \
+    if (U_FAILURE(X)) return get_error_code(ENV, X); 
+
+#define CHECK3(ENV, X, DEST) \
+    if (U_FAILURE(X)) {DEST; return get_error_code(ENV, X);}
+
+
+// divide by 2 
+#define TO_ULEN(X)   (X / sizeof(UChar))
+
+// multiply by 2 
+#define FROM_ULEN(X) (X * sizeof(UChar))
+
+#define ERROR(ENV, X) return get_error_code(ENV, X);
 
 
 
@@ -689,179 +717,204 @@ int parseIteratorType(const char * type)
 /**
  * NIFs
  */
+inline void do_from_utf8(
+    ErlNifBinary  in,
+    ErlNifBinary& out, 
+    int32_t& ulen,
+    UErrorCode& status) 
+{
+    status = U_ZERO_ERROR;
+    if (!enif_alloc_binary(FROM_ULEN(ulen), &out)) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return;
+    }
+
+    u_strFromUTF8(
+        (UChar*) out.data,       // dest
+        ulen,                    // capacity
+        &ulen,                   // len of result
+        (char*)   in.data,       // src
+        (int32_t) in.size,       // len of src
+        &status);                // error code
+
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        /* enlarge buffer if it was too small */
+        enif_release_binary(&out);
+        return;
+    }
+
+    if (FROM_ULEN(ulen) != out.size) {
+        /* shrink binary if it was too large */
+        enif_realloc_binary(&out, FROM_ULEN(ulen));
+    }
+}
 
 // Convert utf8 to utf16
 static ERL_NIF_TERM from_utf8(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary in;
-    ERL_NIF_TERM out;
-    // ulen is length in UChars, len is in bytes
-    int32_t ulen, len; 
-    UChar buf[STR_LEN], buf2[STR_LEN];
+    ErlNifBinary in, out;
+    int32_t ulen; 
     UErrorCode status = U_ZERO_ERROR;
-    unsigned char* bin;
 
-    // First argument must be a binary 
+    /* First argument must be a binary */
     if(!enif_inspect_binary(env, argv[0], &in)) {
         return enif_make_badarg(env);
     }
 
-    // 1. Convert a binary string in utf-8 to a binary string in utf-16.
-    u_strFromUTF8((UChar*) &buf, // dest
-        (int32_t) STR_LEN,       // capacity
-        &ulen,                   // len of result
-        (char*) in.data,         // src
-        (int32_t) in.size,       // len of src
-        &status);                // error code
-    CHECK(env, status);
+    /* Convert a binary string in utf-8 to a binary string in utf-16. */
+    ulen = in.size;
+    do_from_utf8(in, out, ulen, status);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        do_from_utf8(in, out, ulen, status);
+    }
+    CHECK(env, status, 
+        enif_release_binary(&out);
+    );
+    return enif_make_binary(env, &out);
+}
 
-    // 2. Normolize it into NFC.
-    ulen = unorm2_normalize(nfc_normalizer,
-        (UChar*) &buf,      // src
-        ulen,               // len of src
-        (UChar*) &buf2,     // dest
-        (int32_t) STR_LEN,  // capacity
-        &status);           // error code
-    CHECK(env, status);
 
-    // length in bytes
-    len = ulen * sizeof(UChar);
 
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy((void*) bin, (void*)(&buf2), (size_t) len);
-    return out;
+inline void do_to_utf8(
+    ErlNifBinary  in,
+    ErlNifBinary& out, 
+    int32_t& len,
+    UErrorCode& status) 
+{
+    status = U_ZERO_ERROR;
+    if (!enif_alloc_binary(len, &out)) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return;
+    }
+
+    u_strToUTF8( 
+        (char*) out.data,  // dest
+        len, 
+        &len, 
+        (const UChar*) in.data, // src
+        TO_ULEN(in.size),       // len of src
+        &status);
+
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        /* enlarge buffer if it was too small */
+        enif_release_binary(&out);
+        return;
+    }
+
+    if (len != (int32_t) out.size) {
+        /* shrink binary if it was too large */
+        enif_realloc_binary(&out, len);
+    }
 }
 // Convert utf16 to utf8
 static ERL_NIF_TERM to_utf8(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary in;
-    ERL_NIF_TERM out;
+    ErlNifBinary in, out;
     int32_t len; 
-    char buf[BUF_SIZE];
     UErrorCode status = U_ZERO_ERROR;
-    unsigned char* bin;
 
-    // First argument must be a binary 
+    /* First argument must be a binary */
     if(!enif_inspect_binary(env, argv[0], &in)) {
         return enif_make_badarg(env);
     }
 
-    u_strToUTF8((char*) (&buf), 
-        BUF_SIZE, 
-        &len, 
-        (UChar *) (in.data), 
-        div(in.size, sizeof(UChar)).quot, 
-        &status);
-
-    CHECK(env, status);
-
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy(bin, &buf, len);
-    return out;
+    len = in.size / sizeof(UChar);
+    do_to_utf8(in, out, len, status);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        do_to_utf8(in, out, len, status);
+    }
+    CHECK(env, status, 
+        enif_release_binary(&out);
+    );
+    return enif_make_binary(env, &out);
 }
-static ERL_NIF_TERM concat(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+
+
+
+typedef int32_t (*case_fun_ptr)(UChar *,
+    int32_t,
+    const UChar *,
+    int32_t,
+    const char *,
+    UErrorCode *
+    );
+
+inline void do_case(
+    ErlNifBinary  in,
+    ErlNifBinary& out, 
+    int32_t& ulen,
+    case_fun_ptr fun,
+    char* locale,
+    UErrorCode& status) 
 {
-    ErlNifBinary in, in2;
-    ERL_NIF_TERM out;
-    int32_t ulen, len; 
-    UChar buf[STR_LEN];
-    UErrorCode status = U_ZERO_ERROR;
-    unsigned char* bin;
-
-    if(!(enif_inspect_binary(env, argv[0], &in) 
-      && enif_inspect_binary(env, argv[1], &in2))) {
-        return enif_make_badarg(env);
+    status = U_ZERO_ERROR;
+    if (!enif_alloc_binary(FROM_ULEN(ulen), &out)) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return;
     }
-
-    memcpy(&buf, in.data, in.size);
-    ulen = div(in.size, sizeof(UChar)).quot;
-
-    ulen = unorm2_append(nfc_normalizer,
-        (UChar*) (&buf),  // first
-        ulen,             // first len
-        STR_LEN,          // first capacity
-        (UChar*) in.data, // second
-        div(in2.size, sizeof(UChar)).quot, // second length
-        &status);
-    CHECK(env, status);
-
-    // Length in bytes of the new first string
-    len = ulen * sizeof(UChar);
-
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy((void*) bin, (void*)(&buf), (size_t) len);
-    return out;
-}
-static ERL_NIF_TERM to_upper(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ErlNifBinary in;
-    ERL_NIF_TERM out;
-    int32_t len, ulen, locale_len; 
-    UChar buf[STR_LEN];
-    char locale[LOCALE_LEN];
-    UErrorCode status = U_ZERO_ERROR;
-    unsigned char* bin;
-
-    // Second argument must be a binary 
-    if(!enif_inspect_binary(env, argv[1], &in)) {
-        return enif_make_badarg(env);
-    }
-
-    locale_len = enif_get_atom(env, argv[0], locale, LOCALE_LEN, ERL_NIF_LATIN1);
-    if (!locale_len) {
-        return enif_make_badarg(env);
-    }
-
-    ulen = u_strToUpper((UChar*) (&buf), 
-            (int32_t) STR_LEN, 
+    ulen = fun(
+            (UChar*) out.data,   // src
+            ulen,                // len of src
             (UChar*) in.data, 
-            div(in.size, sizeof(UChar)).quot, 
-            (char*) locale, 
+            TO_ULEN(in.size),
+            locale, 
             &status);
 
-    // Length in bytes of the new first string
-    len = ulen * sizeof(UChar);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        /* enlarge buffer if it was too small */
+        enif_release_binary(&out);
+        return;
+    }
 
-    CHECK(env, status);
+    if (FROM_ULEN(ulen) != out.size) {
+        /* shrink binary if it was too large */
+        enif_realloc_binary(&out, FROM_ULEN(ulen));
+    }
+}
 
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy(bin, &buf, len);
-    return out;
+static ERL_NIF_TERM to_upper(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in, out;
+    int32_t ulen; 
+    UErrorCode status = U_ZERO_ERROR;
+    char locale[LOCALE_LEN];
+
+    if (!(enif_get_atom(env, argv[0], locale, LOCALE_LEN, ERL_NIF_LATIN1)
+       && enif_inspect_binary(env, argv[1], &in))) {
+        return enif_make_badarg(env);
+    }
+
+    ulen = TO_ULEN(in.size);
+    do_case(in, out, ulen, u_strToUpper, (char*) locale, status);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        do_case(in, out, ulen, u_strToUpper, (char*) locale, status);
+    }
+    CHECK(env, status, 
+        enif_release_binary(&out);
+    );
+    return enif_make_binary(env, &out);
 }
 static ERL_NIF_TERM to_lower(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary in;
-    ERL_NIF_TERM out;
-    int32_t len, ulen, locale_len; 
-    UChar buf[STR_LEN];
-    char locale[LOCALE_LEN];
+    ErlNifBinary in, out;
+    int32_t ulen; 
     UErrorCode status = U_ZERO_ERROR;
-    unsigned char* bin;
+    char locale[LOCALE_LEN];
 
-    // Second argument must be a binary 
-    if(!enif_inspect_binary(env, argv[1], &in)) {
+    if (!(enif_get_atom(env, argv[0], locale, LOCALE_LEN, ERL_NIF_LATIN1)
+       && enif_inspect_binary(env, argv[1], &in))) {
         return enif_make_badarg(env);
     }
 
-    locale_len = enif_get_atom(env, argv[0], locale, LOCALE_LEN, ERL_NIF_LATIN1);
-    if (!locale_len) {
-        return enif_make_badarg(env);
+    ulen = TO_ULEN(in.size);
+    do_case(in, out, ulen, u_strToLower, (char*) locale, status);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        do_case(in, out, ulen, u_strToUpper, (char*) locale, status);
     }
-
-    ulen = u_strToLower((UChar*) (&buf), 
-            (int32_t) STR_LEN, 
-            (UChar*) in.data, 
-            div(in.size, sizeof(UChar)).quot, 
-            (char*) locale, 
-            &status);
-    CHECK(env, status);
-
-    // Length in bytes of the new first string
-    len = ulen * sizeof(UChar);
-
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy(bin, &buf, len);
-    return out;
+    CHECK(env, status, 
+        enif_release_binary(&out);
+    );
+    return enif_make_binary(env, &out);
 }
 static ERL_NIF_TERM to_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -906,14 +959,14 @@ static ERL_NIF_TERM to_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     ulen = u_strToTitle((UChar*) (&buf), 
             (int32_t) STR_LEN, 
             (UChar*) in.data, 
-            div(in.size, sizeof(UChar)).quot, 
+            TO_ULEN(in.size),
             iter, // Iterator
             locptr, 
             &status);
     CHECK(env, status);
 
     // Length in bytes of the new first string
-    len = ulen * sizeof(UChar);
+    len = FROM_ULEN(ulen);
 
     bin = enif_make_new_binary(env, (size_t) len, &out);
     memcpy(bin, &buf, len);
@@ -943,7 +996,7 @@ static ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     // Do count
     ubrk_setText(iter,
         (UChar *) in.data,
-        div(in.size, sizeof(UChar)).quot, 
+        TO_ULEN(in.size),
         &status);
     CHECK(env, status);
 
@@ -1210,7 +1263,7 @@ static ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 
     len = ucol_getSortKey(col,
         (UChar*) in.data, 
-        (int32_t) div(in.size, sizeof(UChar)).quot, // in UChars
+        TO_ULEN(in.size),
         (uint8_t *) buf,
         BUF_SIZE); 
 
@@ -1244,9 +1297,9 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     res = ucol_strcoll(col,
         (UChar*) in.data, 
-        (int32_t) div(in.size, sizeof(UChar)).quot, 
+        TO_ULEN(in.size),
         (UChar*) in2.data, 
-        (int32_t) div(in2.size, sizeof(UChar)).quot 
+        TO_ULEN(in2.size)
     );   
 
     switch (res) {
@@ -1432,7 +1485,7 @@ static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
     // get a message format
     msg = umsg_open((UChar *) in.data, 
-            div(in.size, sizeof(UChar)).quot, 
+            TO_ULEN(in.size),
             (char *) locale, 
             NULL, 
             &status);
@@ -1474,7 +1527,7 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (argc == 3) {
         if (enif_inspect_binary(env, argv[2], &in)) {
             appendTo.append((UChar*) in.data, 
-                (int32_t) div(in.size, sizeof(UChar)).quot);
+                TO_ULEN(in.size));
         } else {
             // Third elem is not a string
             return enif_make_badarg(env);
@@ -1503,14 +1556,14 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         }
         
         names[i].append((UChar*) name.data, 
-            (int32_t) div(name.size, sizeof(UChar)).quot);
+            (int32_t) TO_ULEN(name.size));
         
         // reuse name variable as an argument
         if (enif_inspect_binary(env, tuple[1], &name)) {
             args[i].setString(
                 * new UnicodeString(
                     (const UChar*) name.data, 
-                    (int32_t) div(name.size, sizeof(UChar)).quot));
+                    (int32_t) TO_ULEN(name.size)));
         } else {
             delete[] args;
             delete[] names;
@@ -1543,7 +1596,7 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     
     ulen = appendTo.length(); 
     // length in bytes
-    len = ulen * sizeof(UChar);
+    len = FROM_ULEN(ulen);
 
     bin = enif_make_new_binary(env, (size_t) len, &out);
     memcpy((void*) bin, (void*) buf2, (size_t) len);
@@ -1663,7 +1716,7 @@ static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     cloner* res;
 
     re = uregex_open((UChar *) in.data, 
-            div(in.size, sizeof(UChar)).quot, 
+            TO_ULEN(in.size),
             0, 
             pe, 
             &status);
@@ -1693,29 +1746,29 @@ static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     UErrorCode status = U_ZERO_ERROR;
 
     // Second argument must be a binary 
-    if(!(enif_inspect_binary(env, argv[1], &in)
-      && enif_inspect_binary(env, argv[2], &in2)
+    if(!(enif_inspect_binary(env, argv[1], &in)  // Subject
+      && enif_inspect_binary(env, argv[2], &in2) // RE
       && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
         return enif_make_badarg(env);
     }
 
     re = (URegularExpression*) cloner_get(ptr);
     uregex_setText(re,
-        (const UChar *) in2.data,
-        (int32_t) div(in2.size, sizeof(UChar)).quot, // in UChars
+        (const UChar*) in.data,
+        TO_ULEN(in.size),
         &status); 
     CHECK(env, status);
 
     ulen = uregex_replaceAll(re,
-        (UChar*) in.data, 
-        (int32_t) div(in.size, sizeof(UChar)).quot, // in UChars
-        (UChar *) buf,
+        (UChar*) in2.data, 
+        TO_ULEN(in2.size),
+        (UChar*) buf,
         (int32_t) STR_LEN,
         &status); 
     CHECK(env, status);
 
     // length in bytes
-    len = ulen * sizeof(UChar);
+    len = FROM_ULEN(ulen);
 
 
     bin = enif_make_new_binary(env, (size_t) len, &out);
@@ -1723,6 +1776,58 @@ static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     return out;
 }
 
+
+#define BUF_CNT 20
+static ERL_NIF_TERM regex_split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    ERL_NIF_TERM head, tail;
+    int32_t len, num; 
+    UChar buf[STR_LEN];
+    unsigned char* bin;
+    URegularExpression* re;
+    cloner* ptr;
+    UErrorCode status = U_ZERO_ERROR;
+    UChar* fields[BUF_CNT];
+    char* pos;
+
+    // Second argument must be a binary 
+    if(!(enif_inspect_binary(env, argv[1], &in)
+      && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    re = (URegularExpression*) cloner_get(ptr);
+    uregex_setText(re,
+        (const UChar*) in.data,
+        TO_ULEN(in.size),
+        &status); 
+    CHECK(env, status);
+
+    num = uregex_split(re,
+        (UChar*) buf,
+        (int32_t) STR_LEN,
+        NULL,
+        fields,
+        (int32_t) BUF_CNT,
+        &status); 
+    CHECK(env, status);
+
+    tail = enif_make_list(env, 0);
+    while(num>0) {
+        num--;
+        pos = (char*) fields[num];
+
+        // length in bytes
+        len = strlen((const char*) pos);
+
+        bin = enif_make_new_binary(env, (size_t) len, &head);
+        memcpy(bin, (const char*) pos, len);
+        tail = enif_make_list_cell(env, head, tail);
+    }
+
+    return tail;
+}
 
 
 
@@ -1924,7 +2029,6 @@ static ErlNifFunc nif_funcs[] =
 #ifdef I18N_STRING
     {"to_utf8", 1, to_utf8},
     {"from_utf8", 1, from_utf8},
-    {"concat", 2, concat},
 
     // Locale dependible
     {"get_iterator", 2, get_iterator},
@@ -1961,6 +2065,7 @@ static ErlNifFunc nif_funcs[] =
 #ifdef I18N_REGEX
     {"open_regex", 1, open_regex},
     {"regex_replace", 3, regex_replace},
+    {"regex_split", 2, regex_split},
 #endif
 
 

@@ -30,6 +30,13 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("triq/include/triq.hrl").
     
+from_test_() ->
+    B = i18n_string:from(<<"F">>),
+    L = i18n_string:from("F"),
+    A = i18n_string:from('F'),
+    
+    [?_assertEqual(B, L), ?_assertEqual(B, A)].
+    
 from_utf8_test() ->
     i18n_string:from_utf8(<<"F">>),
     ok.
@@ -50,6 +57,11 @@ prop_from_utf8_test_() ->
 	{"from_utf8 and to_utf8 prop testing.",
 		{timeout, 60,
     		fun() -> triq:check(prop_from_utf8()) end}}.
+
+prop_concat_test_() ->
+	{"Simple concat prop testing.",
+		{timeout, 60,
+    		fun() -> triq:check(prop_concat()) end}}.
 
 prop_case_test_() ->
     {"to_lower and to_upper prop testing.",
@@ -75,6 +87,12 @@ prop_from_char() ->
 prop_from_utf8() ->
    ?FORALL({Xs},{unicode_binary(100)},
    	    i18n_string:to_utf8(i18n_string:from_utf8(Xs)) =:= Xs).
+
+prop_concat() ->
+   ?FORALL({Xs, Ys},{unicode_binary(100), unicode_binary(100)},
+   	    is_binary(i18n_string:concat(
+                i18n_string:from_utf8(Xs),
+                i18n_string:from_utf8(Ys)))).
     
 prop_case() ->
 	I = i18n_string:get_iterator('grapheme'),
@@ -104,8 +122,8 @@ prop_get_iterator_parallel() ->
 		S = i18n_string:from_utf8(Xs),
 		is_integer(i18n_string:len(I, S))
 		end,
-    FF = fun(F, Xs) -> 
-        spawn(fun() -> F(Xs) end), 
+    FF = fun(F2, Xs) -> 
+        spawn(fun() -> F2(Xs) end), 
         true 
         end,
    	?FORALL({Xs},{unicode_binary(100)}, FF(F, Xs)).

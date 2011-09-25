@@ -1,7 +1,9 @@
 ebin
+deps/*
 *.swp
 *.dump
 *.trace  
 *.o
 *.so
 *.dll
+.eunit

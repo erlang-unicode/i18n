@@ -59,7 +59,7 @@ from(L)
 from(A) 
     when is_atom(A) ->
     L = erlang:atom_to_list(A),
-    B = erlang:atom_to_binary(L),
+    B = erlang:list_to_binary(L),
     from_utf8(B).
 
 
@@ -78,7 +78,7 @@ native_from(A)
 
 
 list_to_i18n_string(L) ->
-    erlang:list_to_binary(xmerl_ucs:to_utf16be(L)).
+    erlang:list_to_binary(xmerl_ucs:to_utf16le(L)).
 
 
 -spec from_utf8(unicode_binary()) -> i18n_string().
@@ -91,7 +91,7 @@ to_utf8(B) ->
 
 -spec concat(i18n_string(), i18n_string()) -> i18n_string().
 concat(B1, B2) -> 
-    ?TRY_STR(?IM:concat(B1, B2)).
+    <<B1/binary, B2/binary>>.
 
 
 -spec to_lower(i18n_string()) -> i18n_string().

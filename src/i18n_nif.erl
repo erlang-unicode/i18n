@@ -33,7 +33,6 @@
 
 % NIFs
 -export([from_utf8/1, to_utf8/1]).
--export([concat/2]).
 
 -export([to_lower/2, to_upper/2, to_title/2]).
 -export([get_iterator/2, len/2]).
@@ -45,7 +44,7 @@
 -export([collator_set_attr/3]).
 
 -export([open_format/2, format/2, format/3]).
--export([open_regex/1, regex_replace/3]).
+-export([open_regex/1, regex_replace/3, regex_split/2]).
 
 -export([locale_name/1, locale_parent/1, locale_language_tag/1,
     locale_base_name/1]).
@@ -61,9 +60,6 @@ from_utf8(_BinUTF8) ->
       ?I18N_NIF_NOT_LOADED.
 
 to_utf8(_BinUTF16) ->
-      ?I18N_NIF_NOT_LOADED.
-
-concat(_BinUTF16Beginning, _BinUTF16Ending) -> 
       ?I18N_NIF_NOT_LOADED.
 
 len(_IterResource, _String) -> 
@@ -131,6 +127,8 @@ open_regex(_FormatString) ->
 regex_replace(_Regex, _SrcS, _RepS) ->
     ?I18N_NIF_NOT_LOADED.
 
+regex_split(_Regex, _SrcS) ->
+    ?I18N_NIF_NOT_LOADED.
 
 
 

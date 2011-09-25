@@ -24,21 +24,20 @@
 -module(i18n_locale).
 -include("i18n.hrl").
 -export([set_locale/1, set_default_locale/1, get_locale/0]).
--export([base_name/1]).
+-export([base_name/1, parent_locale/1]).
+
 
 -define(SERVER, 'i18n_locale_server').
 
 set_locale(Value) -> 
     LName = ?TRY_ATOM(?IM:locale_name(Value)),
-    set_value('i18n_locale', LName).
+    set_value('i18n_locale', fix_locale(LName)).
 
 set_default_locale(Value) -> 
-    set_default_value('i18n_locale', Value).
+    set_default_value('i18n_locale', fix_locale(Value)).
 
 get_locale() -> 
     get_value('i18n_locale').
-
-
 
 
 
@@ -65,5 +64,17 @@ get_value(Key) ->
         Value
     end.
 
+
 base_name(LocaleId) ->
-    ?TRY_ATOM(?IM:locale_base_name(LocaleId)).
+    fix_locale(?TRY_ATOM(?IM:locale_base_name(LocaleId))).
+
+parent_locale(Locale) ->
+    fix_locale(?TRY_ATOM(?IM:locale_parent(Locale))).
+
+
+%%
+%% Helpers
+%%
+
+fix_locale('') -> 'root';
+fix_locale(X) -> X.
