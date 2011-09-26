@@ -679,8 +679,9 @@ inline UnicodeString binary_to_string(const ErlNifBinary& in) {
 }
 
 
-
-
+static ERL_NIF_TERM bool_to_term(ErlNifEnv* env, UBool value) {
+    return enif_make_atom(env, value ? "true" : "false"); 
+}
 
 
 
@@ -1892,6 +1893,35 @@ static ERL_NIF_TERM regex_split(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     return tail;
 }
 
+static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    RegexPattern* re;
+    RegexMatcher* rm;
+    cloner* ptr;
+    UnicodeString input;
+    UErrorCode status = U_ZERO_ERROR;
+    UBool res;
+
+    // Second argument must be a binary 
+    if(!(enif_inspect_binary(env, argv[1], &in)  // Subject
+      && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    re = (RegexPattern*) cloner_get(ptr);
+
+    input = binary_to_string(in);
+    rm = re->matcher((const UnicodeString) input, status);
+    CHECK(env, status);
+
+    res = rm->matches(
+        status 
+    );
+    CHECK(env, status);
+
+    return bool_to_term(env, res);
+}
 
 
 
@@ -2126,6 +2156,7 @@ static ErlNifFunc nif_funcs[] =
     {"open_regex", 1, open_regex},
     {"regex_replace", 3, regex_replace},
     {"regex_split", 2, regex_split},
+    {"regex_test", 2, regex_test}, // hello eunit
 #endif
 
 
