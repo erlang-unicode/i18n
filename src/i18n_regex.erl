@@ -45,5 +45,5 @@ split(Re, S) ->
     ?TRY_LIST(?IM:regex_split(Re, S)).
 
 -spec replace(i18n_regex(), i18n_string(), i18n_string()) -> [i18n_string()].
-replace(Re, S, R) ->
-    ?TRY_STR(?IM:regex_replace(Re, S, R)).
+replace(Re, R, S) ->
+    ?TRY_STR(?IM:regex_replace(Re, R, S)).

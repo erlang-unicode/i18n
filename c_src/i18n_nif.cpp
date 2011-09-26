@@ -43,6 +43,7 @@
 #include "unicode/unorm2.h"
 
 #include "unicode/ucol.h"
+#include "unicode/coll.h"
 
 #include "unicode/umsg.h"
 #include "unicode/msgfmt.h"
@@ -50,6 +51,7 @@
 #include "unicode/utypes.h"
 
 #include "unicode/uregex.h"
+#include "unicode/regex.h"
 
 
 #include "erl_nif.h"
@@ -98,6 +100,20 @@ static ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code) {
     return enif_make_tuple2(env,
         enif_make_atom(env, "error"),
         enif_make_atom(env, code));
+}
+
+static ERL_NIF_TERM parse_error(ErlNifEnv* env, const char* code, 
+        UParseError* e) {
+    return enif_make_tuple4(env,
+        enif_make_atom(env, "error"), 
+        enif_make_atom(env, code),
+        enif_make_tuple2(env,
+            enif_make_atom(env, "line"),
+            enif_make_int(env, (int) e->line)),
+        enif_make_tuple2(env,
+            enif_make_atom(env, "offset"),
+            enif_make_int(env, (int) e->offset))
+        );
 }
 
 /** 
@@ -638,6 +654,30 @@ static ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status) {
 
 
 
+inline ERL_NIF_TERM string_to_term(ErlNifEnv* env, const UnicodeString& s) {
+        ERL_NIF_TERM term;
+        size_t len;
+        const UChar* buf;
+        unsigned char* bin;
+
+        // length in bytes
+        len = FROM_ULEN(s.length());
+        buf = s.getBuffer();
+        bin = enif_make_new_binary(env, len, &term);
+        memcpy(bin, (const char*) buf, len);
+
+        return term;
+}
+
+
+inline UnicodeString binary_to_string(const ErlNifBinary& in) {
+    /* Readonly-aliasing UChar* constructor. */
+    return UnicodeString(
+        false,
+        (const UChar*) in.data,
+        TO_ULEN(in.size));
+}
+
 
 
 
@@ -844,7 +884,7 @@ inline void do_case(
     ErlNifBinary& out, 
     int32_t& ulen,
     case_fun_ptr fun,
-    char* locale,
+    const char* locale,
     UErrorCode& status) 
 {
     status = U_ZERO_ERROR;
@@ -916,61 +956,84 @@ static ERL_NIF_TERM to_lower(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     );
     return enif_make_binary(env, &out);
 }
+
+inline void do_to_title(
+    ErlNifBinary  in,
+    ErlNifBinary& out, 
+    int32_t& ulen,
+    UBreakIterator* iter,
+    const char* locale,
+    UErrorCode& status) 
+{
+    status = U_ZERO_ERROR;
+    if (!enif_alloc_binary(FROM_ULEN(ulen), &out)) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return;
+    }
+    ulen = u_strToTitle(
+            (UChar*) out.data,   // src
+            ulen,                // len of src
+            (UChar*) in.data, 
+            TO_ULEN(in.size),
+            iter, // Iterator
+            locale, 
+            &status);
+
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        /* enlarge buffer if it was too small */
+        enif_release_binary(&out);
+        return;
+    }
+
+    if (FROM_ULEN(ulen) != out.size) {
+        /* shrink binary if it was too large */
+        enif_realloc_binary(&out, FROM_ULEN(ulen));
+    }
+}
 static ERL_NIF_TERM to_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary in;
-    ERL_NIF_TERM out;
-    int32_t len, ulen, locale_len; 
-    UChar buf[STR_LEN];
+    ErlNifBinary in, out;
+    int32_t ulen; 
     char locale[LOCALE_LEN];
     const char* locptr;
-    UErrorCode status = U_ZERO_ERROR;
-    unsigned char* bin;
     cloner* ptr; 
     UBreakIterator* iter; 
+    UErrorCode status = U_ZERO_ERROR;
 
-    // Second argument must be a binary 
+    /* Second argument must be a binary */
     if(!enif_inspect_binary(env, argv[1], &in)) {
         return enif_make_badarg(env);
     }
 
-    locale_len = enif_get_atom(env, argv[0], locale, LOCALE_LEN, ERL_NIF_LATIN1);
-    if (locale_len) {
-        // First element is an atom.
+    if (enif_get_atom(env, argv[0], locale, LOCALE_LEN, ERL_NIF_LATIN1)) {
+        /* First element is an atom. */
         locptr = (const char*) locale;
         iter = NULL;
 
     } else if (enif_get_resource(env, argv[0], iterator_type, (void**) &ptr)) {
-        // First element is an iterator.
+        /* First element is an iterator. */
         iter = (UBreakIterator*) cloner_get(ptr);
 
-        // Iterator contains a locale name. Extract it.
+        /* Iterator contains a locale name. Extract it. */
         locptr = ubrk_getLocaleByType((const UBreakIterator*) iter,
             ULOC_ACTUAL_LOCALE, // locale type
             &status);
 
         CHECK(env, status);
-
     } else {
         return enif_make_badarg(env);
     }  
 
-    // lenght in bytes
-    ulen = u_strToTitle((UChar*) (&buf), 
-            (int32_t) STR_LEN, 
-            (UChar*) in.data, 
-            TO_ULEN(in.size),
-            iter, // Iterator
-            locptr, 
-            &status);
-    CHECK(env, status);
+    ulen = TO_ULEN(in.size);
+    do_to_title(in, out, ulen, iter, locptr, status);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        do_to_title(in, out, ulen, iter, locptr, status);
+    }
+    CHECK(env, status, 
+        enif_release_binary(&out);
+    );
+    return enif_make_binary(env, &out);
 
-    // Length in bytes of the new first string
-    len = FROM_ULEN(ulen);
-
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy(bin, &buf, len);
-    return out;
 }
 static ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -990,8 +1053,6 @@ static ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (iter == NULL) {
         return enif_make_badarg(env);
     }
-
-    
 
     // Do count
     ubrk_setText(iter,
@@ -1243,42 +1304,75 @@ static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     /* resource now only owned by "Erlang" */
     return out;
 }
+inline void do_sort_key(
+    ErlNifBinary  in,
+    ErlNifBinary& out, 
+    int32_t& len,
+    UCollator* col,
+    UErrorCode &status)
+{
+    int32_t full_len;
+    status = U_ZERO_ERROR;
+
+    if (!enif_alloc_binary(len, &out)) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return;
+    }
+
+    full_len = ucol_getSortKey(col,
+        (const UChar*) in.data, 
+        TO_ULEN(in.size),
+        (uint8_t*) out.data,  // dest
+        len);
+
+    /* If there was an internal error generating the sort key, 
+        a zero value is returned. */
+    if (!full_len) {
+        enif_release_binary(&out);
+        status = U_INTERNAL_PROGRAM_ERROR;
+        return;
+    }
+    if (full_len > len) {
+        status = U_BUFFER_OVERFLOW_ERROR;
+        len = full_len;
+        enif_release_binary(&out);
+        return;
+    }
+    len = full_len;
+
+    /* Delete NULL from the end of the key. */
+    len--;
+
+    if (len != (int32_t) out.size) {
+        /* shrink binary if it was too large */
+        enif_realloc_binary(&out, len);
+    }
+}
 static ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary in;
-    ERL_NIF_TERM out;
+    ErlNifBinary in, out;
     int32_t len; 
-    uint8_t buf[BUF_SIZE];
-    unsigned char* bin;
     UCollator* col;
     cloner* ptr;
+    UErrorCode status = U_ZERO_ERROR;
 
-    // Second argument must be a binary 
+    /* Second argument must be a binary */
     if(!(enif_inspect_binary(env, argv[1], &in)
       && enif_get_resource(env, argv[0], collator_type, (void**) &ptr))) {
         return enif_make_badarg(env);
     }
-
     col = (UCollator*) cloner_get(ptr);
 
-    len = ucol_getSortKey(col,
-        (UChar*) in.data, 
-        TO_ULEN(in.size),
-        (uint8_t *) buf,
-        BUF_SIZE); 
-
-
-    // If there was an internal error generating the sort key, a zero value is returned.  
-    if(!len) {
-        return enif_make_badarg(env);
-    } 
-
-    // Delete NULL from the end of the key.
-    len--;
-
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy(bin, &buf, len);
-    return out;
+    /* Convert a binary string in utf-8 to a binary string in utf-16. */
+    len = in.size*4;
+    do_sort_key(in, out, len, col, status);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        do_sort_key(in, out, len, col, status);
+    }
+    CHECK(env, status, 
+        enif_release_binary(&out);
+    );
+    return enif_make_binary(env, &out);
 }
 static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -1287,7 +1381,6 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     cloner* ptr;
     UCollationResult res;
 
-    // Second argument must be a binary 
     if(!(enif_inspect_binary(env, argv[1], &in) 
       && enif_inspect_binary(env, argv[2], &in2)
       && enif_get_resource(env, argv[0], collator_type, (void**) &ptr))) {
@@ -1296,11 +1389,11 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     col = (UCollator*) cloner_get(ptr);
 
     res = ucol_strcoll(col,
-        (UChar*) in.data, 
+        (const UChar*) in.data, 
         TO_ULEN(in.size),
-        (UChar*) in2.data, 
-        TO_ULEN(in2.size)
-    );   
+        (const UChar*) in2.data, 
+        TO_ULEN(in2.size) 
+    );
 
     switch (res) {
         case UCOL_EQUAL:
@@ -1315,7 +1408,7 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             return enif_make_atom(env, "less");
             break;
     }
-    return enif_make_badarg(env);
+    ERROR(env, U_INTERNAL_PROGRAM_ERROR);
 }
 static ERL_NIF_TERM collator_set_attr(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -1506,8 +1599,7 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, name;
     ERL_NIF_TERM out, list;
-    int32_t len, ulen; 
-    unsigned char* bin;
+    int32_t len; 
     cloner* ptr;
     UMessageFormat* fmt;
     unsigned int count, i;
@@ -1575,7 +1667,6 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         i++;
     }
     
-    
     ((const MessageFormat*) fmt)->format(
         (const UnicodeString *) names,
         (const Formattable *) args,
@@ -1588,19 +1679,7 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     CHECK(env, status);
 
-    const UChar* buf2 = appendTo.getBuffer();
-    if (!buf2) {
-        return enif_make_badarg(env);
-    }
-
-    
-    ulen = appendTo.length(); 
-    // length in bytes
-    len = FROM_ULEN(ulen);
-
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy((void*) bin, (void*) buf2, (size_t) len);
-    return out;
+    return string_to_term(env, appendTo);
 }
 
 
@@ -1673,23 +1752,17 @@ void regex_dtor(ErlNifEnv* env, void* obj)
 void regex_destr(char* obj) 
 { 
     if (obj != NULL)
-        uregex_close((URegularExpression*) obj);
+        delete (RegexPattern*) obj;
 }
 char* regex_clone(char* obj) 
 {
-    UErrorCode status = U_ZERO_ERROR;
-
-    obj = (char*) uregex_clone(
-        (URegularExpression*) obj,
-        &status 
+    obj = (char*) new RegexPattern(
+        * ((RegexPattern*) obj)
     );
-    if(U_FAILURE(status)) { 
-        return NULL;
-    } 
     return obj;
 }
 
-int regex_open(URegularExpression * obj, cloner* c)
+int regex_open(RegexPattern * obj, cloner* c)
 {
     return cloner_open((char *) obj, c, &regex_clone, &regex_destr);
 } 
@@ -1710,17 +1783,27 @@ static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 {
     ERL_NIF_TERM out;
     ErlNifBinary in;
+    UParseError pe;
     UErrorCode status = U_ZERO_ERROR;
-    UParseError* pe = NULL;
-    URegularExpression* re;
+    RegexPattern* re;
     cloner* res;
+    uint32_t flags = 0;
+    UnicodeString input;
 
-    re = uregex_open((UChar *) in.data, 
-            TO_ULEN(in.size),
-            0, 
+    if(!(enif_inspect_binary(env, argv[0], &in)  // Regexp
+        )) {
+        return enif_make_badarg(env);
+    }
+    input = binary_to_string(in);
+
+    re = RegexPattern::compile(
+            input, 
+            flags, 
             pe, 
-            &status);
-    CHECK(env, status);
+            status);
+    if (U_FAILURE(status)) {
+        return parse_error(env, "i18n_regex_error", &pe);
+    }
 
     res = (cloner*) enif_alloc_resource(regex_type, sizeof(cloner));
     if (regex_open(re, res)) {
@@ -1734,103 +1817,80 @@ static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 }
 
 
+// i18n_regex:replace(i18n_regex:open(i18n_string:from("G")),
+// i18n_string:from("$1"), i18n_string:from("G")).
 static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, in2;
-    ERL_NIF_TERM out;
-    int32_t ulen, len; 
-    UChar buf[STR_LEN];
-    unsigned char* bin;
-    URegularExpression* re;
+    RegexPattern* re;
+    RegexMatcher* rm;
     cloner* ptr;
+    UnicodeString input, replacement, res;
     UErrorCode status = U_ZERO_ERROR;
 
     // Second argument must be a binary 
-    if(!(enif_inspect_binary(env, argv[1], &in)  // Subject
-      && enif_inspect_binary(env, argv[2], &in2) // RE
+    if(!(enif_inspect_binary(env, argv[2], &in)  // Subject
+      && enif_inspect_binary(env, argv[1], &in2) // RE
       && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
         return enif_make_badarg(env);
     }
 
-    re = (URegularExpression*) cloner_get(ptr);
-    uregex_setText(re,
-        (const UChar*) in.data,
-        TO_ULEN(in.size),
-        &status); 
+    re = (RegexPattern*) cloner_get(ptr);
+
+    input = binary_to_string(in);
+    rm = re->matcher((const UnicodeString) input, status);
     CHECK(env, status);
 
-    ulen = uregex_replaceAll(re,
-        (UChar*) in2.data, 
-        TO_ULEN(in2.size),
-        (UChar*) buf,
-        (int32_t) STR_LEN,
-        &status); 
+    replacement = binary_to_string(in2);
+    res = rm->replaceAll(
+        (const UnicodeString) replacement,
+        status 
+    );
     CHECK(env, status);
 
-    // length in bytes
-    len = FROM_ULEN(ulen);
-
-
-    bin = enif_make_new_binary(env, (size_t) len, &out);
-    memcpy(bin, &buf, len);
-    return out;
+    return string_to_term(env, res);
 }
 
 
+// i18n_regex:split(i18n_regex:open(i18n_string:from("G")), i18n_string:from("4")).
 #define BUF_CNT 20
 static ERL_NIF_TERM regex_split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     ERL_NIF_TERM head, tail;
-    int32_t len, num; 
-    UChar buf[STR_LEN];
-    unsigned char* bin;
-    URegularExpression* re;
+    int32_t num; 
+    RegexPattern* re;
     cloner* ptr;
     UErrorCode status = U_ZERO_ERROR;
-    UChar* fields[BUF_CNT];
-    char* pos;
+    UnicodeString fields[BUF_CNT];
+    UnicodeString input;
 
-    // Second argument must be a binary 
     if(!(enif_inspect_binary(env, argv[1], &in)
       && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
         return enif_make_badarg(env);
     }
 
-    re = (URegularExpression*) cloner_get(ptr);
-    uregex_setText(re,
-        (const UChar*) in.data,
-        TO_ULEN(in.size),
-        &status); 
-    CHECK(env, status);
+    re = (RegexPattern*) cloner_get(ptr);
+    input = binary_to_string(in);
 
-    num = uregex_split(re,
-        (UChar*) buf,
-        (int32_t) STR_LEN,
-        NULL,
+    num = re->split(
+        (const UnicodeString) input,
         fields,
         (int32_t) BUF_CNT,
-        &status); 
+        status 
+    );   
     CHECK(env, status);
 
     tail = enif_make_list(env, 0);
     while(num>0) {
         num--;
-        pos = (char*) fields[num];
 
-        // length in bytes
-        len = strlen((const char*) pos);
-
-        bin = enif_make_new_binary(env, (size_t) len, &head);
-        memcpy(bin, (const char*) pos, len);
+        head = string_to_term(env, fields[num]);
         tail = enif_make_list_cell(env, head, tail);
     }
 
     return tail;
 }
-
-
-
 
 
 
