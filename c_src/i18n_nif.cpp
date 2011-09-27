@@ -1847,6 +1847,7 @@ static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
         (const UnicodeString) replacement,
         status 
     );
+    delete rm;
     CHECK(env, status);
 
     return string_to_term(env, res);
@@ -1918,11 +1919,58 @@ static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     res = rm->matches(
         status 
     );
+    delete rm;
     CHECK(env, status);
 
     return bool_to_term(env, res);
 }
 
+
+static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    ERL_NIF_TERM head, tail;
+    RegexPattern* re;
+    RegexMatcher* rm;
+    cloner* ptr;
+    UnicodeString input, group;
+    UErrorCode status = U_ZERO_ERROR;
+    int32_t num;
+
+    // Second argument must be a binary 
+    if(!(enif_inspect_binary(env, argv[1], &in)  // Subject
+      && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    re = (RegexPattern*) cloner_get(ptr);
+
+    input = binary_to_string(in);
+    rm = re->matcher((const UnicodeString) input, status);
+    CHECK(env, status);
+
+    tail = enif_make_list(env, 0);
+
+    if(rm->find()) {
+        num = rm->groupCount();
+
+        while(num >= 0) {
+
+            /* Replace the temp string */
+            group = rm->group(num, status);
+
+            CHECK(env, status,
+                delete rm;
+            );
+            head = string_to_term(env, group);
+            tail = enif_make_list_cell(env, head, tail);
+            num--;
+        }
+    }
+    delete rm;
+
+    return tail;
+}
 
 
 static int i18n_regex_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
@@ -2157,6 +2205,7 @@ static ErlNifFunc nif_funcs[] =
     {"regex_replace", 3, regex_replace},
     {"regex_split", 2, regex_split},
     {"regex_test", 2, regex_test}, // hello eunit
+    {"regex_match", 2, regex_match}, 
 #endif
 
 
