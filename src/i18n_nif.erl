@@ -44,8 +44,9 @@
 -export([collator_set_attr/3]).
 
 -export([open_format/2, format/2, format/3]).
--export([open_regex/1, regex_replace/3, regex_split/2, regex_test/2,
-    regex_match/2]).
+-export([open_regex/1, regex_replace/3, regex_replace_all/3, 
+    regex_split/2, regex_test/2,
+    regex_match/2, regex_match_all/2]).
 
 -export([locale_name/1, locale_parent/1, locale_language_tag/1,
     locale_base_name/1]).
@@ -128,6 +129,9 @@ open_regex(_FormatString) ->
 regex_replace(_Regex, _SrcS, _RepS) ->
     ?I18N_NIF_NOT_LOADED.
 
+regex_replace_all(_Regex, _SrcS, _RepS) ->
+    ?I18N_NIF_NOT_LOADED.
+
 regex_split(_Regex, _SrcS) ->
     ?I18N_NIF_NOT_LOADED.
 
@@ -135,6 +139,9 @@ regex_test(_Regex, _SrcS) ->
     ?I18N_NIF_NOT_LOADED.
 
 regex_match(_Regex, _SrcS) ->
+    ?I18N_NIF_NOT_LOADED.
+
+regex_match_all(_Regex, _SrcS) ->
     ?I18N_NIF_NOT_LOADED.
 
 

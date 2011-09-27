@@ -50,7 +50,6 @@
 
 #include "unicode/utypes.h"
 
-#include "unicode/uregex.h"
 #include "unicode/regex.h"
 
 
@@ -1820,7 +1819,7 @@ static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 
 // i18n_regex:replace(i18n_regex:open(i18n_string:from("G")),
 // i18n_string:from("$1"), i18n_string:from("G")).
-static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM regex_replace_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, in2;
     RegexPattern* re;
@@ -1852,6 +1851,40 @@ static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
     return string_to_term(env, res);
 }
+
+static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in, in2;
+    RegexPattern* re;
+    RegexMatcher* rm;
+    cloner* ptr;
+    UnicodeString input, replacement, res;
+    UErrorCode status = U_ZERO_ERROR;
+
+    // Second argument must be a binary 
+    if(!(enif_inspect_binary(env, argv[2], &in)  // Subject
+      && enif_inspect_binary(env, argv[1], &in2) // RE
+      && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    re = (RegexPattern*) cloner_get(ptr);
+
+    input = binary_to_string(in);
+    rm = re->matcher((const UnicodeString) input, status);
+    CHECK(env, status);
+
+    replacement = binary_to_string(in2);
+    res = rm->replaceFirst(
+        (const UnicodeString) replacement,
+        status 
+    );
+    delete rm;
+    CHECK(env, status);
+
+    return string_to_term(env, res);
+}
+
 
 
 // i18n_regex:split(i18n_regex:open(i18n_string:from("G")), i18n_string:from("4")).
@@ -1926,16 +1959,37 @@ static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 }
 
 
-static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+inline static ERL_NIF_TERM do_regex_match(ErlNifEnv* env, RegexMatcher* rm, UErrorCode& status)
+{
+    ERL_NIF_TERM head, tail;
+    UnicodeString group;
+    int32_t num;
+
+    num = rm->groupCount();
+    tail = enif_make_list(env, 0);
+
+    while(num >= 0) {
+
+        /* Replace the temp string */
+        group = rm->group(num, status);
+        CHECK(env, status);
+
+        head = string_to_term(env, group);
+        tail = enif_make_list_cell(env, head, tail);
+        num--;
+    }
+    return tail;
+}
+
+static ERL_NIF_TERM regex_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     ERL_NIF_TERM head, tail;
     RegexPattern* re;
     RegexMatcher* rm;
     cloner* ptr;
-    UnicodeString input, group;
+    UnicodeString input;
     UErrorCode status = U_ZERO_ERROR;
-    int32_t num;
 
     // Second argument must be a binary 
     if(!(enif_inspect_binary(env, argv[1], &in)  // Subject
@@ -1951,27 +2005,53 @@ static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
     tail = enif_make_list(env, 0);
 
-    if(rm->find()) {
-        num = rm->groupCount();
-
-        while(num >= 0) {
-
-            /* Replace the temp string */
-            group = rm->group(num, status);
-
-            CHECK(env, status,
-                delete rm;
-            );
-            head = string_to_term(env, group);
-            tail = enif_make_list_cell(env, head, tail);
-            num--;
-        }
+    while(rm->find()) {
+        head = do_regex_match(env, rm, status);
+        CHECK(env, status,
+            delete rm;
+        );
+        tail = enif_make_list_cell(env, head, tail);
     }
     delete rm;
 
     return tail;
 }
 
+static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    ERL_NIF_TERM out;
+    RegexPattern* re;
+    RegexMatcher* rm;
+    cloner* ptr;
+    UnicodeString input;
+    UErrorCode status = U_ZERO_ERROR;
+
+    // Second argument must be a binary 
+    if(!(enif_inspect_binary(env, argv[1], &in)  // Subject
+      && enif_get_resource(env, argv[0], regex_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    re = (RegexPattern*) cloner_get(ptr);
+
+    input = binary_to_string(in);
+    rm = re->matcher((const UnicodeString) input, status);
+    CHECK(env, status);
+
+
+    if(rm->find()) {
+        out = do_regex_match(env, rm, status);
+        CHECK(env, status,
+            delete rm;
+        );
+    } else {
+        out = enif_make_list(env, 0);
+    }
+    delete rm;
+
+    return out;
+}
 
 static int i18n_regex_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
@@ -2201,11 +2281,13 @@ static ErlNifFunc nif_funcs[] =
 
 
 #ifdef I18N_REGEX
-    {"open_regex", 1, open_regex},
-    {"regex_replace", 3, regex_replace},
-    {"regex_split", 2, regex_split},
-    {"regex_test", 2, regex_test}, // hello eunit
-    {"regex_match", 2, regex_match}, 
+    {"open_regex",        1, open_regex},
+    {"regex_replace",     3, regex_replace},
+    {"regex_replace_all", 3, regex_replace_all},
+    {"regex_split",       2, regex_split},
+    {"regex_test",        2, regex_test}, // hello eunit
+    {"regex_match",       2, regex_match}, 
+    {"regex_match_all",   2, regex_match_all}, 
 #endif
 
 

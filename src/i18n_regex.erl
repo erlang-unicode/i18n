@@ -31,7 +31,7 @@
 
 % NIFs
 -export([open/1]).
--export([split/2, replace/3, test/2, match/2]).
+-export([split/2, replace/3, replace_all/3, test/2, match/2, match_all/2]).
 
 
 
@@ -48,6 +48,10 @@ split(Re, S) ->
 replace(Re, R, S) ->
     ?TRY_STR(?IM:regex_replace(Re, R, S)).
 
+-spec replace_all(i18n_regex(), i18n_string(), i18n_string()) -> [i18n_string()].
+replace_all(Re, R, S) ->
+    ?TRY_STR(?IM:regex_replace_all(Re, R, S)).
+
 -spec test(i18n_regex(), i18n_string()) -> boolean().
 %% @doc Test matches.
 test(Re, S) ->
@@ -56,3 +60,7 @@ test(Re, S) ->
 -spec match(i18n_regex(), i18n_string()) -> [i18n_string()].
 match(Re, S) ->
     ?TRY_LIST(?IM:regex_match(Re, S)).
+
+-spec match_all(i18n_regex(), i18n_string()) -> [[i18n_string()]].
+match_all(Re, S) ->
+    ?TRY_LIST(?IM:regex_match_all(Re, S)).
