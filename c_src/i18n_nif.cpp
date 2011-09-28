@@ -29,6 +29,7 @@
 #define I18N_MESSAGE   	true
 #define I18N_REGEX   	true
 #define I18N_LOCALE   	true
+#define I18N_DATE   	true
 
 #define BUF_SIZE 65536 // 2^16, since we're using a 2-byte length header
 #define STR_LEN 32768
@@ -52,6 +53,7 @@
 
 #include "unicode/regex.h"
 
+#include "unicode/ucal.h"
 
 #include "erl_nif.h"
 
@@ -1510,6 +1512,31 @@ static void i18n_collation_unload(ErlNifEnv* env, void* priv)
 
 #ifdef I18N_MESSAGE
 
+
+U_NAMESPACE_BEGIN
+/**
+ * This class isolates our access to private internal methods of
+ * MessageFormat.  It is never instantiated; it exists only for C++
+ * access management.
+ */
+class MessageFormatAdapter {
+public:
+    static const Formattable::Type* getArgTypeList(const MessageFormat& m,
+                                                   int32_t& count);
+};
+const Formattable::Type*
+MessageFormatAdapter::getArgTypeList(const MessageFormat& m,
+                                     int32_t& count) {
+    return m.getArgTypeList(count);
+}
+U_NAMESPACE_END
+
+U_NAMESPACE_USE
+
+
+
+
+
 static ErlNifResourceType* message_type = 0;
 
 
@@ -1558,7 +1585,11 @@ int message_open(UMessageFormat * obj, cloner* c)
  * NIFs
  */
 
-// Get a message format 
+/* Get a message format 
+ * i18n:to(i18n_message:format(i18n_message:open(i18n:from("{0,date}")),
+ * [{i18n:from("0"), i18n_nif:date_now()}])).  
+ * <<"2011 9 28">> */
+
 static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
@@ -1599,19 +1630,25 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, name;
     ERL_NIF_TERM out, list;
-    int32_t len; 
+    int32_t len, mcount; 
     cloner* ptr;
-    UMessageFormat* fmt;
     unsigned int count, i;
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString appendTo;
+    const MessageFormat* fmt;
+    const Formattable::Type* types;
+
+    ERL_NIF_TERM* tuple;
+    double tDouble;
+    int tInt;
+    int64_t tInt64;
 
     if(!(enif_get_list_length(env, argv[1], &count)
       && enif_get_resource(env, argv[0], message_type, (void**) &ptr))) {
         return enif_make_badarg(env);
     }
 
-    fmt = (UMessageFormat*) cloner_get(ptr);
+    fmt = (const MessageFormat*) cloner_get(ptr);
     if (fmt == NULL) {
         return enif_make_badarg(env);
     }
@@ -1633,41 +1670,114 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     i = 0;
     list = argv[1];
-    ERL_NIF_TERM* tuple;
+
+    // TODO: dirty, but stable
+    // If we use c API we cannot check args
+    // If we use c++ API we cannot get requered type
+    types = MessageFormatAdapter::getArgTypeList(*fmt, mcount);
+
+    if (mcount < (int32_t) count) 
+        return enif_make_badarg(env); // too few in
+
     while (enif_get_list_cell(env, list, &out, &list)) {
-        // out is a head
-        // len is arity
+
         if (!(enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
              && (len == 2)
              && enif_inspect_binary(env, tuple[0], &name))) {
             delete[] args;
             delete[] names;
             
-            // is not {name, value}
+            /* is not {name, value} */
             return enif_make_badarg(env);
+        }
+        /* out is a head
+           len is arity
+           reuse name variable as an argument */
+        switch (types[i]) {
+            
+            case Formattable::kDate:
+ 
+                if (enif_get_double(env, tuple[1], &tDouble)) {
+                    args[i].setDate((UDate) tDouble);
+                } else {
+                    delete[] args;
+                    delete[] names;
+                    
+                    // is not a double
+                    return enif_make_badarg(env);
+                }
+                break;
+            
+            case Formattable::kDouble:
+ 
+                if (enif_get_double(env, tuple[1], &tDouble)) {
+                    args[i].setDouble(tDouble);
+                } else {
+                    delete[] args;
+                    delete[] names;
+                    
+                    // is not a double
+                    return enif_make_badarg(env);
+                }
+                break;
+            
+            case Formattable::kLong:
+ 
+                if (enif_get_int(env, tuple[1], &tInt)) {
+                    args[i].setLong((int32_t) tInt);
+                } else {
+                    delete[] args;
+                    delete[] names;
+                    
+                    // is not a int32
+                    return enif_make_badarg(env);
+                }
+                break;
+ 
+            case Formattable::kInt64:
+ 
+                if (enif_get_int64(env, tuple[1], (ErlNifSInt64*) &tInt64)) {
+                    args[i].setInt64(tInt64);
+                } else {
+                    delete[] args;
+                    delete[] names;
+                    
+                    // is not a int64
+                    return enif_make_badarg(env);
+                }
+                break;
+                
+            case Formattable::kString:
+                if (enif_inspect_binary(env, tuple[1], &name)) {
+                    args[i].setString(
+                        * new UnicodeString(
+                            (const UChar*) name.data, 
+                            (int32_t) TO_ULEN(name.size)));
+                } else {
+                    delete[] args;
+                    delete[] names;
+                    
+                    // is not a binary
+                    return enif_make_badarg(env);
+                }
+                break;
+ 
+ 
+           default:
+                delete[] args;
+                delete[] names;
+                
+                // status=U_ILLEGAL_ARGUMENT_ERROR; 
+                return enif_make_badarg(env);
         }
         
         names[i].append((UChar*) name.data, 
             (int32_t) TO_ULEN(name.size));
         
-        // reuse name variable as an argument
-        if (enif_inspect_binary(env, tuple[1], &name)) {
-            args[i].setString(
-                * new UnicodeString(
-                    (const UChar*) name.data, 
-                    (int32_t) TO_ULEN(name.size)));
-        } else {
-            delete[] args;
-            delete[] names;
-            
-            // wtf?
-            return enif_make_badarg(env);
-        }
-        
         i++;
     }
     
-    ((const MessageFormat*) fmt)->format(
+    fmt->format(
         (const UnicodeString *) names,
         (const Formattable *) args,
         (int32_t) count,
@@ -2169,6 +2279,114 @@ static ERL_NIF_TERM locale_base_name(ErlNifEnv* env, int argc, const ERL_NIF_TER
 #endif
 
 
+#ifdef I18N_DATE
+
+static ErlNifResourceType* calendar_type = 0;
+
+
+// Called from erl_nif.
+void calendar_dtor(ErlNifEnv* env, void* obj) 
+{
+    // Free memory
+    cloner_destroy((cloner*) obj); 
+}
+
+
+
+// Called from cloner for each thread.
+void calendar_destr(char* obj) 
+{ 
+    if (obj != NULL)
+        ucal_close((UCalendar*) obj);
+}
+char* calendar_clone(char* obj) 
+{
+    UErrorCode status = U_ZERO_ERROR;
+    
+    obj = (char*) ucal_clone((UCalendar*) obj, &status);
+    if(U_FAILURE(status)) { 
+        return NULL;
+    } 
+
+    return obj;
+}
+
+int calendar_open(UCalendar * obj, cloner* c)
+{
+    return cloner_open((char *) obj, c, &calendar_clone, &calendar_destr);
+} 
+
+
+
+
+
+
+
+
+/**
+ * NIFs
+ */
+
+
+inline UCalendarType parserCalendarType(const char * type) 
+{
+    return (!strcmp((char*) "gregorian",   type)) ? UCAL_GREGORIAN :
+           (!strcmp((char*) "traditional", type)) ? UCAL_TRADITIONAL :
+            UCAL_DEFAULT;
+}
+static ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM out;
+    ErlNifBinary tz;
+    char type[LOCALE_LEN], locale[LOCALE_LEN];
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* res;
+
+
+    if (!(enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)
+       && enif_inspect_binary(env, argv[1], &tz)
+       && enif_get_atom(env, argv[2], (char*) type, LOCALE_LEN, ERL_NIF_LATIN1))) {
+        return enif_make_badarg(env);
+    }
+
+    /* get a calendar type */
+    cal = ucal_open(
+        (const UChar *) tz.data,
+        (int32_t) tz.size,
+        (const char *) locale,
+        parserCalendarType((const char *) type),
+        &status 
+    );
+    CHECK(env, status);
+
+
+    res = (cloner*) enif_alloc_resource(calendar_type, sizeof(cloner));
+    if (calendar_open(cal, res)) {
+        enif_release_resource(res);
+        return enif_make_badarg(env);
+    }
+    out = enif_make_resource(env, res);
+    enif_release_resource(res);
+    /* resource now only owned by "Erlang" */
+    return out;
+}
+
+
+static ERL_NIF_TERM date_now(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_double(env, (double) ucal_getNow());
+}
+
+
+static int i18n_date_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+{
+    calendar_type = enif_open_resource_type(env, NULL, "calendar_type",
+        calendar_dtor, ERL_NIF_RT_CREATE, NULL); 
+    if (calendar_type == NULL) return 6;
+    return 0;
+}
+#endif
 
 
 
@@ -2209,6 +2427,13 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
     code = i18n_regex_load(env, priv_data, load_info);
     if (code) return code;
 #endif
+
+
+#ifdef I18N_DATE
+    code = i18n_date_load(env, priv_data, load_info);
+    if (code) return code;
+#endif
+
 
      
     return 0;
@@ -2298,6 +2523,14 @@ static ErlNifFunc nif_funcs[] =
     {"locale_parent",       1, locale_parent},
     {"locale_language_tag", 1, locale_language_tag},
     {"locale_base_name",    1, locale_base_name},
+#endif
+
+
+
+
+#ifdef I18N_DATE
+    {"date_now",      0, date_now},
+    {"open_calendar", 3, open_calendar},
 #endif
 
 };

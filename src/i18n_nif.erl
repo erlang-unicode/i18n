@@ -40,7 +40,7 @@
 
 -export([get_collator/1]).
 -export([sort_key/2, compare/3]).
-% Bad function
+% Dirty function
 -export([collator_set_attr/3]).
 
 -export([open_format/2, format/2, format/3]).
@@ -50,6 +50,8 @@
 
 -export([locale_name/1, locale_parent/1, locale_language_tag/1,
     locale_base_name/1]).
+
+-export([date_now/0, open_calendar/3]).
 
 init() ->
     i18n:start(),
@@ -160,4 +162,15 @@ locale_language_tag(_L) ->
     ?I18N_NIF_NOT_LOADED.
 
 locale_base_name(_L) ->
+    ?I18N_NIF_NOT_LOADED.
+
+
+%%
+%% Date
+%%
+
+date_now() ->
+    ?I18N_NIF_NOT_LOADED.
+
+open_calendar(_L, _TZ, _Type) ->
     ?I18N_NIF_NOT_LOADED.
