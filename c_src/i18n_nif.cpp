@@ -1654,6 +1654,7 @@ inline void append_atom(char * atom, UnicodeString& s)
 {
     while (*atom) {
         s.append((UChar) *atom);
+        atom++;
     } 
 }
 

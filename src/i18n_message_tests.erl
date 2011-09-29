@@ -29,36 +29,78 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("triq/include/triq.hrl").
+
+equal([H, H|T]) ->
+    equal([H|T]);
+equal([]) ->
+    true;
+equal([H]) ->
+    true;
+equal(_) ->
+    false.
+
+equal_test_() ->
+    [?_assert(equal([1,1,1]))
+    ,?_assert(equal([1,1]))
+    ,?_assert(not equal([1,2]))
+    ,?_assert(not equal([1,1,3]))
+    ].
     
 %%% argType = "number" | "date" | "time" | "spellout" | "ordinal" | "duration"
 %%% argStyle = "short" | "medium" | "long" | "full" | "integer" | "currency" |
 %%%    "percent" | argStyleText
 
+get_checker_format(S) ->
+    M = i18n_message:open(S),
+
+    % This fun returns boolean
+    fun(X) ->
+        B = i18n_message:format(M, [X]),
+        equal([B,
+               i18n_message:format(M, [{0, X}]),
+               i18n_message:format(M, [{'0', X}])
+              ]) 
+        andalso is_binary(B)
+    end.
+
 prop_message_string_test_() ->
-	{"message with string prop testing.",
-		{timeout, 60,
+    {"message with string prop testing.",
+    	{timeout, 60,
     		fun() -> triq:check(prop_message_string()) end}}.
     
 prop_message_int_test_() ->
 	{"message with int prop testing.",
 		{timeout, 60,
     		fun() -> triq:check(prop_message_int()) end}}.
+    
+prop_message_double_test_() ->
+	{"message with double prop testing.",
+		{timeout, 60,
+    		fun() -> triq:check(prop_message_double()) end}}.
+    
+prop_message_date_test_() ->
+	{"message with date prop testing.",
+		{timeout, 60,
+    		fun() -> triq:check(prop_message_date()) end}}.
 
 prop_message_string() ->
-    S = i18n_string:from("String {0}."),
-    M = i18n_message:open(S),
+    S = ?ISTR("String {0}."),
+    F = get_checker_format(S),
+    ?FORALL({Xs}, {unicode_binary()}, F(?ISTR(Xs))).
 
-    ?FORALL({Xs},{unicode_binary(100)},
-   	    is_binary(i18n_message:format(M, [i18n_string:from_utf8(Xs)]))).
-
-%% argType = number
-%% argStyle = integer
 prop_message_int() ->
-    S = i18n_string:from("String {0,number, integer}."),
-    M = i18n_message:open(S),
+    S = i18n_string:from("String {0, number, integer}."),
+    F = get_checker_format(S),
+    ?FORALL({Xs}, {int()}, F(Xs)).
 
-    ?FORALL({Xs},{int()},
-   	    is_binary(i18n_message:format(M, [Xs]))).
+prop_message_double() ->
+    S = i18n_string:from("String {0, number, double}."),
+    F = get_checker_format(S),
+    ?FORALL({Xs}, {real()}, F(Xs)).
 
+prop_message_date() ->
+    S = i18n_string:from("String {0, date}."),
+    F = get_checker_format(S),
+    ?FORALL({Xs}, {real()}, F(Xs)).
 
 -endif.
