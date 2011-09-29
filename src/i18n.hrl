@@ -8,3 +8,4 @@
 -define(TRY_ATOM(X), begin Y = (X), try true=is_atom(Y),    Y catch error:{badmatch, _V} -> {error, E} = Y, throw(E) end end).
 -define(TRY_OK(X),   begin Y = (X), try ok=Y,               Y catch error:{badmatch, _V} -> {error, E} = Y, throw(E) end end).
 -define(TRY_INT(X),  begin Y = (X), try true=is_integer(Y), Y catch error:{badmatch, _V} -> {error, E} = Y, throw(E) end end).
+-define(TRY_NUM(X),  begin Y = (X), try true=is_number(Y),  Y catch error:{badmatch, _V} -> {error, E} = Y, throw(E) end end).

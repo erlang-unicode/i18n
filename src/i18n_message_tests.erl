@@ -45,7 +45,17 @@ equal_test_() ->
     ,?_assert(not equal([1,2]))
     ,?_assert(not equal([1,1,3]))
     ].
-    
+
+message_test_() ->
+    M = i18n_message:open(?ISTR("Hello, {name}. Now {now, time, full}.")),
+    R = i18n_message:format(M, [
+            {'name', ?ISTR("Username")},
+            {'now',  i18n_date:now()}
+        ]),
+    io:format(user, "~n~ts~n", [i18n_string:to_utf8(R)]),
+
+    [?_assert(is_binary(R))].
+
 %%% argType = "number" | "date" | "time" | "spellout" | "ordinal" | "duration"
 %%% argStyle = "short" | "medium" | "long" | "full" | "integer" | "currency" |
 %%%    "percent" | argStyleText

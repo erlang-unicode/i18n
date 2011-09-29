@@ -709,7 +709,11 @@ static ERL_NIF_TERM bool_to_term(ErlNifEnv* env, UBool value) {
 #ifdef I18N_STRING
 
 static ErlNifResourceType* iterator_type = 0;
-static const UNormalizer2* nfc_normalizer = 0;
+
+static const Normalizer2* nfc_normalizer = 0;
+static const Normalizer2* nfd_normalizer = 0;
+static const Normalizer2* nfkc_normalizer = 0;
+static const Normalizer2* nfkd_normalizer = 0;
 
 
 
@@ -886,7 +890,67 @@ static ERL_NIF_TERM to_utf8(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     return enif_make_binary(env, &out);
 }
 
+static ERL_NIF_TERM do_norm(ErlNifEnv* env, const ErlNifBinary& in, const
+    Normalizer2* norm)
+{
+    UnicodeString out_str;
+    UErrorCode status = U_ZERO_ERROR;
 
+    out_str = norm->normalize(binary_to_string(in), status);
+    CHECK(env, status);
+
+    return string_to_term(env, out_str);
+}
+
+/**
+ * Normalization
+ */
+
+static ERL_NIF_TERM to_nfc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+
+    if (!enif_inspect_binary(env, argv[0], &in)) 
+        return enif_make_badarg(env);
+
+    return do_norm(env, in, nfc_normalizer);
+}
+
+static ERL_NIF_TERM to_nfd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+
+    if (!enif_inspect_binary(env, argv[0], &in)) 
+        return enif_make_badarg(env);
+
+    return do_norm(env, in, nfd_normalizer);
+}
+
+static ERL_NIF_TERM to_nfkc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+
+    if (!enif_inspect_binary(env, argv[0], &in)) 
+        return enif_make_badarg(env);
+
+    return do_norm(env, in, nfkc_normalizer);
+}
+
+static ERL_NIF_TERM to_nfkd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+
+    if (!enif_inspect_binary(env, argv[0], &in)) 
+        return enif_make_badarg(env);
+
+    return do_norm(env, in, nfkd_normalizer);
+}
+
+
+
+/**
+ * Locale dependible functions
+ */
 
 typedef int32_t (*case_fun_ptr)(UChar *,
     int32_t,
@@ -1150,19 +1214,37 @@ static ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 static int i18n_string_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
     UErrorCode status = U_ZERO_ERROR;
-    char type[] = "nfc";
 
     iterator_type = enif_open_resource_type(env, NULL, "iterator_type",
         iterator_dtor, ERL_NIF_RT_CREATE, NULL); 
 
     if (iterator_type == NULL) return 1;
 
-    // get NFC normalizer
-    nfc_normalizer = unorm2_getInstance(NULL,
-        (char*) type,
+    /* get normalizers */
+    nfc_normalizer = Normalizer2::getInstance(NULL,
+        "nfc",
         UNORM2_COMPOSE,
-        &status);
+        status);
     if(U_FAILURE(status)) return 2;
+
+    nfd_normalizer = Normalizer2::getInstance(NULL,
+        "nfc",
+        UNORM2_DECOMPOSE,
+        status);
+    if(U_FAILURE(status)) return 2;
+
+    nfkc_normalizer = Normalizer2::getInstance(NULL,
+        "nfkc",
+        UNORM2_COMPOSE,
+        status);
+    if(U_FAILURE(status)) return 2;
+
+    nfkd_normalizer = Normalizer2::getInstance(NULL,
+        "nfkc",
+        UNORM2_DECOMPOSE,
+        status);
+    if(U_FAILURE(status)) return 2;
+
     return 0;
 }
 
@@ -2503,15 +2585,19 @@ static void unload(ErlNifEnv* env, void* priv)
 static ErlNifFunc nif_funcs[] =
 {
 #ifdef I18N_STRING
-    {"to_utf8", 1, to_utf8},
-    {"from_utf8", 1, from_utf8},
+    {"to_utf8",      1, to_utf8},
+    {"from_utf8",    1, from_utf8},
 
     // Locale dependible
     {"get_iterator", 2, get_iterator},
-    {"len", 2, len},
-    {"to_lower", 2, to_lower},
-    {"to_upper", 2, to_upper},
-    {"to_title", 2, to_title},
+    {"len",          2, len},
+    {"to_lower",     2, to_lower},
+    {"to_upper",     2, to_upper},
+    {"to_title",     2, to_title},
+    {"to_nfc",       1, to_nfc},
+    {"to_nfd",       1, to_nfd},
+    {"to_nfkc",      1, to_nfkc},
+    {"to_nfkd",      1, to_nfkd},
 #endif
 
 

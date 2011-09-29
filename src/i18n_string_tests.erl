@@ -48,6 +48,14 @@ simple_open_test() ->
     i18n_string:get_iterator('sentence'),
     ok.
 
+simple_normalization_test() ->
+    S = i18n_string:from_utf8(<<"Simple test">>),
+    i18n_string:to_nfc(S),
+    i18n_string:to_nfd(S),
+    i18n_string:to_nfkc(S),
+    i18n_string:to_nfkd(S),
+    ok.
+
 prop_from_char_test_() ->
 	{"1 char conversation prop testing.",
 		{timeout, 60,

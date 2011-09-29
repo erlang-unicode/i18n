@@ -40,6 +40,7 @@
 % NIFs
 -export([from/1, native_from/1]).
 -export([from_utf8/1, to_utf8/1]).
+-export([to_nfc/1, to_nfd/1, to_nfkc/1, to_nfkd/1]).
 -export([concat/2]).
 
 
@@ -80,7 +81,6 @@ native_from(A)
 list_to_i18n_string(L) ->
     erlang:list_to_binary(xmerl_ucs:to_utf16le(L)).
 
-
 -spec from_utf8(unicode_binary()) -> i18n_string().
 from_utf8(B) ->
     ?TRY_STR(?IM:from_utf8(B)).
@@ -88,6 +88,28 @@ from_utf8(B) ->
 -spec to_utf8(i18n_string()) -> unicode_binary().
 to_utf8(B) ->
     ?TRY_BIN(?IM:to_utf8(B)).
+
+%%
+%% Normalization
+%%
+
+-spec to_nfc(i18n_string()) -> unicode_binary().
+to_nfc(B) ->
+    ?TRY_BIN(?IM:to_nfc(B)).
+
+-spec to_nfd(i18n_string()) -> unicode_binary().
+to_nfd(B) ->
+    ?TRY_BIN(?IM:to_nfd(B)).
+
+-spec to_nfkc(i18n_string()) -> unicode_binary().
+to_nfkc(B) ->
+    ?TRY_BIN(?IM:to_nfkc(B)).
+
+-spec to_nfkd(i18n_string()) -> unicode_binary().
+to_nfkd(B) ->
+    ?TRY_BIN(?IM:to_nfkd(B)).
+
+
 
 -spec concat(i18n_string(), i18n_string()) -> i18n_string().
 concat(B1, B2) -> 

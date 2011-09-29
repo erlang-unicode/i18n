@@ -33,6 +33,7 @@
 
 % NIFs
 -export([from_utf8/1, to_utf8/1]).
+-export([to_nfc/1, to_nfd/1, to_nfkc/1, to_nfkd/1]).
 
 -export([to_lower/2, to_upper/2, to_title/2]).
 -export([get_iterator/2, len/2]).
@@ -59,6 +60,9 @@ init() ->
     erlang:load_nif(Nif, 0).
 
 
+%%
+%% Strings
+%%
 
 from_utf8(_BinUTF8) ->
       ?I18N_NIF_NOT_LOADED.
@@ -81,6 +85,21 @@ to_title(_Locale, _String) ->
 get_iterator(_Locale, _Type) -> 
     ?I18N_NIF_NOT_LOADED.
 
+%%
+%% Normalization
+%%
+
+to_nfc(_BinUTF16) ->
+      ?I18N_NIF_NOT_LOADED.
+
+to_nfd(_BinUTF16) ->
+      ?I18N_NIF_NOT_LOADED.
+
+to_nfkc(_BinUTF16) ->
+      ?I18N_NIF_NOT_LOADED.
+
+to_nfkd(_BinUTF16) ->
+      ?I18N_NIF_NOT_LOADED.
 
 
 %%
