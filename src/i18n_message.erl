@@ -55,4 +55,3 @@ format(M, P) ->
 -spec format(i18n_msg_format(), [i18n_msg_param()], i18n_string()) -> i18n_string().
 format(M, P, A) ->
     ?TRY_STR(?IM:format(M, P, A)).
-

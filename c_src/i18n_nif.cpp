@@ -117,6 +117,21 @@ static ERL_NIF_TERM parse_error(ErlNifEnv* env, const char* code,
         );
 }
 
+static ERL_NIF_TERM list_element_error(ErlNifEnv* env, const ERL_NIF_TERM list,
+        int32_t num) {
+    return enif_make_tuple4(env,
+        enif_make_atom(env, "error"),
+        enif_make_atom(env, "bad_element"),
+        enif_make_tuple2(env,
+            enif_make_atom(env, "list"),
+            list),
+        enif_make_tuple2(env,
+            enif_make_atom(env, "index"),
+            enif_make_int(env, (int) num))
+        );
+}
+
+
 /** 
  * http://icu-project.org/apiref/icu4c/utypes_8h.html#a3343c1c8a8377277046774691c98d78c
  */
@@ -1594,15 +1609,12 @@ static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 {
     ERL_NIF_TERM out;
     ErlNifBinary in;
-    int32_t locale_len; 
     char locale[LOCALE_LEN];
     UErrorCode status = U_ZERO_ERROR;
     UMessageFormat* msg;
     cloner* res;
 
-
-    locale_len = enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1);
-    if (!(locale_len
+    if (!(enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)
           && enif_inspect_binary(env, argv[1], &in))) {
         return enif_make_badarg(env);
     }
@@ -1626,10 +1638,29 @@ static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     /* resource now only owned by "Erlang" */
     return out;
 }
+/* Non-localized realization */
+inline void append_uint(unsigned int n, UnicodeString& s)
+{
+    int tenth;
+
+    do {
+        tenth = n / 10;
+        s.append((UChar)(n - 10 * tenth + '0'));
+        n = tenth;
+    } while (n != 0);
+}
+
+inline void append_atom(char * atom, UnicodeString& s)
+{
+    while (*atom) {
+        s.append((UChar) *atom);
+    } 
+}
+
 static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, name;
-    ERL_NIF_TERM out, list;
+    ERL_NIF_TERM out, list, argt;
     int32_t len, mcount; 
     cloner* ptr;
     unsigned int count, i;
@@ -1641,7 +1672,7 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     ERL_NIF_TERM* tuple;
     double tDouble;
     int tInt;
-    int64_t tInt64;
+    ErlNifSInt64 tInt64;
 
     if(!(enif_get_list_length(env, argv[1], &count)
       && enif_get_resource(env, argv[0], message_type, (void**) &ptr))) {
@@ -1677,19 +1708,46 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     types = MessageFormatAdapter::getArgTypeList(*fmt, mcount);
 
     if (mcount < (int32_t) count) 
-        return enif_make_badarg(env); // too few in
+        return enif_make_badarg(env); // too few elements in the list
 
     while (enif_get_list_cell(env, list, &out, &list)) {
 
-        if (!(enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
-             && (len == 2)
-             && enif_inspect_binary(env, tuple[0], &name))) {
-            delete[] args;
-            delete[] names;
-            
-            /* is not {name, value} */
-            return enif_make_badarg(env);
+        if (enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
+            && (len == 2)) { 
+            /* [..., {Id, Arg}, ...] */
+
+            if (enif_inspect_binary(env, tuple[0], &name)) {
+                /* typeof(Id) == unicode_string */
+                names[i].append((UChar*) name.data, 
+                    (int32_t) TO_ULEN(name.size));
+            } else 
+
+            if (enif_get_int(env, tuple[0], &tInt)) {
+                /* typeof(Id) == integer */
+                append_uint(tInt, names[i]);
+            } else 
+
+            if (enif_is_atom(env, tuple[0])) {
+                /* typeof(Id) == atom */
+                char atom[ATOM_LEN];
+                if (!enif_get_atom(env, tuple[0], (char*) atom, ATOM_LEN,
+                    ERL_NIF_LATIN1))
+                    goto bad_elem;
+                
+                append_atom((char *) atom, names[i]);
+                    
+            } else 
+                goto bad_elem;
+
+                
+            argt = tuple[1];
+        } else {
+            /* [..., Arg, ...] */
+            argt = out;
+            append_uint((unsigned int) i, names[i]);
         }
+
+
         /* out is a head
            len is arity
            reuse name variable as an argument */
@@ -1697,82 +1755,50 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             
             case Formattable::kDate:
  
-                if (enif_get_double(env, tuple[1], &tDouble)) {
-                    args[i].setDate((UDate) tDouble);
-                } else {
-                    delete[] args;
-                    delete[] names;
-                    
-                    // is not a double
-                    return enif_make_badarg(env);
-                }
+                if (!enif_get_double(env, argt, &tDouble)) 
+                    goto bad_elem;
+
+                args[i].setDate((UDate) tDouble);
                 break;
             
             case Formattable::kDouble:
  
-                if (enif_get_double(env, tuple[1], &tDouble)) {
-                    args[i].setDouble(tDouble);
-                } else {
-                    delete[] args;
-                    delete[] names;
-                    
-                    // is not a double
-                    return enif_make_badarg(env);
-                }
+                if (!enif_get_double(env, argt, &tDouble)) 
+                    goto bad_elem;
+
+                args[i].setDouble(tDouble);
                 break;
             
             case Formattable::kLong:
  
-                if (enif_get_int(env, tuple[1], &tInt)) {
-                    args[i].setLong((int32_t) tInt);
-                } else {
-                    delete[] args;
-                    delete[] names;
-                    
-                    // is not a int32
-                    return enif_make_badarg(env);
-                }
+                if (!enif_get_int(env, argt, &tInt))
+                    goto bad_elem;
+
+                args[i].setLong((int32_t) tInt);
                 break;
  
             case Formattable::kInt64:
- 
-                if (enif_get_int64(env, tuple[1], (ErlNifSInt64*) &tInt64)) {
-                    args[i].setInt64(tInt64);
-                } else {
-                    delete[] args;
-                    delete[] names;
-                    
-                    // is not a int64
-                    return enif_make_badarg(env);
-                }
+
+                if (!enif_get_int64(env, argt, &tInt64)) 
+                    goto bad_elem;
+
+                args[i].setInt64((int64_t) tInt64);
                 break;
                 
             case Formattable::kString:
-                if (enif_inspect_binary(env, tuple[1], &name)) {
-                    args[i].setString(
-                        * new UnicodeString(
-                            (const UChar*) name.data, 
-                            (int32_t) TO_ULEN(name.size)));
-                } else {
-                    delete[] args;
-                    delete[] names;
-                    
-                    // is not a binary
-                    return enif_make_badarg(env);
-                }
+
+                if (!enif_inspect_binary(env, argt, &name)) 
+                    goto bad_elem;
+
+                args[i].setString(
+                    * new UnicodeString(
+                        (const UChar*) name.data, 
+                        (int32_t) TO_ULEN(name.size)));
                 break;
  
- 
            default:
-                delete[] args;
-                delete[] names;
-                
-                // status=U_ILLEGAL_ARGUMENT_ERROR; 
-                return enif_make_badarg(env);
+                goto bad_elem;
         }
-        
-        names[i].append((UChar*) name.data, 
-            (int32_t) TO_ULEN(name.size));
         
         i++;
     }
@@ -1781,8 +1807,8 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         (const UnicodeString *) names,
         (const Formattable *) args,
         (int32_t) count,
-        (UnicodeString &) appendTo, // hate c++
-        (UErrorCode &) status       // hate c++
+        appendTo,
+        status      
     );
     delete[] args;
     delete[] names;
@@ -1790,6 +1816,12 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     CHECK(env, status);
 
     return string_to_term(env, appendTo);
+
+    bad_elem:
+        /* Memory deallocation */
+//      delete[] args;
+//      delete[] names;
+        return list_element_error(env, argv[1], i);
 }
 
 
