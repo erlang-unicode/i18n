@@ -4,6 +4,12 @@ DEST:=$(PREFIX)$(PROJECT)
 
 REBAR=./rebar
 
+export CC=$(shell icu-config --cc)
+export ICU_CFLAGS=$(shell icu-config --cppflags-searchpath) 
+export ICU_LDFLAGS=$(shell icu-config --ldflags) 
+
+
+
 all:
 	@$(REBAR) get-deps compile
 

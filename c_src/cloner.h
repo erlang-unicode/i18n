@@ -1,4 +1,4 @@
-// vim: set filetype=c shiftwidth=4 tabstop=4 expandtab tw=80:
+/* vim: set filetype=c shiftwidth=4 tabstop=4 expandtab tw=80: */
 
 /**
  *  =====================================================================
@@ -33,11 +33,11 @@ struct cloner_element {
     char * data;
 };
 struct cloner_store {
-    size_t size; // size in bytes
+    size_t size; /* in bytes */
     ErlNifMutex* mutex;
     ptr2clonefn clone_fn;
     ptr2destrfn destr_fn;
-    size_t count; // count of elements 
+    size_t count; /* in elements */
     struct cloner_array* array;
 };
 struct cloner_array {

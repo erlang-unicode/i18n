@@ -665,7 +665,31 @@ static ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status) {
 
 
 
+ERL_NIF_TERM ATOM_TRUE, ATOM_FALSE;
+ERL_NIF_TERM ATOM_EQUAL, ATOM_GREATER, ATOM_LESS;
+ERL_NIF_TERM ATOM_OK;
+ERL_NIF_TERM ATOM_ENDIAN;
 
+static int i18n_atom_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+{
+    ATOM_TRUE    = enif_make_atom(env, "true");
+    ATOM_FALSE   = enif_make_atom(env, "false");
+
+    ATOM_EQUAL   = enif_make_atom(env, "equal");
+    ATOM_GREATER = enif_make_atom(env, "greater");
+    ATOM_LESS    = enif_make_atom(env, "less");
+
+    ATOM_OK      = enif_make_atom(env, "ok");
+
+
+#if U_IS_BIG_ENDIAN
+    ATOM_ENDIAN = enif_make_atom(env, "big");
+#else
+    ATOM_ENDIAN = enif_make_atom(env, "little");
+#endif
+
+    return 0;
+}
 
 
 
@@ -694,9 +718,8 @@ inline UnicodeString binary_to_string(const ErlNifBinary& in) {
         TO_ULEN(in.size));
 }
 
-
-static ERL_NIF_TERM bool_to_term(ErlNifEnv* env, UBool value) {
-    return enif_make_atom(env, value ? "true" : "false"); 
+inline static ERL_NIF_TERM bool_to_term(UBool value) {
+    return value ? ATOM_TRUE : ATOM_FALSE; 
 }
 
 
@@ -888,6 +911,11 @@ static ERL_NIF_TERM to_utf8(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         enif_release_binary(&out);
     );
     return enif_make_binary(env, &out);
+}
+
+ERL_NIF_TERM endian(ErlNifEnv* env, int argc,
+                            const ERL_NIF_TERM argv[]) {
+    return ATOM_ENDIAN;
 }
 
 static ERL_NIF_TERM do_norm(ErlNifEnv* env, const ErlNifBinary& in, const
@@ -1496,15 +1524,15 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     switch (res) {
         case UCOL_EQUAL:
-            return enif_make_atom(env, "equal");
+            return ATOM_EQUAL;
             break;
             
         case UCOL_GREATER: 
-            return enif_make_atom(env, "greater");
+            return ATOM_GREATER;
             break;
 
         case UCOL_LESS:
-            return enif_make_atom(env, "less");
+            return ATOM_LESS;
             break;
     }
     ERROR(env, U_INTERNAL_PROGRAM_ERROR);
@@ -1541,7 +1569,7 @@ static ERL_NIF_TERM collator_set_attr(ErlNifEnv* env, int argc, const ERL_NIF_TE
         &status);
     CHECK(env, status);
 
-    return enif_make_atom(env, "ok");
+    return ATOM_OK;
 }
 
 
@@ -2180,7 +2208,7 @@ static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     delete rm;
     CHECK(env, status);
 
-    return bool_to_term(env, res);
+    return bool_to_term(res);
 }
 
 
@@ -2520,6 +2548,9 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
     int code;
     uloc_getDefault();
 
+    code = i18n_atom_load(env, priv_data, load_info);
+    if (code) return code;
+
 #ifdef I18N_STRING
     code = i18n_string_load(env, priv_data, load_info);
     if (code) return code;
@@ -2548,8 +2579,6 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
     code = i18n_date_load(env, priv_data, load_info);
     if (code) return code;
 #endif
-
-
      
     return 0;
 }
@@ -2587,6 +2616,7 @@ static ErlNifFunc nif_funcs[] =
 #ifdef I18N_STRING
     {"to_utf8",      1, to_utf8},
     {"from_utf8",    1, from_utf8},
+    {"endian",       0, endian},
 
     // Locale dependible
     {"get_iterator", 2, get_iterator},

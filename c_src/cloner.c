@@ -1,4 +1,4 @@
-// vim: set filetype=c shiftwidth=4 tabstop=4 expandtab tw=80:
+/* vim: set filetype=c shiftwidth=4 tabstop=4 expandtab tw=80: */
 
 /**
  *  =====================================================================
@@ -34,7 +34,7 @@ int cloner_open(char * obj,
 {
     struct cloner_element* e;
 
-    c->mutex = enif_mutex_create("Cloner mutex.");
+    c->mutex = enif_mutex_create((char*) "Cloner mutex.");
     c->clone_fn = clone_fn;
     c->destr_fn = destr_fn;
     c->count = 1;
@@ -65,7 +65,7 @@ char* cloner_get(cloner* c)
     a = c->array;
     self = enif_thread_self();
     
-    // readonly: try to find a copy for this thread
+    /* readonly: try to find a copy for this thread */
     for(i=0, ii=0; i<count; i++, ii++) 
     {
         if (ii == CLONER_MAX) {
@@ -80,10 +80,10 @@ char* cloner_get(cloner* c)
 
 
     
-    // cloner function has an own mutex.
+    /* cloner function has its own mutex. */
     ptr = (*c->clone_fn)(c->array->elems->data);
 
-    // write
+    /* write */
     enif_mutex_lock(c->mutex);
     count = c->count + 1;
 

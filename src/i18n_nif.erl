@@ -33,6 +33,7 @@
 
 % NIFs
 -export([from_utf8/1, to_utf8/1]).
+-export([endian/0]).
 -export([to_nfc/1, to_nfd/1, to_nfkc/1, to_nfkd/1]).
 
 -export([to_lower/2, to_upper/2, to_title/2]).
@@ -68,6 +69,9 @@ from_utf8(_BinUTF8) ->
       ?I18N_NIF_NOT_LOADED.
 
 to_utf8(_BinUTF16) ->
+      ?I18N_NIF_NOT_LOADED.
+
+endian() ->
       ?I18N_NIF_NOT_LOADED.
 
 len(_IterResource, _String) -> 

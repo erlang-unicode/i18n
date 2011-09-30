@@ -38,7 +38,7 @@
 -type i18n_string_iterator_type() :: 'grapheme' | 'word' | 'sentence' | 'line'.
 
 % NIFs
--export([from/1, native_from/1]).
+-export([from/1]).
 -export([from_utf8/1, to_utf8/1]).
 -export([to_nfc/1, to_nfd/1, to_nfkc/1, to_nfkd/1]).
 -export([concat/2]).
@@ -63,23 +63,6 @@ from(A)
     B = erlang:list_to_binary(L),
     from_utf8(B).
 
-
-%% Slow from/1.
-native_from(B) 
-    when is_binary(B) ->
-    L = unicode:characters_to_list(B),
-    list_to_i18n_string(L);
-native_from(L) 
-    when is_list(L) ->
-    list_to_i18n_string(L);
-native_from(A) 
-    when is_atom(A) ->
-    L = erlang:atom_to_list(A),
-    list_to_i18n_string(L).
-
-
-list_to_i18n_string(L) ->
-    erlang:list_to_binary(xmerl_ucs:to_utf16le(L)).
 
 -spec from_utf8(unicode_binary()) -> i18n_string().
 from_utf8(B) ->
