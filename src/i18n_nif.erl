@@ -54,6 +54,8 @@
 -export([date_now/0]).
 -export([date_set/3, date_add/3, date_roll/3, date_clear/3]).
 -export([open_calendar/1, open_calendar/2, open_calendar/3]).
+-export([date_is_weekend/2]).
+-export([date_get/4, date_get/7]).
 
 init() ->
     i18n:start(),
@@ -213,4 +215,13 @@ date_roll(_Cal, _Date, _List_of_Fields_and_Offset) ->
     ?I18N_NIF_NOT_LOADED.
 
 date_clear(_Cal, _Date, _List_of_Fields) ->
+    ?I18N_NIF_NOT_LOADED.
+
+date_is_weekend(_Cal, _Date) ->
+    ?I18N_NIF_NOT_LOADED.
+
+date_get(_Cal, _Year, _Month, _Day, _Hour, _Minute, _Second) ->
+    ?I18N_NIF_NOT_LOADED.
+
+date_get(_Cal, _Year, _Month, _Day) ->
     ?I18N_NIF_NOT_LOADED.

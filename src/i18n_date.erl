@@ -27,9 +27,12 @@
 -include("i18n.hrl").
 -export([now/0]).
 -export([add/1, add/2, add/3]).
--export([set/1, set/2, set/3]).
+-export([set/1, set/2, set/3]). 
+-export([get/3, get/4, get/6, get/7]).
 -export([roll/1, roll/2, roll/3]).
 -export([clear/2, clear/3]).
+
+-export([is_weekend/0, is_weekend/1, is_weekend/2]).
 
 -type resource() :: <<>>.   
 -type i18n_calendar() :: resource().   
@@ -144,9 +147,24 @@ set(Cal, Fields)
 
 -spec set(i18n_calendar(), i18n_date(), fields()) -> i18n_date().
 
-set(Cal, Date, Fields) ->
+set(Cal, Date, Fields) 
+    when is_list(Fields) ->
 	?TRY_NUM(?IM:date_set(Cal, Date, Fields)).
 
+
+get(Year, Month, Day) ->
+    Cal = i18n_calendar:open(),
+    ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day)).
+
+get(Cal, Year, Month, Day) ->
+    ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day)).
+
+get(Cal, Year, Month, Day, Hour, Minute, Second) ->
+    ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day, Hour, Minute, Second)).
+
+get(Year, Month, Day, Hour, Minute, Second) ->
+    Cal = i18n_calendar:open(),
+    ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day, Hour, Minute, Second)).
 
 
 -spec clear(i18n_date(), [i18n_date_field()]) -> i18n_date().
@@ -162,3 +180,29 @@ clear(Date, Fields)
 
 clear(Cal, Date, Fields) ->
 	?TRY_NUM(?IM:date_clear(Cal, Date, Fields)).
+
+
+
+-spec is_weekend() -> boolean().
+
+is_weekend() ->
+    Cal = i18n_calendar:open(),
+    Date = now(),
+	is_weekend(Cal, Date).
+    
+
+-spec is_weekend(i18n_calendar() | i18n_date()) -> boolean().
+
+is_weekend(Date)
+    when is_number(Date) ->
+    Cal = i18n_calendar:open(),
+	is_weekend(Cal, Date);
+is_weekend(Cal)
+    when is_binary(Cal) ->
+    Date = now(),
+	is_weekend(Cal, Date).
+
+
+-spec is_weekend(i18n_calendar(), i18n_date()) -> boolean().
+is_weekend(Cal, Date) ->
+	?TRY_ATOM(?IM:date_is_weekend(Cal, Date)).

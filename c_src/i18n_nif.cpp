@@ -2807,6 +2807,94 @@ static ERL_NIF_TERM date_now(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     return enif_make_double(env, (double) ucal_getNow());
 }
 
+static ERL_NIF_TERM date_is_weekend(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double date;
+    UBool flag;
+
+    if(!((argc == 2)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &date))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    flag = ucal_isWeekend(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    return bool_to_term(flag);
+}
+
+
+static ERL_NIF_TERM date_get3(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    int32_t year, month, day;    
+
+    if(!((argc == 4)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_int(env, argv[1], &year)  
+      && enif_get_int(env, argv[2], &month)  
+      && enif_get_int(env, argv[3], &day))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setDate(cal,
+        year,
+        month,
+        day,
+        &status);
+    CHECK(env, status);
+
+    return calendar_to_double(env, (const UCalendar*) cal);
+}
+
+static ERL_NIF_TERM date_get6(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    int32_t year, month, day, hour, minute, second;    
+
+    if(!((argc == 7)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_int(env, argv[1], &year)  
+      && enif_get_int(env, argv[2], &month)  
+      && enif_get_int(env, argv[3], &day)  
+      && enif_get_int(env, argv[4], &hour)  
+      && enif_get_int(env, argv[5], &minute)  
+      && enif_get_int(env, argv[6], &second))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setDateTime(cal,
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        &status);
+    CHECK(env, status);
+
+    return calendar_to_double(env, (const UCalendar*) cal);
+}
 
 static int i18n_date_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
@@ -2963,14 +3051,17 @@ static ErlNifFunc nif_funcs[] =
 
 
 #ifdef I18N_DATE
-    {"date_now",      0, date_now},
-    {"open_calendar", 1, open_calendar},
-    {"open_calendar", 2, open_calendar},
-    {"open_calendar", 3, open_calendar},
-    {"date_set",      3, date_set},
-    {"date_add",      3, date_add},
-    {"date_roll",     3, date_roll},
-    {"date_clear",    3, date_clear},
+    {"date_now",        0, date_now},
+    {"open_calendar",   1, open_calendar},
+    {"open_calendar",   2, open_calendar},
+    {"open_calendar",   3, open_calendar},
+    {"date_set",        3, date_set},
+    {"date_add",        3, date_add},
+    {"date_roll",       3, date_roll},
+    {"date_clear",      3, date_clear},
+    {"date_is_weekend", 2, date_is_weekend},
+    {"date_get",        4, date_get3},
+    {"date_get",        7, date_get6},
 #endif
 
 };
