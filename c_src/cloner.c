@@ -83,6 +83,9 @@ char* cloner_get(cloner* c)
     /* cloner function has its own mutex. */
     ptr = (*c->clone_fn)(c->array->elems->data);
 
+    if (ptr == NULL) /* clone failed */
+        return NULL; 
+
     /* write */
     enif_mutex_lock(c->mutex);
     count = c->count + 1;
@@ -99,6 +102,10 @@ char* cloner_get(cloner* c)
     ii = div(c->count, CLONER_MAX).rem;
     if (!ii) {
         a->next = enif_alloc(sizeof(struct cloner_array));
+
+        if (a->next == NULL) /* allocation failed */
+            return NULL; 
+
         a = a->next;
         a->next = NULL;
     }
@@ -125,7 +132,8 @@ void cloner_destroy(cloner* c)
             a = next;
             ii = 0;
         }
-        (*c->destr_fn) ((a->elems[ii]).data);
+        if ((a->elems[ii]).data != NULL)
+            (*c->destr_fn) ((a->elems[ii]).data);
     }
     enif_free(a);
 }

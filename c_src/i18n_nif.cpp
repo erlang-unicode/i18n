@@ -31,10 +31,10 @@
 #define I18N_LOCALE   	true
 #define I18N_DATE   	true
 
-#define BUF_SIZE 65536 // 2^16, since we're using a 2-byte length header
-#define STR_LEN 32768
-#define LOCALE_LEN 255
-#define ATOM_LEN 16
+#define BUF_SIZE        65536 // 2^16, since we're using a 2-byte length header
+#define STR_LEN         32768
+#define LOCALE_LEN      255
+#define ATOM_LEN        16
 
 
 #include "unicode/uloc.h"
@@ -63,7 +63,8 @@ extern "C" {
 
 #include <string.h>
 
-// from http://cplusplus.co.il/2010/07/17/variadic-macro-to-count-number-of-arguments/
+/* from http://cplusplus.co.il/2010/07/17/variadic-macro-to-count-number-of-arguments/
+ */
 
 #define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 5,4,3,2,1)
 #define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5,N,...) N
@@ -85,14 +86,23 @@ extern "C" {
     if (U_FAILURE(X)) {DEST; return get_error_code(ENV, X);}
 
 
-// divide by 2 
+/* Divide by 2 */
 #define TO_ULEN(X)   (X / sizeof(UChar))
 
-// multiply by 2 
+/* Multiply by 2 */
 #define FROM_ULEN(X) (X * sizeof(UChar))
 
 #define ERROR(ENV, X) return get_error_code(ENV, X);
 
+ERL_NIF_TERM res_error_term;
+#define CHECK_RES(ENV, RES) if (RES == NULL) return res_error_term;
+
+
+/* Allocated atoms */
+ERL_NIF_TERM ATOM_TRUE, ATOM_FALSE;
+ERL_NIF_TERM ATOM_EQUAL, ATOM_GREATER, ATOM_LESS;
+ERL_NIF_TERM ATOM_OK;
+ERL_NIF_TERM ATOM_ENDIAN;
 
 
 
@@ -130,6 +140,32 @@ static ERL_NIF_TERM list_element_error(ErlNifEnv* env, const ERL_NIF_TERM list,
             enif_make_int(env, (int) num))
         );
 }
+
+
+static int i18n_atom_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+{
+    ATOM_TRUE    = enif_make_atom(env, "true");
+    ATOM_FALSE   = enif_make_atom(env, "false");
+
+    ATOM_EQUAL   = enif_make_atom(env, "equal");
+    ATOM_GREATER = enif_make_atom(env, "greater");
+    ATOM_LESS    = enif_make_atom(env, "less");
+
+    ATOM_OK      = enif_make_atom(env, "ok");
+
+
+#if U_IS_BIG_ENDIAN
+    ATOM_ENDIAN = enif_make_atom(env, "big");
+#else
+    ATOM_ENDIAN = enif_make_atom(env, "little");
+#endif
+
+    res_error_term = make_error(env, "i18n_resource_error");
+
+    return 0;
+}
+
+
 
 
 /** 
@@ -665,33 +701,6 @@ static ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status) {
 
 
 
-ERL_NIF_TERM ATOM_TRUE, ATOM_FALSE;
-ERL_NIF_TERM ATOM_EQUAL, ATOM_GREATER, ATOM_LESS;
-ERL_NIF_TERM ATOM_OK;
-ERL_NIF_TERM ATOM_ENDIAN;
-
-static int i18n_atom_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
-{
-    ATOM_TRUE    = enif_make_atom(env, "true");
-    ATOM_FALSE   = enif_make_atom(env, "false");
-
-    ATOM_EQUAL   = enif_make_atom(env, "equal");
-    ATOM_GREATER = enif_make_atom(env, "greater");
-    ATOM_LESS    = enif_make_atom(env, "less");
-
-    ATOM_OK      = enif_make_atom(env, "ok");
-
-
-#if U_IS_BIG_ENDIAN
-    ATOM_ENDIAN = enif_make_atom(env, "big");
-#else
-    ATOM_ENDIAN = enif_make_atom(env, "little");
-#endif
-
-    return 0;
-}
-
-
 
 
 inline ERL_NIF_TERM string_to_term(ErlNifEnv* env, const UnicodeString& s) {
@@ -716,6 +725,17 @@ inline UnicodeString binary_to_string(const ErlNifBinary& in) {
         false,
         (const UChar*) in.data,
         TO_ULEN(in.size));
+}
+
+
+inline ERL_NIF_TERM calendar_to_double(ErlNifEnv* env, const UCalendar* cal) {
+    UDate date;
+    UErrorCode status = U_ZERO_ERROR;
+
+    date = ucal_getMillis(cal, &status);
+    CHECK(env, status);
+
+    return enif_make_double(env, (double) date);
 }
 
 inline static ERL_NIF_TERM bool_to_term(UBool value) {
@@ -1122,6 +1142,8 @@ static ERL_NIF_TERM to_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     } else if (enif_get_resource(env, argv[0], iterator_type, (void**) &ptr)) {
         /* First element is an iterator. */
         iter = (UBreakIterator*) cloner_get(ptr);
+        CHECK_RES(env, iter);
+            
 
         /* Iterator contains a locale name. Extract it. */
         locptr = ubrk_getLocaleByType((const UBreakIterator*) iter,
@@ -1159,6 +1181,8 @@ static ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
     }    
     iter = (UBreakIterator*) cloner_get(ptr);
+    CHECK_RES(env, iter);
+
     if (iter == NULL) {
         return enif_make_badarg(env);
     }
@@ -1398,23 +1422,70 @@ int parseAttrKey(const char * type)
  * NIFs
  */
 
-// Get a collator
+int do_iterator_options(ErlNifEnv* env, UCollator* col, 
+    const ERL_NIF_TERM in, unsigned int& i) {
+
+    ERL_NIF_TERM out, list;
+    ERL_NIF_TERM* tuple;
+    unsigned int count;
+    UErrorCode status = U_ZERO_ERROR;
+    int32_t len; 
+
+    char    value[ATOM_LEN], key[ATOM_LEN];
+    int     parsed_value,    parsed_key;
+    
+    i = 0;
+    if (!enif_get_list_length(env, in, &count)) 
+        return 0;
+
+    while (enif_get_list_cell(env, list, &out, &list)) {
+
+        if (enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
+            && (len == 2)) { 
+
+            /* Set an attribute start */
+
+            if (!(enif_get_atom(env, tuple[0], (char*) key,   ATOM_LEN, ERL_NIF_LATIN1) 
+               && enif_get_atom(env, tuple[1], (char*) value, ATOM_LEN, ERL_NIF_LATIN1))) 
+                return 0;
+                
+    
+            parsed_key   = parseAttrKey(key);
+            parsed_value = parseAttrValue(value);
+            if ((parsed_value == -1) || (parsed_key == -1)) 
+                return 0;
+ 
+            ucol_setAttribute(col,
+                (UColAttribute)      parsed_key,
+                (UColAttributeValue) parsed_value,
+                &status);
+
+            if (U_FAILURE(status))
+                return 0;
+            
+            /* Set an attribute end */
+
+        } else 
+            return 0;
+    }
+    return 1;
+}
+
+/* Get a collator */
 static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
-    int32_t locale_len; 
     char locale[LOCALE_LEN];
     UErrorCode status = U_ZERO_ERROR;
     UCollator* col;
     cloner* res;
+    unsigned int index;
 
 
-    locale_len = enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1);
-    if (!locale_len) {
+    if (enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)) {
         return enif_make_badarg(env);
     }
 
-    // get a collator
     col = ucol_open((char *) locale, &status);
     CHECK(env, status);
 
@@ -1426,6 +1497,18 @@ static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
         enif_release_resource(res);
         return enif_make_badarg(env);
     }
+
+
+    if (argc > 1) {
+        if (!do_iterator_options(env, col, argv[1], index)) {
+            enif_release_resource(res);
+            return list_element_error(env, argv[1], index);
+        }
+    }
+    CHECK(env, status,
+        enif_release_resource(res);
+    );
+
     out = enif_make_resource(env, res);
     enif_release_resource(res);
     /* resource now only owned by "Erlang" */
@@ -1489,6 +1572,7 @@ static ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
         return enif_make_badarg(env);
     }
     col = (UCollator*) cloner_get(ptr);
+    CHECK_RES(env, col);
 
     /* Convert a binary string in utf-8 to a binary string in utf-16. */
     len = in.size*4;
@@ -1514,6 +1598,7 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
     }
     col = (UCollator*) cloner_get(ptr);
+    CHECK_RES(env, col);
 
     res = ucol_strcoll(col,
         (const UChar*) in.data, 
@@ -1536,40 +1621,6 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             break;
     }
     ERROR(env, U_INTERNAL_PROGRAM_ERROR);
-}
-static ERL_NIF_TERM collator_set_attr(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    UCollator* col;
-    cloner* ptr;
-    UErrorCode status = U_ZERO_ERROR;
-
-    int32_t value_len,       key_len; 
-    char    value[ATOM_LEN], key[ATOM_LEN];
-    int     parsed_value,    parsed_key;
-
-
-    key_len   = enif_get_atom(env, argv[1], (char*) key,   ATOM_LEN, ERL_NIF_LATIN1);
-    value_len = enif_get_atom(env, argv[2], (char*) value, ATOM_LEN, ERL_NIF_LATIN1);
-
-    if (!(key_len && value_len && 
-        enif_get_resource(env, argv[0], collator_type, (void**) &ptr))) {
-        return enif_make_badarg(env);
-    }
-    col = (UCollator*) cloner_get(ptr);
-
-    parsed_key   = parseAttrKey(key);
-    parsed_value = parseAttrValue(value);
-    if ((parsed_value == -1) || (parsed_key == -1)) {
-        return enif_make_badarg(env);
-    }
-
-    ucol_setAttribute(col,
-        (UColAttribute)      parsed_key,
-        (UColAttributeValue) parsed_value,
-        &status);
-    CHECK(env, status);
-
-    return ATOM_OK;
 }
 
 
@@ -1791,9 +1842,8 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     }
 
     fmt = (const MessageFormat*) cloner_get(ptr);
-    if (fmt == NULL) {
-        return enif_make_badarg(env);
-    }
+    CHECK_RES(env, fmt);
+
 
     if (argc == 3) {
         if (enif_inspect_binary(env, argv[2], &in)) {
@@ -1930,8 +1980,8 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     bad_elem:
         /* Memory deallocation */
-//      delete[] args;
-//      delete[] names;
+        delete[] args;
+        delete[] names;
         return list_element_error(env, argv[1], i);
 }
 
@@ -2089,6 +2139,7 @@ static ERL_NIF_TERM regex_replace_all(ErlNifEnv* env, int argc, const ERL_NIF_TE
     }
 
     re = (RegexPattern*) cloner_get(ptr);
+    CHECK_RES(env, re);
 
     input = binary_to_string(in);
     rm = re->matcher((const UnicodeString) input, status);
@@ -2122,6 +2173,7 @@ static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     }
 
     re = (RegexPattern*) cloner_get(ptr);
+    CHECK_RES(env, re);
 
     input = binary_to_string(in);
     rm = re->matcher((const UnicodeString) input, status);
@@ -2159,6 +2211,8 @@ static ERL_NIF_TERM regex_split(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     }
 
     re = (RegexPattern*) cloner_get(ptr);
+    CHECK_RES(env, re);
+
     input = binary_to_string(in);
 
     num = re->split(
@@ -2197,6 +2251,7 @@ static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
     }
 
     re = (RegexPattern*) cloner_get(ptr);
+    CHECK_RES(env, re);
 
     input = binary_to_string(in);
     rm = re->matcher((const UnicodeString) input, status);
@@ -2251,6 +2306,7 @@ static ERL_NIF_TERM regex_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     }
 
     re = (RegexPattern*) cloner_get(ptr);
+    CHECK_RES(env, re);
 
     input = binary_to_string(in);
     rm = re->matcher((const UnicodeString) input, status);
@@ -2287,6 +2343,7 @@ static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     }
 
     re = (RegexPattern*) cloner_get(ptr);
+    CHECK_RES(env, re);
 
     input = binary_to_string(in);
     rm = re->matcher((const UnicodeString) input, status);
@@ -2465,7 +2522,6 @@ int calendar_open(UCalendar * obj, cloner* c)
 
 
 
-
 /**
  * NIFs
  */
@@ -2481,26 +2537,41 @@ static ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 {
     ERL_NIF_TERM out;
     ErlNifBinary tz;
-    char type[LOCALE_LEN], locale[LOCALE_LEN];
-    UErrorCode status = U_ZERO_ERROR;
-    UCalendar* cal;
+
     cloner* res;
+    UCalendar* cal;
+    UCalendarType type = UCAL_DEFAULT;
+    UErrorCode status = U_ZERO_ERROR;
+    char type_atom[ATOM_LEN], locale[LOCALE_LEN];
+    
+    tz.size = 0; 
+    tz.data = 0;
 
-
-    if (!(enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)
-       && enif_inspect_binary(env, argv[1], &tz)
-       && enif_get_atom(env, argv[2], (char*) type, LOCALE_LEN, ERL_NIF_LATIN1))) {
-        return enif_make_badarg(env);
+    switch (argc) {
+        case 3:
+            if (!enif_get_atom(env, argv[2], (char*) type_atom, ATOM_LEN,
+                ERL_NIF_LATIN1))
+                return enif_make_badarg(env);
+            type = parserCalendarType((const char *) type_atom);
+        case 2:
+            if (!enif_inspect_binary(env, argv[1], &tz))
+                return enif_make_badarg(env);
+        case 1:
+            if (!enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1))
+                return enif_make_badarg(env);
+        break;
+        default:
+            return enif_make_badarg(env);
     }
+
 
     /* get a calendar type */
     cal = ucal_open(
         (const UChar *) tz.data,
         (int32_t) tz.size,
         (const char *) locale,
-        parserCalendarType((const char *) type),
-        &status 
-    );
+        type,
+        &status);
     CHECK(env, status);
 
 
@@ -2515,6 +2586,221 @@ static ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
     return out;
 }
 
+int parseCalendarDateField(const char * type) 
+{
+    return (!strcmp((char*) "era",          type)) ? UCAL_ERA :
+           (!strcmp((char*) "year",         type)) ? UCAL_YEAR :
+           (!strcmp((char*) "month",        type)) ? UCAL_WEEK_OF_YEAR :
+           (!strcmp((char*) "week_of_year", type)) ? UCAL_WEEK_OF_MONTH :
+           (!strcmp((char*) "date",         type)) ? UCAL_DATE :
+           (!strcmp((char*) "day_of_year",  type)) ? UCAL_DAY_OF_YEAR :
+           (!strcmp((char*) "day_of_week",  type)) ? UCAL_DAY_OF_WEEK :
+           (!strcmp((char*) "am_pm",        type)) ? UCAL_AM_PM :
+           (!strcmp((char*) "hour",         type)) ? UCAL_HOUR :
+           (!strcmp((char*) "hour_of_day",  type)) ? UCAL_HOUR_OF_DAY :
+           (!strcmp((char*) "minute",       type)) ? UCAL_MINUTE :
+           (!strcmp((char*) "second",       type)) ? UCAL_SECOND :
+           (!strcmp((char*) "millisecond",  type)) ? UCAL_MILLISECOND :
+           (!strcmp((char*) "zone_offset",  type)) ? UCAL_ZONE_OFFSET :
+           (!strcmp((char*) "dst_offset",   type)) ? UCAL_DST_OFFSET :
+           (!strcmp((char*) "day_of_week_in_month", type))  
+                ? UCAL_DAY_OF_WEEK_IN_MONTH :
+            -1;
+}
+
+typedef void (*date_fun_ptr)(
+    UCalendar *,
+    UCalendarDateFields,
+    int32_t,
+    UErrorCode *
+    );
+inline static ERL_NIF_TERM do_offset(ErlNifEnv* env, 
+    UCalendar* cal,
+    date_fun_ptr fun,
+    const ERL_NIF_TERM in) 
+{
+    UCalendarDateFields field;
+    UErrorCode status = U_ZERO_ERROR;
+
+    ERL_NIF_TERM head, tail;
+    ERL_NIF_TERM* tuple;
+    unsigned int count, i;
+    int32_t len, offset; 
+
+    char    value[ATOM_LEN];
+    int     parsed_value;
+    
+    
+    i = 0;
+    if (!enif_get_list_length(env, in, &count)) 
+        return enif_make_badarg(env);
+
+    tail = in;
+
+    while (enif_get_list_cell(env, tail, &head, &tail)) {
+
+        if (enif_get_tuple(env, head, &len, (const ERL_NIF_TERM**) &tuple)
+            && (len == 2)) { 
+
+            /* Set an attribute start */
+
+            if (!(enif_get_atom(env, tuple[0], (char*) value, ATOM_LEN, ERL_NIF_LATIN1) 
+               && enif_get_int(env, tuple[1], &offset))) 
+                goto bad_elem;
+                
+            parsed_value = parseCalendarDateField(value);
+            if ((parsed_value == -1)) 
+                goto bad_elem;
+
+            field = (UCalendarDateFields) parsed_value;
+ 
+            fun(cal, field, offset, &status);
+
+            if (U_FAILURE(status))
+                goto bad_elem;
+            
+            /* Set an attribute end */
+
+        } else 
+            goto bad_elem;
+    }
+
+
+    return calendar_to_double(env, (const UCalendar*) cal);
+
+    bad_elem:
+        return list_element_error(env, in, i);
+}
+
+void do_ucal_set(UCalendar * cal,
+        UCalendarDateFields field,
+        int32_t amount,
+        UErrorCode * status) {
+    ucal_set(cal, field, amount);
+} 
+
+static ERL_NIF_TERM date_set(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double date;
+
+    if(!((argc == 3)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &date))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    return do_offset(env, cal, do_ucal_set, argv[2]);
+}
+
+static ERL_NIF_TERM date_add(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double date;
+
+    if(!((argc == 3)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &date))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    return do_offset(env, cal, ucal_add, argv[2]);
+}
+
+static ERL_NIF_TERM date_roll(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double date;
+
+    if(!((argc == 3)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &date))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    return do_offset(env, cal, ucal_roll, argv[2]);
+}
+
+
+static ERL_NIF_TERM date_clear(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double date;
+
+    UCalendarDateFields field;
+    ERL_NIF_TERM head, tail;
+    unsigned int count, i = 0;
+
+    char    value[ATOM_LEN];
+    int     parsed_value;
+
+    if(!((argc == 3)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &date)
+      && enif_get_list_length(env, argv[2], &count))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    tail = argv[2];
+    while (enif_get_list_cell(env, tail, &head, &tail)) {
+
+            /* Set an attribute start */
+
+            if (!enif_get_atom(env, head, (char*) value, ATOM_LEN, ERL_NIF_LATIN1)) 
+                goto bad_elem;
+                
+            parsed_value = parseCalendarDateField(value);
+            if ((parsed_value == -1)) 
+                goto bad_elem;
+
+            field = (UCalendarDateFields) parsed_value;
+ 
+            ucal_clearField(cal, field);
+
+            if (U_FAILURE(status))
+                goto bad_elem;
+            
+            /* Set an attribute end */
+
+    }
+
+    return calendar_to_double(env, (const UCalendar*) cal);
+
+    bad_elem:
+        return list_element_error(env, argv[2], i);
+}
 
 static ERL_NIF_TERM date_now(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
@@ -2638,7 +2924,6 @@ static ErlNifFunc nif_funcs[] =
     {"get_collator",      1, get_collator},
     {"sort_key",          2, sort_key},
     {"compare",           3, compare},
-    {"collator_set_attr", 3, collator_set_attr},
 #endif
 
 
@@ -2679,7 +2964,13 @@ static ErlNifFunc nif_funcs[] =
 
 #ifdef I18N_DATE
     {"date_now",      0, date_now},
+    {"open_calendar", 1, open_calendar},
+    {"open_calendar", 2, open_calendar},
     {"open_calendar", 3, open_calendar},
+    {"date_set",      3, date_set},
+    {"date_add",      3, date_add},
+    {"date_roll",     3, date_roll},
+    {"date_clear",    3, date_clear},
 #endif
 
 };

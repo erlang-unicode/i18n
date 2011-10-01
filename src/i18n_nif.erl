@@ -40,10 +40,8 @@
 -export([get_iterator/2, len/2]).
 
 
--export([get_collator/1]).
+-export([get_collator/1, get_collator/2]).
 -export([sort_key/2, compare/3]).
-% Dirty function
--export([collator_set_attr/3]).
 
 -export([open_format/2, format/2, format/3]).
 -export([open_regex/1, regex_replace/3, regex_replace_all/3, 
@@ -53,7 +51,9 @@
 -export([locale_name/1, locale_parent/1, locale_language_tag/1,
     locale_base_name/1]).
 
--export([date_now/0, open_calendar/3]).
+-export([date_now/0]).
+-export([date_set/3, date_add/3, date_roll/3, date_clear/3]).
+-export([open_calendar/1, open_calendar/2, open_calendar/3]).
 
 init() ->
     i18n:start(),
@@ -113,14 +113,13 @@ to_nfkd(_BinUTF16) ->
 get_collator(_Locale) ->
     ?I18N_NIF_NOT_LOADED.
 
+get_collator(_Locale, _Opts) ->
+    ?I18N_NIF_NOT_LOADED.
+
 sort_key(_CollatorResource, _String) ->
     ?I18N_NIF_NOT_LOADED.
 
 compare(_CollatorResource, _String, _String2) ->
-    ?I18N_NIF_NOT_LOADED.
-
-%% Destructive function!
-collator_set_attr(_CollationResource, _Key, _Value) ->
     ?I18N_NIF_NOT_LOADED.
 
 
@@ -195,5 +194,23 @@ locale_base_name(_L) ->
 date_now() ->
     ?I18N_NIF_NOT_LOADED.
 
+open_calendar(_L) ->
+    ?I18N_NIF_NOT_LOADED.
+
+open_calendar(_L, _TZ) ->
+    ?I18N_NIF_NOT_LOADED.
+
 open_calendar(_L, _TZ, _Type) ->
+    ?I18N_NIF_NOT_LOADED.
+
+date_set(_Cal, _Date, _List_of_Fields_and_Offset) ->
+    ?I18N_NIF_NOT_LOADED.
+
+date_add(_Cal, _Date, _List_of_Fields_and_Offset) ->
+    ?I18N_NIF_NOT_LOADED.
+
+date_roll(_Cal, _Date, _List_of_Fields_and_Offset) ->
+    ?I18N_NIF_NOT_LOADED.
+
+date_clear(_Cal, _Date, _List_of_Fields) ->
     ?I18N_NIF_NOT_LOADED.

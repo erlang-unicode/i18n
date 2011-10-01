@@ -77,8 +77,7 @@ open(L) when is_atom(L) ->
 
 -spec open(i18n_locale_id(), [i18n_collation_option()]) -> i18n_collator().
 open(L, Options) ->
-    C = open(L),
-    do_options(C, Options).
+    ?TRY_RES(?IM:get_collator(L, lists:map(fun options/1, Options))).
 
 -spec sort_key(i18n_collator(), i18n_string()) -> i18n_sort_key().
 sort_key(C, S) ->
@@ -126,51 +125,25 @@ map_sort(F, Xx)
 %% Helpers
 %%
 
-do_options(C, [H|T]) 
+options(H) 
     when   H=:='primary'
     orelse H=:='secondary'
     orelse H=:='tertiary'
     orelse H=:='quanternary'
     orelse H=:='identical' ->
-    set_strength(C, H),
-    do_options(C, T); 
-do_options(C, [H|T]) 
+    {'strength', H};
+options(H) 
     when   H=:='shifted'
     orelse H=:='non_ignorable' ->
-    set_alternate(C, H),
-    do_options(C, T); 
-do_options(C, [H|T]) 
+    {'alternate', H};
+options(H) 
     when   H=:='lower_first'
     orelse H=:='upper_first' ->
-    set_case_first(C, H),
-    do_options(C, T); 
-do_options(C, [H|T]) 
+    {'case_first', H};
+options(H) 
     when   H=:='numeric' % natural sort
     orelse H=:='french_accents' % bachwards on level 2
     orelse H=:='hiragana' % on level 4
     orelse H=:='normalization' ->
-    on(C, H),
-    do_options(C, T); 
-do_options(C, []) ->
-    C.
-    
-on(C, K) ->
-    set_attr(C, K, 'on').
-
-off(C, K) ->
-    set_attr(C, K, 'off').
-    
-
-
-set_strength(C, V) ->
-    set_attr(C, 'strength', V).
-    
-set_alternate(C, V) ->
-    set_attr(C, 'alternate', V).
-
-set_case_first(C, V) ->
-    set_attr(C, 'case_first', V).
-
-set_attr(C, K, V) ->
-    ?TRY_OK(?IM:collator_set_attr(C, K, V)).
-    
+    {H, 'on'};
+options(H) -> H.

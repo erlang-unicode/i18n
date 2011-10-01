@@ -22,13 +22,41 @@
 %%% =====================================================================
 
 -module(i18n_date).
+-compile({no_auto_import,[now/0]}).
+
 -include("i18n.hrl").
 -export([now/0]).
+-export([add/1, add/2, add/3]).
+-export([set/1, set/2, set/3]).
+-export([roll/1, roll/2, roll/3]).
+-export([clear/2, clear/3]).
+
+-type resource() :: <<>>.   
+-type i18n_calendar() :: resource().   
 
 -type i18n_locale_id() :: atom(). 
-
+-type i18n_date_field() :: 
+      era          
+    | year         
+    | month   
+    | week_of_year
+    | date    
+    | day_of_year  
+    | day_of_week  
+    | am_pm        
+    | hour    
+    | hour_of_day 
+    | minute       
+    | second    
+    | millisecond  
+    | zone_offset  
+    | dst_offset
+    | day_of_week_in_month.
+    
+    
 -type double() :: number().
 -type i18n_date() :: double().
+-type fields() :: [{i18n_date_field(), integer()}].
 
 %% @doc Return timestamp 
 %%		(count of milliseconds from starting of the 1970 year).
@@ -36,3 +64,101 @@
 -spec now() -> i18n_date().
 now() ->
 	?TRY_NUM(?IM:date_now()).
+
+
+
+-spec roll(fields()) -> i18n_date().
+
+%% @doc This will not modify more significant fields in the calendar. 
+roll(Fields) ->
+    Cal = i18n_calendar:open(),
+    Date = now(),
+	roll(Cal, Date, Fields).
+
+
+-spec roll(i18n_calendar() | i18n_date(), fields()) -> i18n_date().
+
+roll(Date, Fields)
+    when is_number(Date) ->
+    Cal = i18n_calendar:open(),
+	roll(Cal, Date, Fields);
+roll(Cal, Fields)
+    when is_binary(Cal) ->
+    Date = now(),
+	roll(Cal, Date, Fields).
+
+
+-spec roll(i18n_calendar(), i18n_date(), fields()) -> i18n_date().
+
+roll(Cal, Date, Fields) ->
+	?TRY_NUM(?IM:date_roll(Cal, Date, Fields)).
+
+
+
+-spec add(fields()) -> i18n_date().
+
+add(Fields) ->
+    Cal = i18n_calendar:open(),
+    Date = now(),
+	add(Cal, Date, Fields).
+
+
+-spec add(i18n_calendar() | i18n_date(), fields()) -> i18n_date().
+
+add(Date, Fields)
+    when is_number(Date) ->
+    Cal = i18n_calendar:open(),
+	add(Cal, Date, Fields);
+add(Cal, Fields)
+    when is_binary(Cal) ->
+    Date = now(),
+	add(Cal, Date, Fields).
+
+
+-spec add(i18n_calendar(), i18n_date(), fields()) -> i18n_date().
+
+add(Cal, Date, Fields) ->
+	?TRY_NUM(?IM:date_add(Cal, Date, Fields)).
+
+
+
+-spec set([{i18n_date_field(), integer()}]) -> i18n_date().
+
+set(Fields) ->
+    Cal = i18n_calendar:open(),
+    Date = now(),
+	set(Cal, Date, Fields).
+
+
+-spec set(i18n_calendar() | i18n_date(), fields()) -> i18n_date().
+
+set(Date, Fields)
+    when is_number(Date) ->
+    Cal = i18n_calendar:open(),
+	set(Cal, Date, Fields);
+set(Cal, Fields)
+    when is_binary(Cal) ->
+    Date = now(),
+	set(Cal, Date, Fields).
+
+
+-spec set(i18n_calendar(), i18n_date(), fields()) -> i18n_date().
+
+set(Cal, Date, Fields) ->
+	?TRY_NUM(?IM:date_set(Cal, Date, Fields)).
+
+
+
+-spec clear(i18n_date(), [i18n_date_field()]) -> i18n_date().
+
+%% @doc Clear the field value.
+clear(Date, Fields)
+    when is_number(Date) ->
+    Cal = i18n_calendar:open(),
+	clear(Cal, Date, Fields).
+
+
+-spec clear(i18n_calendar(), i18n_date(), [i18n_date_field()]) -> i18n_date().
+
+clear(Cal, Date, Fields) ->
+	?TRY_NUM(?IM:date_clear(Cal, Date, Fields)).
