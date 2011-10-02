@@ -1438,6 +1438,8 @@ int do_iterator_options(ErlNifEnv* env, UCollator* col,
     if (!enif_get_list_length(env, in, &count)) 
         return 0;
 
+    list = in;
+
     while (enif_get_list_cell(env, list, &out, &list)) {
 
         if (enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
@@ -1482,7 +1484,7 @@ static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     unsigned int index;
 
 
-    if (enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)) {
+    if (!enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)) {
         return enif_make_badarg(env);
     }
 
@@ -1497,17 +1499,17 @@ static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
         enif_release_resource(res);
         return enif_make_badarg(env);
     }
+    CHECK(env, status,
+        enif_release_resource(res);
+    );
 
 
-    if (argc > 1) {
+    if (argc == 2) {
         if (!do_iterator_options(env, col, argv[1], index)) {
             enif_release_resource(res);
             return list_element_error(env, argv[1], index);
         }
     }
-    CHECK(env, status,
-        enif_release_resource(res);
-    );
 
     out = enif_make_resource(env, res);
     enif_release_resource(res);
@@ -3114,6 +3116,7 @@ static ErlNifFunc nif_funcs[] =
 
 #ifdef I18N_COLLATION
     {"get_collator",      1, get_collator},
+    {"get_collator",      2, get_collator},
     {"sort_key",          2, sort_key},
     {"compare",           3, compare},
 #endif
