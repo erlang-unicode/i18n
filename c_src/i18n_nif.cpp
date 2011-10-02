@@ -2588,21 +2588,23 @@ static ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
 int parseCalendarDateField(const char * type) 
 {
-    return (!strcmp((char*) "era",          type)) ? UCAL_ERA :
-           (!strcmp((char*) "year",         type)) ? UCAL_YEAR :
-           (!strcmp((char*) "month",        type)) ? UCAL_WEEK_OF_YEAR :
-           (!strcmp((char*) "week_of_year", type)) ? UCAL_WEEK_OF_MONTH :
-           (!strcmp((char*) "date",         type)) ? UCAL_DATE :
-           (!strcmp((char*) "day_of_year",  type)) ? UCAL_DAY_OF_YEAR :
-           (!strcmp((char*) "day_of_week",  type)) ? UCAL_DAY_OF_WEEK :
-           (!strcmp((char*) "am_pm",        type)) ? UCAL_AM_PM :
-           (!strcmp((char*) "hour",         type)) ? UCAL_HOUR :
-           (!strcmp((char*) "hour_of_day",  type)) ? UCAL_HOUR_OF_DAY :
-           (!strcmp((char*) "minute",       type)) ? UCAL_MINUTE :
-           (!strcmp((char*) "second",       type)) ? UCAL_SECOND :
-           (!strcmp((char*) "millisecond",  type)) ? UCAL_MILLISECOND :
-           (!strcmp((char*) "zone_offset",  type)) ? UCAL_ZONE_OFFSET :
-           (!strcmp((char*) "dst_offset",   type)) ? UCAL_DST_OFFSET :
+    return (!strcmp((char*) "era",           type)) ? UCAL_ERA :
+           (!strcmp((char*) "year",          type)) ? UCAL_YEAR :
+           (!strcmp((char*) "month",         type)) ? UCAL_MONTH :
+           (!strcmp((char*) "week_of_year",  type)) ? UCAL_WEEK_OF_YEAR :
+           (!strcmp((char*) "week_of_month", type)) ? UCAL_WEEK_OF_MONTH :
+           (!strcmp((char*) "date",          type)) ? UCAL_DATE :
+           (!strcmp((char*) "day",           type)) ? UCAL_DATE :
+           (!strcmp((char*) "day_of_year",   type)) ? UCAL_DAY_OF_YEAR :
+           (!strcmp((char*) "day_of_week",   type)) ? UCAL_DAY_OF_WEEK :
+           (!strcmp((char*) "am_pm",         type)) ? UCAL_AM_PM :
+           (!strcmp((char*) "hour",          type)) ? UCAL_HOUR :
+           (!strcmp((char*) "hour_of_day",   type)) ? UCAL_HOUR_OF_DAY :
+           (!strcmp((char*) "minute",        type)) ? UCAL_MINUTE :
+           (!strcmp((char*) "second",        type)) ? UCAL_SECOND :
+           (!strcmp((char*) "millisecond",   type)) ? UCAL_MILLISECOND :
+           (!strcmp((char*) "zone_offset",   type)) ? UCAL_ZONE_OFFSET :
+           (!strcmp((char*) "dst_offset",    type)) ? UCAL_DST_OFFSET :
            (!strcmp((char*) "day_of_week_in_month", type))  
                 ? UCAL_DAY_OF_WEEK_IN_MONTH :
             -1;
@@ -2676,6 +2678,8 @@ void do_ucal_set(UCalendar * cal,
         UCalendarDateFields field,
         int32_t amount,
         UErrorCode * status) {
+    if (field == UCAL_MONTH)
+        amount--; // month from 0
     ucal_set(cal, field, amount);
 } 
 
@@ -2802,6 +2806,107 @@ static ERL_NIF_TERM date_clear(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
         return list_element_error(env, argv[2], i);
 }
 
+static ERL_NIF_TERM do_date_get_field(ErlNifEnv* env, UCalendar* cal,
+    const ERL_NIF_TERM field_atom, UErrorCode& status)
+{
+    char    value[ATOM_LEN];
+    int     parsed_value, amount;
+    UCalendarDateFields field;
+
+    if (!enif_get_atom(env, field_atom, (char*) value, ATOM_LEN, 
+            ERL_NIF_LATIN1)) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return 0;
+    }
+
+    parsed_value = parseCalendarDateField(value);
+    if (parsed_value == -1) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return 0;
+    }
+
+    field = (UCalendarDateFields) parsed_value;
+
+    amount = (int) ucal_get(cal, field, &status);
+    if (U_FAILURE(status))
+        return 0;
+
+    if (field == UCAL_MONTH)
+        amount++; // month from 0
+
+    return enif_make_int(env, amount);
+}
+
+static ERL_NIF_TERM date_get_field(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double date;
+    ERL_NIF_TERM res;
+
+
+    if(!((argc == 3)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &date))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    res = do_date_get_field(env, cal, argv[2], status);
+    CHECK(env, status);
+
+    return res;
+}
+
+static ERL_NIF_TERM date_get_fields(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double date;
+    ERL_NIF_TERM res;
+
+    ERL_NIF_TERM head, tail, out;
+    unsigned int count;
+
+
+    if(!((argc == 3)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &date)
+      && enif_get_list_length(env, argv[2], &count))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) date, &status);
+    CHECK(env, status);
+
+    tail = argv[2];
+    out = enif_make_list(env, 0);
+    while (enif_get_list_cell(env, tail, &head, &tail)) {
+
+            /* Set an attribute start */
+            res = do_date_get_field(env, cal, head, status);
+            CHECK(env, status);
+            out = enif_make_list_cell(env, 
+                    enif_make_tuple2(env, head, res),
+                    out);
+
+            /* Set an attribute end */
+
+    }
+
+    return out;
+}
+
 static ERL_NIF_TERM date_now(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     return enif_make_double(env, (double) ucal_getNow());
@@ -2824,9 +2929,6 @@ static ERL_NIF_TERM date_is_weekend(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     cal = (UCalendar*) cloner_get(ptr);
     CHECK_RES(env, cal);
 
-    ucal_setMillis(cal, (UDate) date, &status);
-    CHECK(env, status);
-
     flag = ucal_isWeekend(cal, (UDate) date, &status);
     CHECK(env, status);
 
@@ -2848,6 +2950,7 @@ static ERL_NIF_TERM date_get3(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
       && enif_get_int(env, argv[3], &day))) {
         return enif_make_badarg(env);
     }
+    month--;
 
     cal = (UCalendar*) cloner_get(ptr);
     CHECK_RES(env, cal);
@@ -2879,6 +2982,7 @@ static ERL_NIF_TERM date_get6(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
       && enif_get_int(env, argv[6], &second))) {
         return enif_make_badarg(env);
     }
+    month--;
 
     cal = (UCalendar*) cloner_get(ptr);
     CHECK_RES(env, cal);
@@ -3062,6 +3166,8 @@ static ErlNifFunc nif_funcs[] =
     {"date_is_weekend", 2, date_is_weekend},
     {"date_get",        4, date_get3},
     {"date_get",        7, date_get6},
+    {"date_get_field",  3, date_get_field},
+    {"date_get_fields", 3, date_get_fields},
 #endif
 
 };

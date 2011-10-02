@@ -28,7 +28,8 @@
 -export([now/0]).
 -export([add/1, add/2, add/3]).
 -export([set/1, set/2, set/3]). 
--export([get/3, get/4, get/6, get/7]).
+-export([get/1, get/2, get/3]). 
+-export([new/3, new/4, new/6, new/7]).
 -export([roll/1, roll/2, roll/3]).
 -export([clear/2, clear/3]).
 
@@ -125,7 +126,7 @@ add(Cal, Date, Fields) ->
 
 
 
--spec set([{i18n_date_field(), integer()}]) -> i18n_date().
+-spec set(fields()) -> i18n_date().
 
 set(Fields) ->
     Cal = i18n_calendar:open(),
@@ -152,17 +153,67 @@ set(Cal, Date, Fields)
 	?TRY_NUM(?IM:date_set(Cal, Date, Fields)).
 
 
-get(Year, Month, Day) ->
+
+
+
+
+
+
+
+
+-spec get([i18n_date_field()] | i18n_date_field()) -> 
+        [integer()] | integer().
+
+get(Fields) ->
+    Cal = i18n_calendar:open(),
+    Date = now(),
+	get(Cal, Date, Fields).
+
+
+-spec get(i18n_calendar() | i18n_date(), 
+         [i18n_date_field()] | i18n_date_field()) -> 
+        [integer()] | integer().
+
+get(Date, Fields)
+    when is_number(Date) ->
+    Cal = i18n_calendar:open(),
+	get(Cal, Date, Fields);
+get(Cal, Fields)
+    when is_binary(Cal) ->
+    Date = now(),
+	get(Cal, Date, Fields).
+
+
+-spec get(i18n_calendar(), i18n_date(), 
+    [i18n_date_field()] | i18n_date_field()) -> 
+        [integer()] | integer().
+
+get(Cal, Date, Fields) 
+    when is_list(Fields) ->
+	?TRY_LIST(?IM:date_get_fields(Cal, Date, Fields));
+
+get(Cal, Date, Field) 
+    when is_atom(Field) ->
+	?TRY_NUM(?IM:date_get_field(Cal, Date, Field)).
+
+
+
+
+
+
+
+
+new(Year, Month, Day) ->
     Cal = i18n_calendar:open(),
     ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day)).
 
-get(Cal, Year, Month, Day) ->
+new(Cal, Year, Month, Day) ->
     ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day)).
 
-get(Cal, Year, Month, Day, Hour, Minute, Second) ->
+new(Cal, Year, Month, Day, Hour, Minute, Second) ->
     ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day, Hour, Minute, Second)).
 
-get(Year, Month, Day, Hour, Minute, Second) ->
+new(Year, Month, Day, Hour, Minute, Second) ->
     Cal = i18n_calendar:open(),
     ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day, Hour, Minute, Second)).
 
