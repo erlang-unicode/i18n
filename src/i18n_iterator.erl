@@ -21,27 +21,32 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
--module(i18n_calendar).
+%%% @doc Text Boundary Analysis (Break Iteration) 
+
+-module(i18n_iterator).
 -include("i18n.hrl").
--export([open/0, open/1, open/2, open/3]).
+
+-export([open/1, open/2]).
 -export([available_locales/0]).
 
 -type i18n_locale_id() :: atom(). 
 
-open() ->
-    Locale = i18n_locale:get_locale(),
-    open(Locale).
+-type resource() :: <<>>.   
+-type i18n_iterator() :: resource().   
 
-open(Locale) ->
-	?TRY_RES(?IM:open_calendar(Locale)).
 
-open(Locale, TZ) ->
-	?TRY_RES(?IM:open_calendar(Locale, TZ)).
+-type i18n_string_iterator_type() :: 'grapheme' | 'word' | 'sentence' | 'line'.
 
-open(Locale, TZ, Type) ->
-	?TRY_RES(?IM:open_calendar(Locale, TZ, Type)).
+-spec open(i18n_string_iterator_type()) -> i18n_iterator().
+open(T) -> 
+    L = i18n_locale:get_locale(),
+    open(L, T).
+
+-spec open(i18n_locale_id(), i18n_string_iterator_type()) -> i18n_iterator().
+open(S, T) when is_atom(T) -> 
+    ?TRY_RES(?IM:get_iterator(S, T)).
 
 -spec available_locales() -> [i18n_locale_id()].
 available_locales() ->
-	?TRY_LIST(?IM:calendar_locales()).
+	?TRY_LIST(?IM:iterator_locales()).
 

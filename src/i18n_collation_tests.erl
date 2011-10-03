@@ -33,6 +33,12 @@
     
 simple_open_test() ->
     i18n_collation:open().
+    
+for_all_locales_open_test_() ->
+    ?_assert(
+        lists:all(fun erlang:is_binary/1, 
+            lists:map(fun i18n_collation:open/1, 
+                i18n_collation:available_locales()))).
 
 simple_sort_key_test() ->
     C = i18n_collation:open(),

@@ -35,7 +35,6 @@
 -type resource() :: <<>>.   
 -type i18n_iterator() :: resource().   
 
--type i18n_string_iterator_type() :: 'grapheme' | 'word' | 'sentence' | 'line'.
 
 % NIFs
 -export([from/1]).
@@ -46,7 +45,6 @@
 
 -export([to_lower/2, to_upper/2, to_title/2]).
 -export([to_lower/1, to_upper/1, to_title/1]).
--export([get_iterator/1, get_iterator/2]).
 -export([len/1, len/2]).
 
 
@@ -114,11 +112,6 @@ to_title(S) ->
     L = i18n_locale:get_locale(),
     to_title(L, S).
 
--spec get_iterator(i18n_string_iterator_type()) -> i18n_iterator().
-get_iterator(T) -> 
-    L = i18n_locale:get_locale(),
-    get_iterator(L, T).
-
 %% @doc Count of code paints.
 -spec len(i18n_string()) -> non_neg_integer().
 len(S) when is_integer(S) -> 
@@ -127,7 +120,7 @@ len(S) when is_integer(S) ->
 %% @doc Count the length og the string with help of an iterator.
 %%
 %% ```
-%% i18n_string:len(i18n_string:get_iterator('grapheme'), ?ISTR("Example"));
+%% i18n_string:len(i18n_iterator:open('grapheme'), ?ISTR("Example"));
 %% '''
 -spec len(i18n_iterator(), i18n_string()) -> non_neg_integer().
 len(I, S) -> 
@@ -144,9 +137,5 @@ to_upper(L, S) when is_atom(L) ->
 -spec to_title(i18n_locale_id() | i18n_iterator(), i18n_string()) -> i18n_string().
 to_title(L, S) ->
     ?TRY_STR(?IM:to_title(L, S)).
-
--spec get_iterator(i18n_locale_id(), i18n_string_iterator_type()) -> i18n_iterator().
-get_iterator(S, T) when is_atom(T) -> 
-    ?TRY_RES(?IM:get_iterator(S, T)).
 
 

@@ -21,27 +21,50 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
--module(i18n_calendar).
+%%% @doc Text Trasliteration
+
+
+-module(i18n_transliteration).
 -include("i18n.hrl").
--export([open/0, open/1, open/2, open/3]).
--export([available_locales/0]).
 
--type i18n_locale_id() :: atom(). 
+-export([open/1, open/2]).
+-export([available_ids/0]).
+-export([do/2]).
 
-open() ->
-    Locale = i18n_locale:get_locale(),
-    open(Locale).
+-type i18n_transliterator_id() :: atom(). 
 
-open(Locale) ->
-	?TRY_RES(?IM:open_calendar(Locale)).
+%% UTF-16 string
+-type i18n_string() :: binary().   
 
-open(Locale, TZ) ->
-	?TRY_RES(?IM:open_calendar(Locale, TZ)).
+-type resource() :: <<>>.   
+-type i18n_transliterator() :: resource().   
 
-open(Locale, TZ, Type) ->
-	?TRY_RES(?IM:open_calendar(Locale, TZ, Type)).
+-type i18n_direction() :: 'forward' | 'reverse'.
 
--spec available_locales() -> [i18n_locale_id()].
-available_locales() ->
-	?TRY_LIST(?IM:calendar_locales()).
 
+
+-spec open(i18n_transliterator_id()) -> i18n_transliterator().
+open(Id) -> 
+	Dir = 'forward',
+    open(Id, Dir).
+
+
+-spec open(i18n_transliterator_id(), i18n_direction()) -> 
+		i18n_transliterator().
+
+open(Id, Dir) when is_atom(Id), is_atom(Dir) -> 
+    ?TRY_RES(?IM:get_transliterator(Id, Dir)).
+
+
+
+
+-spec available_ids() -> [i18n_transliterator_id()].
+available_ids() ->
+    ?TRY_LIST(?IM:trans_ids()).
+
+	
+-spec do(i18n_transliterator(), i18n_string()) ->
+		i18n_string().
+
+do(T, S) ->
+    ?TRY_STR(?IM:trans(T, S)).

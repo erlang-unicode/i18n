@@ -30,6 +30,7 @@
 #define I18N_REGEX   	true
 #define I18N_LOCALE   	true
 #define I18N_DATE   	true
+#define I18N_TRANS  	true
 
 #define BUF_SIZE        65536 // 2^16, since we're using a 2-byte length header
 #define STR_LEN         32768
@@ -54,6 +55,12 @@
 #include "unicode/regex.h"
 
 #include "unicode/ucal.h"
+
+#include "unicode/utrans.h"
+#include "unicode/translit.h"
+
+#include "unicode/uenum.h"
+
 
 #include "erl_nif.h"
 
@@ -96,6 +103,7 @@ extern "C" {
 
 ERL_NIF_TERM res_error_term;
 #define CHECK_RES(ENV, RES) if (RES == NULL) return res_error_term;
+
 
 
 /* Allocated atoms */
@@ -702,6 +710,34 @@ static ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status) {
 
 
 
+inline ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en) {
+    
+    ERL_NIF_TERM head, tail;
+    UErrorCode status = U_ZERO_ERROR;
+    const char* buf;
+    int32_t len;
+
+
+    uenum_reset(en, &status);   
+    CHECK(env, status);
+
+    tail = enif_make_list(env, 0);
+
+    while (true) {
+        buf = uenum_next(en, &len, &status);   
+        CHECK(env, status);
+        if (buf == NULL) 
+            return tail;
+
+        if (len > 255) 
+            return make_error(env, "i18n_enum_elem_too_long");
+
+        head = enif_make_atom(env, buf);
+        tail = enif_make_list_cell(env, head, tail);
+    }
+}
+
+
 
 inline ERL_NIF_TERM string_to_term(ErlNifEnv* env, const UnicodeString& s) {
         ERL_NIF_TERM term;
@@ -718,6 +754,13 @@ inline ERL_NIF_TERM string_to_term(ErlNifEnv* env, const UnicodeString& s) {
         return term;
 }
 
+
+inline UnicodeString copy_binary_to_string(const ErlNifBinary& in) {
+    /* Readonly-aliasing UChar* constructor. */
+    return UnicodeString(
+        (const UChar*) in.data,
+        TO_ULEN(in.size));
+}
 
 inline UnicodeString binary_to_string(const ErlNifBinary& in) {
     /* Readonly-aliasing UChar* constructor. */
@@ -1665,6 +1708,150 @@ static void i18n_collation_unload(ErlNifEnv* env, void* priv)
 
 
 
+#ifdef I18N_TRANS
+static ErlNifResourceType* trans_type = 0;
+
+
+
+// Called from erl_nif.
+void trans_dtor(ErlNifEnv* env, void* obj) 
+{
+    // Free memory
+    cloner_destroy((cloner*) obj); 
+}
+
+
+
+// Called from cloner for each thread.
+void trans_destr(char* obj) 
+{ 
+    if (obj != NULL)
+        utrans_close((UTransliterator*) obj);
+}
+char* trans_clone(char* obj) 
+{
+    UErrorCode status = U_ZERO_ERROR;
+
+    obj = (char*) utrans_clone(
+        (const UTransliterator *) obj,
+        &status 
+    );
+    if(U_FAILURE(status)) { 
+        return NULL;
+    } 
+    return obj;
+}
+
+int trans_open(UTransliterator * obj, cloner* c)
+{
+    return cloner_open((char *) obj, c, &trans_clone, &trans_destr);
+} 
+
+
+int parseDir(const char * type) 
+{
+    return (!strcmp((char*) "reverse", type)) ? UTRANS_REVERSE :
+        UTRANS_FORWARD;
+}
+
+
+static ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM out;
+    UEnumeration* en; 
+    UErrorCode status = U_ZERO_ERROR;
+
+    en = utrans_openIDs(&status);   
+    CHECK(env, status);
+
+    out = enum_to_term(env, en);
+    uenum_close(en);
+
+    return out;
+}
+
+
+/* Get a collator */
+static ERL_NIF_TERM get_transliterator(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM out;
+    char id[LOCALE_LEN], dir[ATOM_LEN];
+    UErrorCode status = U_ZERO_ERROR;
+    UTransliterator* obj;
+    cloner* res;
+    int parsed_dir;
+
+
+    if (!(enif_get_atom(env, argv[0], (char*) id, LOCALE_LEN, ERL_NIF_LATIN1)
+       && enif_get_atom(env, argv[1], (char*) dir, ATOM_LEN, ERL_NIF_LATIN1)
+        )) {
+        return enif_make_badarg(env);
+    }
+
+    parsed_dir = parseDir(dir);
+    if ((parsed_dir == -1)) 
+        return enif_make_badarg(env);
+
+    obj = utrans_open((char *) id, (UTransDirection) parsed_dir, 
+            NULL, 0, NULL, &status);
+    CHECK(env, status);
+
+
+
+    res = (cloner*) enif_alloc_resource(trans_type, sizeof(cloner));
+
+    if (trans_open(obj, res)) {
+        enif_release_resource(res);
+        return enif_make_badarg(env);
+    }
+    CHECK(env, status,
+        enif_release_resource(res);
+    );
+
+
+    out = enif_make_resource(env, res);
+    enif_release_resource(res);
+    /* resource now only owned by "Erlang" */
+    return out;
+}
+
+
+static ERL_NIF_TERM trans(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    cloner* ptr; 
+    const Transliterator* t; 
+    UnicodeString input;
+
+    /* Second argument must be a binary */
+    if(!(enif_inspect_binary(env, argv[1], &in)
+      && enif_get_resource(env, argv[0], trans_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    t = (Transliterator*) cloner_get(ptr);
+    CHECK_RES(env, t);
+            
+
+    input = copy_binary_to_string(in);
+
+    t->transliterate(input);
+    
+    return string_to_term(env, input);
+}
+
+static int i18n_trans_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+{
+    trans_type = enif_open_resource_type(env, NULL, "trans_type",
+        trans_dtor, ERL_NIF_RT_CREATE, NULL); 
+    if (collator_type == NULL) return 20;
+    
+    return 0;
+}
+#endif
+
+
+
 
 
 
@@ -2478,6 +2665,44 @@ static ERL_NIF_TERM locale_base_name(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
     return enif_make_atom(env, value);
 }
+
+
+
+
+typedef const char* (*avail_fun)(int32_t);
+
+
+static ERL_NIF_TERM generate_available(ErlNifEnv* env, avail_fun fun, 
+    int32_t i)
+{
+    ERL_NIF_TERM head, tail;
+    const char* locale;
+
+    tail = enif_make_list(env, 0);
+    while (i) {
+        i--;
+        locale = fun(i);
+        head = enif_make_atom(env, locale);
+        tail = enif_make_list_cell(env, head, tail);
+    }
+
+    return tail;
+}
+
+static ERL_NIF_TERM calendar_locales(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return generate_available(env, ucal_getAvailable, ucal_countAvailable());
+}
+
+static ERL_NIF_TERM iterator_locales(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return generate_available(env, ubrk_getAvailable, ubrk_countAvailable());
+}
+
+static ERL_NIF_TERM collator_locales(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return generate_available(env, ucol_getAvailable, ucol_countAvailable());
+}
 #endif
 
 
@@ -3002,6 +3227,7 @@ static ERL_NIF_TERM date_get6(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return calendar_to_double(env, (const UCalendar*) cal);
 }
 
+
 static int i18n_date_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
     calendar_type = enif_open_resource_type(env, NULL, "calendar_type",
@@ -3059,6 +3285,13 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
     code = i18n_date_load(env, priv_data, load_info);
     if (code) return code;
 #endif
+
+
+#ifdef I18N_TRANS
+    code = i18n_trans_load(env, priv_data, load_info);
+    if (code) return code;
+#endif
+     
      
     return 0;
 }
@@ -3152,25 +3385,37 @@ static ErlNifFunc nif_funcs[] =
     {"locale_parent",       1, locale_parent},
     {"locale_language_tag", 1, locale_language_tag},
     {"locale_base_name",    1, locale_base_name},
+    {"calendar_locales",    0, calendar_locales},
+    {"collator_locales",    0, collator_locales},
+    {"iterator_locales",    0, iterator_locales},
 #endif
 
 
 
 
 #ifdef I18N_DATE
-    {"date_now",        0, date_now},
-    {"open_calendar",   1, open_calendar},
-    {"open_calendar",   2, open_calendar},
-    {"open_calendar",   3, open_calendar},
-    {"date_set",        3, date_set},
-    {"date_add",        3, date_add},
-    {"date_roll",       3, date_roll},
-    {"date_clear",      3, date_clear},
-    {"date_is_weekend", 2, date_is_weekend},
-    {"date_get",        4, date_get3},
-    {"date_get",        7, date_get6},
-    {"date_get_field",  3, date_get_field},
-    {"date_get_fields", 3, date_get_fields},
+    {"date_now",         0, date_now},
+    {"open_calendar",    1, open_calendar},
+    {"open_calendar",    2, open_calendar},
+    {"open_calendar",    3, open_calendar},
+    {"date_set",         3, date_set},
+    {"date_add",         3, date_add},
+    {"date_roll",        3, date_roll},
+    {"date_clear",       3, date_clear},
+    {"date_is_weekend",  2, date_is_weekend},
+    {"date_get",         4, date_get3},
+    {"date_get",         7, date_get6},
+    {"date_get_field",   3, date_get_field},
+    {"date_get_fields",  3, date_get_fields},
+#endif
+
+
+
+
+#ifdef I18N_TRANS
+    {"trans_ids",          0, trans_ids},
+    {"trans",              2, trans},
+    {"get_transliterator", 2, get_transliterator},
 #endif
 
 };

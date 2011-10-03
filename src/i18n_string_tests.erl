@@ -42,10 +42,10 @@ from_utf8_test() ->
     ok.
 
 simple_open_test() ->
-    i18n_string:get_iterator('grapheme'),
-    i18n_string:get_iterator('word'),
-    i18n_string:get_iterator('line'),
-    i18n_string:get_iterator('sentence'),
+    i18n_iterator:open('grapheme'),
+    i18n_iterator:open('word'),
+    i18n_iterator:open('line'),
+    i18n_iterator:open('sentence'),
     ok.
 
 simple_normalization_test() ->
@@ -103,7 +103,7 @@ prop_concat() ->
                 i18n_string:from_utf8(Ys)))).
     
 prop_case() ->
-	I = i18n_string:get_iterator('grapheme'),
+	I = i18n_iterator:open('grapheme'),
 	F = fun(Xs) ->
 		S = i18n_string:from_utf8(Xs),
 		i18n_string:to_lower(S) =:= i18n_string:to_lower(i18n_string:to_upper(S))
@@ -117,7 +117,7 @@ prop_case() ->
    	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
     
 prop_len() ->
-	I = i18n_string:get_iterator('grapheme'),
+	I = i18n_iterator:open('grapheme'),
 	F = fun(Xs) ->
 		S = i18n_string:from_utf8(Xs),
 		is_integer(i18n_string:len(I, S))
@@ -125,7 +125,7 @@ prop_len() ->
    	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
     
 prop_get_iterator_parallel() ->
-	I = i18n_string:get_iterator('grapheme'),
+	I = i18n_iterator:open('grapheme'),
 	F = fun(Xs) ->
 		S = i18n_string:from_utf8(Xs),
 		is_integer(i18n_string:len(I, S))

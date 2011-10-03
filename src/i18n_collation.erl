@@ -23,6 +23,7 @@
 
 -module(i18n_collation).
 -include_lib("i18n.hrl").
+-export([available_locales/0]).
 
 
 % NIFs
@@ -147,3 +148,8 @@ options(H)
     orelse H=:='normalization' ->
     {H, 'on'};
 options(H) -> H.
+
+-spec available_locales() -> [i18n_locale_id()].
+available_locales() ->
+	?TRY_LIST(?IM:collator_locales()).
+

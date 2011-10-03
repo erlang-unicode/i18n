@@ -58,6 +58,13 @@
 -export([date_is_weekend/2]).
 -export([date_get/4, date_get/7]).
 
+-export([calendar_locales/0]).
+-export([iterator_locales/0]).
+-export([collator_locales/0]).
+-export([trans_ids/0, trans/2]).
+
+-export([get_transliterator/2]).
+
 init() ->
     i18n:start(),
     Nif = ?I18N_NIF_PATH(?MODULE),
@@ -189,6 +196,18 @@ locale_language_tag(_L) ->
 locale_base_name(_L) ->
     ?I18N_NIF_NOT_LOADED.
 
+iterator_locales() ->
+    ?I18N_NIF_NOT_LOADED.
+
+collator_locales() ->
+    ?I18N_NIF_NOT_LOADED.
+
+calendar_locales() ->
+    ?I18N_NIF_NOT_LOADED.
+
+trans_ids() ->
+    ?I18N_NIF_NOT_LOADED.
+
 
 %%
 %% Date
@@ -232,3 +251,15 @@ date_get_field(_Cal, _Date, _Field) ->
 
 date_get_fields(_Cal, _Date, _Fields) ->
     ?I18N_NIF_NOT_LOADED.
+
+
+%%
+%% Transliteration
+%%
+
+get_transliterator(_Id, _Direction) ->
+    ?I18N_NIF_NOT_LOADED.
+
+trans(_Transliterator, _String) ->
+    ?I18N_NIF_NOT_LOADED.
+    

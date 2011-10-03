@@ -37,7 +37,7 @@ String case modifications
 3> i18n_string:to_utf8(i18n_string:to_title(S)).                               
 <<"The Quick Brown Fox Jumps Over The Lazy Dog.">>
 
-4> I=i18n_string:get_iterator(sentence).                                       
+4> I=i18n_iterator:open(sentence).                                       
 <<>>
 
 5> i18n_string:to_utf8(i18n_string:to_title(I, S)).                            
