@@ -43,7 +43,8 @@
 -export([get_collator/1, get_collator/2]).
 -export([sort_key/2, compare/3]).
 
--export([search_index/3, search_match_all/3, search_test/3, search_match/3]).
+-export([search_open/2, 
+    search_index/2, search_match_all/2, search_test/2, search_match/2]).
 
 -export([open_format/2, format/2, format/3]).
 -export([open_regex/1, regex_replace/3, regex_replace_all/3, 
@@ -142,16 +143,19 @@ compare(_CollatorResource, _String, _String2) ->
 %% Searching
 %%
 
-search_index(_CollatorResource, _String, _String2) ->
+search_open(_CollatorResource, _PatternString) ->
     ?I18N_NIF_NOT_LOADED.
 
-search_match_all(_CollatorResource, _String, _String2) ->
+search_index(_SearcherResource, _String) ->
     ?I18N_NIF_NOT_LOADED.
 
-search_match(_CollatorResource, _String, _String2) ->
+search_match_all(_SearcherResource, _String) ->
     ?I18N_NIF_NOT_LOADED.
 
-search_test(_CollatorResource, _String, _String2) ->
+search_match(_SearcherResource, _String) ->
+    ?I18N_NIF_NOT_LOADED.
+
+search_test(_SearcherResource, _String) ->
     ?I18N_NIF_NOT_LOADED.
 
 

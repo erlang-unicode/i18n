@@ -23,6 +23,7 @@
  *  =====================================================================
  */
 
+
 #define I18N_STRING     true
 #define I18N_COLLATION  true
 #define I18N_SEARCH    	true
@@ -1727,11 +1728,60 @@ static void i18n_collation_unload(ErlNifEnv* env, void* priv)
 
 
 #ifdef I18N_SEARCH
-static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+
+
+/* isearch_common_store: Stores const values for each copy of searcher */
+static ErlNifResourceType* isearch_common_type = 0;
+/* Stores default text */
+static UChar isearch_text[1];
+static int32_t isearch_text_len = 1;
+
+typedef struct {
+    ErlNifEnv* env;
+    ERL_NIF_TERM pattern;
+    ERL_NIF_TERM col;
+} ISearchCommon;
+
+
+ISearchCommon* isearch_common_open(const ERL_NIF_TERM& pattern, 
+                                   const ERL_NIF_TERM& col)
 {
-    ERL_NIF_TERM head, tail;
-    ErlNifBinary pattern, text;
-    int pos; 
+    ISearchCommon* isc;
+    isc = (ISearchCommon*) enif_alloc_resource(isearch_common_type, 
+                sizeof(ISearchCommon));
+
+    isc->env = enif_alloc_env();
+    isc->pattern = enif_make_copy(isc->env, pattern);
+    isc->col     = enif_make_copy(isc->env, col);
+    
+    return isc;
+}
+
+
+void isearch_common_dtor(ErlNifEnv* env, void* obj) 
+{
+    enif_free_env(((ISearchCommon*) obj)->env);
+}
+
+
+
+
+
+
+
+
+
+
+/* ISearch API */
+typedef struct {
+    ISearchCommon* isc;
+    UStringSearch* ss;
+} ISearch;
+
+/* @private */
+UStringSearch* isc_to_ss(ISearchCommon* isc)
+{
+    ErlNifBinary pattern;
     cloner* ptr;
     const UCollator* col;
     UStringSearch* ss;
@@ -1739,29 +1789,207 @@ static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     UErrorCode status = U_ZERO_ERROR;
 
 
-    /* Second argument must be a binary */
-    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
-      && enif_inspect_binary(env, argv[1], &pattern)
-      && enif_inspect_binary(env, argv[2], &text))) {
-        return enif_make_badarg(env);
+    if(!(enif_get_resource(isc->env, isc->col, collator_type, (void**) &ptr)
+      && enif_inspect_binary(isc->env, isc->pattern, &pattern))) {
+        return NULL;
     }
     col = (UCollator*) cloner_get(ptr);
-    CHECK_RES(env, col);
+    if (col == NULL)
+        return NULL;
 
+    /* Init with "empty" text. */
     ss = usearch_openFromCollator(
         (const UChar *) pattern.data,
         (int32_t) TO_ULEN(pattern.size),
-        (const UChar *) text.data,
-        (int32_t) TO_ULEN(text.size),
+        (const UChar *) isearch_text,
+        isearch_text_len,
         col,
         bi,
         &status);
+    if(U_FAILURE(status)) { 
+        return NULL;
+    } 
+
+    return ss;
+}
+
+void isearch_close(ISearch* is)
+{
+    usearch_close(is->ss);
+    /* important: free the common resourse for this clone */
+    enif_release_resource(is->isc);
+    enif_free(is);
+}
+
+ISearch* isearch_clone(ISearch* is1)
+{
+    ISearch* is2;
+
+    if (is1 == NULL)
+        return NULL;
+
+    is2 = (ISearch*) enif_alloc(sizeof(ISearch));
+    if (is2 == NULL)
+        return NULL;
+
+    is2->isc = is1->isc;
+    /* important: keep the common resourse for new clone */
+    enif_keep_resource(is2->isc);
+
+    is2->ss = isc_to_ss(is2->isc);
+    if (is2->ss == NULL) {
+        isearch_close(is2);
+    }
+    return is2;
+}
+
+ISearch* isearch_open(const ERL_NIF_TERM& col,
+                      const ERL_NIF_TERM& pattern)
+{
+    ISearch* is;
+    is =(ISearch*) enif_alloc(sizeof(ISearch));
+    if (is == NULL)
+        return NULL;
+
+    is->isc = isearch_common_open(pattern, col);
+    is->ss = isc_to_ss(is->isc);
+    if (is->ss == NULL) {
+        isearch_close(is);
+    }
+    return is;
+}
+
+UStringSearch* isearch_get(const ISearch* is)
+{
+    if ((is == NULL) || (is->ss == NULL))
+        return NULL;
+    return is->ss;
+}
+
+
+
+
+
+
+
+
+
+/* This constraction is same for all parts of this file. */
+static ErlNifResourceType* searcher_type = 0;
+
+
+
+// Called from erl_nif.
+void searcher_dtor(ErlNifEnv* env, void* obj) 
+{
+    // Free memory
+    cloner_destroy((cloner*) obj); 
+}
+
+
+
+// Called from cloner for each thread.
+void searcher_destr(char* obj) 
+{ 
+    if (obj != NULL)
+        isearch_close((ISearch*) obj);
+}
+char* searcher_clone(char* obj) 
+{
+    return (char*) isearch_clone((ISearch*) obj);
+}
+
+int searcher_open(ISearch * obj, cloner* c)
+{
+    return cloner_open((char *) obj, c, &searcher_clone, &searcher_destr);
+} 
+
+
+
+
+
+/**
+ * User API
+ */
+
+
+static ERL_NIF_TERM search_open(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ISearch* is;
+    cloner* res;
+    ERL_NIF_TERM out;
+
+
+    if(argc != 2) {
+        return enif_make_badarg(env);
+    }
+
+    /* argv[0] = col, argv[1] = pattern */
+    is = isearch_open(argv[0], argv[1]);
+    
+    
+    res = (cloner*) enif_alloc_resource(searcher_type, sizeof(cloner));
+    if (searcher_open(is, res)) {
+        enif_release_resource(res);
+        return enif_make_badarg(env);
+    }
+    out = enif_make_resource(env, res);
+    enif_release_resource(res);
+    /* resource now only owned by "Erlang" */
+    return out;
+}
+
+inline UStringSearch* search_read_args(ErlNifEnv* env, 
+        const ERL_NIF_TERM argv[], UErrorCode& status)
+{
+    ErlNifBinary text;
+    cloner* ptr;
+    const ISearch* is;
+    UStringSearch* ss;
+
+    /* Second argument must be a binary */
+    if(!(enif_get_resource(env, argv[0], searcher_type, (void**) &ptr)
+      && enif_inspect_binary(env, argv[1], &text))) 
+        return NULL;
+
+    is = (const ISearch*) cloner_get(ptr);
+    if (is == NULL)
+        return NULL;
+
+    ss = isearch_get(is);
+    if (ss == NULL)
+        return NULL;
+
+    usearch_reset(ss);
+
+    usearch_setText(ss,
+        (const UChar *) text.data,
+        (int32_t) TO_ULEN(text.size),
+        &status);
+    if (U_FAILURE(status)) 
+        return NULL;
+
+    return ss;
+
+}
+
+static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    UStringSearch* ss;
+    UErrorCode status = U_ZERO_ERROR;
+    ERL_NIF_TERM head, tail;
+    int pos; 
+
+    if (argc != 2)
+        return enif_make_badarg(env);
+
+    ss = search_read_args(env, argv, status);
     CHECK(env, status);
+    CHECK_RES(env, ss);
 
     pos = (int) usearch_last(ss, &status);
-    CHECK(env, status,
-        usearch_close(ss);
-    );
+    CHECK(env, status);
+
     tail = enif_make_list(env, 0);
     while (pos != USEARCH_DONE) 
     {
@@ -1773,50 +2001,33 @@ static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
         /* get the next elem. */
         pos = (int) usearch_previous(ss, &status);
-        CHECK(env, status,
-            usearch_close(ss);
-        );
+        CHECK(env, status);
     }
-    usearch_close(ss);
 
     return tail;
 }
 static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ERL_NIF_TERM head, tail;
-    ErlNifBinary pattern, text;
-    int pos, len; 
-    cloner* ptr;
-    const UCollator* col;
     UStringSearch* ss;
-    UBreakIterator* bi = NULL;
     UErrorCode status = U_ZERO_ERROR;
+    ERL_NIF_TERM head, tail;
+    int pos, len; 
     UChar* bin;
+    const UChar* text;
+    int32_t text_len;
 
-
-    /* Second argument must be a binary */
-    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
-      && enif_inspect_binary(env, argv[1], &pattern)
-      && enif_inspect_binary(env, argv[2], &text))) {
+    if (argc != 2)
         return enif_make_badarg(env);
-    }
-    col = (UCollator*) cloner_get(ptr);
-    CHECK_RES(env, col);
 
-    ss = usearch_openFromCollator(
-        (const UChar *) pattern.data,
-        (int32_t) TO_ULEN(pattern.size),
-        (const UChar *) text.data,
-        (int32_t) TO_ULEN(text.size),
-        col,
-        bi,
-        &status);
+    ss = search_read_args(env, argv, status);
     CHECK(env, status);
+    CHECK_RES(env, ss);
+
 
     pos = (int) usearch_last(ss, &status);
-    CHECK(env, status,
-        usearch_close(ss);
-    );
+    CHECK(env, status);
+    text = usearch_getText(ss, &text_len);
+
     tail = enif_make_list(env, 0);
     while (pos != USEARCH_DONE) 
     {
@@ -1824,7 +2035,7 @@ static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
         bin = (UChar*) enif_make_new_binary(env, len, &head);
         memcpy(bin, 
-            (const char*) (((const UChar *) text.data) + pos), 
+            (const char*) (text + pos), 
             len);
         tail = enif_make_list_cell(env, head, tail);
 
@@ -1832,102 +2043,77 @@ static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
         /* get the next elem. */
         pos = (int) usearch_previous(ss, &status);
-        CHECK(env, status,
-            usearch_close(ss);
-        );
+        CHECK(env, status);
     }
-    usearch_close(ss);
 
     return tail;
 }
 static ERL_NIF_TERM search_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ERL_NIF_TERM res;
-    ErlNifBinary pattern, text;
-    int pos, len; 
-    cloner* ptr;
-    const UCollator* col;
     UStringSearch* ss;
-    UBreakIterator* bi = NULL;
     UErrorCode status = U_ZERO_ERROR;
+    ERL_NIF_TERM res;
+    int pos, len; 
     UChar* bin;
+    const UChar* text;
+    int32_t text_len;
 
-
-    /* Second argument must be a binary */
-    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
-      && enif_inspect_binary(env, argv[1], &pattern)
-      && enif_inspect_binary(env, argv[2], &text))) {
+    if (argc != 2)
         return enif_make_badarg(env);
-    }
-    col = (UCollator*) cloner_get(ptr);
-    CHECK_RES(env, col);
 
-    ss = usearch_openFromCollator(
-        (const UChar *) pattern.data,
-        (int32_t) TO_ULEN(pattern.size),
-        (const UChar *) text.data,
-        (int32_t) TO_ULEN(text.size),
-        col,
-        bi,
-        &status);
+    ss = search_read_args(env, argv, status);
     CHECK(env, status);
+    CHECK_RES(env, ss);
+
 
     pos = (int) usearch_last(ss, &status);
-    CHECK(env, status,
-        usearch_close(ss);
-    );
+    CHECK(env, status);
+
     if (pos != USEARCH_DONE) 
     {
         len = FROM_ULEN(usearch_getMatchedLength(ss));
 
         bin = (UChar*) enif_make_new_binary(env, len, &res);
+        text = usearch_getText(ss, &text_len);
         memcpy(bin, 
-            (const char*) (((const UChar *) text.data) + pos), 
+            (const char*) (text + pos), 
             len);
     } else {
         res = ATOM_FALSE;
     }
-    usearch_close(ss);
 
     return res;
 }
 static ERL_NIF_TERM search_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary pattern, text;
-    int pos; 
-    cloner* ptr;
-    const UCollator* col;
     UStringSearch* ss;
-    UBreakIterator* bi = NULL;
     UErrorCode status = U_ZERO_ERROR;
+    int pos; 
 
-
-    /* Second argument must be a binary */
-    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
-      && enif_inspect_binary(env, argv[1], &pattern)
-      && enif_inspect_binary(env, argv[2], &text))) {
+    if (argc != 2)
         return enif_make_badarg(env);
-    }
-    col = (UCollator*) cloner_get(ptr);
-    CHECK_RES(env, col);
 
-    ss = usearch_openFromCollator(
-        (const UChar *) pattern.data,
-        (int32_t) TO_ULEN(pattern.size),
-        (const UChar *) text.data,
-        (int32_t) TO_ULEN(text.size),
-        col,
-        bi,
-        &status);
+    ss = search_read_args(env, argv, status);
     CHECK(env, status);
+    CHECK_RES(env, ss);
+
 
     pos = (int) usearch_last(ss, &status);
-    CHECK(env, status,
-        usearch_close(ss);
-    );
-    usearch_close(ss);
+    CHECK(env, status);
 
     return bool_to_term(pos != USEARCH_DONE);
+}
+
+static int i18n_search_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+{
+    isearch_common_type = enif_open_resource_type(env, NULL, "isearch_common_type",
+        isearch_common_dtor, ERL_NIF_RT_CREATE, NULL); 
+    if (isearch_common_type == NULL) return 40;
+
+    searcher_type = enif_open_resource_type(env, NULL, "searcher_type",
+        searcher_dtor, ERL_NIF_RT_CREATE, NULL); 
+    if (searcher_type == NULL) return 41;
+    return 0;
 }
 #endif
 
@@ -3539,6 +3725,12 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 #endif
 
 
+#ifdef I18N_COLLATION
+    code = i18n_search_load(env, priv_data, load_info);
+    if (code) return code;
+#endif
+
+
 #ifdef I18N_MESSAGE
     code = i18n_message_load(env, priv_data, load_info);
     if (code) return code;
@@ -3627,10 +3819,11 @@ static ErlNifFunc nif_funcs[] =
 
 
 #ifdef I18N_SEARCH
-    {"search_index",      3, search_index},
-    {"search_match_all",  3, search_match_all},
-    {"search_match",      3, search_match},
-    {"search_test",       3, search_test},
+    {"search_open",       2, search_open},
+    {"search_index",      2, search_index},
+    {"search_match_all",  2, search_match_all},
+    {"search_match",      2, search_match},
+    {"search_test",       2, search_test},
 #endif
 
 

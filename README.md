@@ -27,21 +27,12 @@ String case modifications
 -------------------------
 
 ```erlang
-1> S=i18n_string:from_utf8(<<"the quick brown Fox jumps over the lazy Dog.">>).
-<<116,0,104,0,101,0,32,0,113,0,117,0,105,0,99,0,107,0,32,
-  0,98,0,114,0,111,0,119,0,110,...>>
+S=i18n_string:from_utf8(<<"the quick brown Fox jumps over the lazy Dog.">>).
+i18n_string:to_utf8(i18n_string:to_upper(S)).                               
+i18n_string:to_utf8(i18n_string:to_title(S)).                               
 
-2> i18n_string:to_utf8(i18n_string:to_upper(S)).                               
-<<"THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.">>
-
-3> i18n_string:to_utf8(i18n_string:to_title(S)).                               
-<<"The Quick Brown Fox Jumps Over The Lazy Dog.">>
-
-4> I=i18n_iterator:open(sentence).                                       
-<<>>
-
-5> i18n_string:to_utf8(i18n_string:to_title(I, S)).                            
-<<"The quick brown fox jumps over the lazy dog.">>
+I=i18n_iterator:open(sentence).                                       
+i18n_string:to_utf8(i18n_string:to_title(I, S)).                            
 ```
 
 
@@ -49,16 +40,15 @@ Searching
 ---------
 
 ```erlang
-1> CS = i18n_collation:open([secondary]). 
-2> CT = i18n_collation:open(). 
-3> S = i18n:from("abcd ABCD"). 
-4> P = i18n:from("a"). 
-5> i18n_search:index(CS, P, S).
-[{0,1},{5,1}]
-6>  i18n_search:index(CT, P, S).           
-[{0,1}]
-7> i18n_search:match_all(CS, P, S).           
-[<<97,0>>,<<65,0>>]
+CS = i18n_collation:open([secondary]). 
+CT = i18n_collation:open(). 
+S = i18n:from("abcd ABCD"). 
+P = i18n:from("a"). 
+SCSP = i18n_search:open(CS, P). 
+SCTP = i18n_search:open(CT, P). 
+i18n_search:index(SCSP, S).
+i18n_search:index(SCTP, S).           
+i18n_search:match_all(SCSP, S).           
 ```
 
 

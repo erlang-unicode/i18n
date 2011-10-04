@@ -24,7 +24,8 @@
 -module(i18n_search).
 -include_lib("i18n.hrl").
 
--export([index/3, match_all/3, test/3, match/3]).
+-export([open/2]).
+-export([index/2, match_all/2, test/2, match/2]).
 
 
 %%
@@ -35,6 +36,7 @@
 
 -type resource() :: <<>>.
 -type i18n_collator() :: resource().
+-type i18n_searcher() :: resource().
 -type i18n_search_option() :: atom().
 
 
@@ -42,17 +44,19 @@
 %% API
 %%
 
+open(Col, Pattern) ->
+    ?TRY_RES(?IM:search_open(Col, Pattern)).
 
-index(Col, Pattern, String) ->
-    ?TRY_LIST(?IM:search_index(Col, Pattern, String)).
 
-match_all(Col, Pattern, String) ->
-    ?TRY_LIST(?IM:search_match_all(Col, Pattern, String)).
+index(Searcher, String) ->
+    ?TRY_LIST(?IM:search_index(Searcher, String)).
+
+match_all(Searcher, String) ->
+    ?TRY_LIST(?IM:search_match_all(Searcher, String)).
     
--spec test(i18n_collator(), i18n_string(), i18n_string()) -> boolean().
 %% @doc Test matches.
-test(Col, Pattern, String) ->
-    ?TRY_ATOM(?IM:search_test(Col, Pattern, String)).
+test(Searcher, String) ->
+    ?TRY_ATOM(?IM:search_index(Searcher, String)).
 
-match(Col, Pattern, String) ->
-    ?TRY_STR_OR_ATOM(?IM:search_match(Col, Pattern, String)).
+match(Searcher, String) ->
+    ?TRY_STR_OR_ATOM(?IM:search_match(Searcher, String)).
