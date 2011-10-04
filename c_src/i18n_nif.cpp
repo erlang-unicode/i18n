@@ -46,6 +46,7 @@
 
 #include "unicode/ucol.h"
 #include "unicode/coll.h"
+#include "unicode/usearch.h"
 
 #include "unicode/umsg.h"
 #include "unicode/msgfmt.h"
@@ -1708,145 +1709,136 @@ static void i18n_collation_unload(ErlNifEnv* env, void* priv)
 
 
 
-#ifdef I18N_TRANS
-static ErlNifResourceType* trans_type = 0;
 
 
 
-// Called from erl_nif.
-void trans_dtor(ErlNifEnv* env, void* obj) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef I18N_SEARCH
+static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    // Free memory
-    cloner_destroy((cloner*) obj); 
-}
-
-
-
-// Called from cloner for each thread.
-void trans_destr(char* obj) 
-{ 
-    if (obj != NULL)
-        utrans_close((UTransliterator*) obj);
-}
-char* trans_clone(char* obj) 
-{
+    ERL_NIF_TERM head, tail;
+    ErlNifBinary pattern, text;
+    int pos; 
+    cloner* ptr;
+    const UCollator* col;
+    UStringSearch* ss;
+    UBreakIterator* bi = NULL;
     UErrorCode status = U_ZERO_ERROR;
 
-    obj = (char*) utrans_clone(
-        (const UTransliterator *) obj,
-        &status 
-    );
-    if(U_FAILURE(status)) { 
-        return NULL;
-    } 
-    return obj;
-}
-
-int trans_open(UTransliterator * obj, cloner* c)
-{
-    return cloner_open((char *) obj, c, &trans_clone, &trans_destr);
-} 
-
-
-int parseDir(const char * type) 
-{
-    return (!strcmp((char*) "reverse", type)) ? UTRANS_REVERSE :
-        UTRANS_FORWARD;
-}
-
-
-static ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ERL_NIF_TERM out;
-    UEnumeration* en; 
-    UErrorCode status = U_ZERO_ERROR;
-
-    en = utrans_openIDs(&status);   
-    CHECK(env, status);
-
-    out = enum_to_term(env, en);
-    uenum_close(en);
-
-    return out;
-}
-
-
-/* Get a collator */
-static ERL_NIF_TERM get_transliterator(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ERL_NIF_TERM out;
-    char id[LOCALE_LEN], dir[ATOM_LEN];
-    UErrorCode status = U_ZERO_ERROR;
-    UTransliterator* obj;
-    cloner* res;
-    int parsed_dir;
-
-
-    if (!(enif_get_atom(env, argv[0], (char*) id, LOCALE_LEN, ERL_NIF_LATIN1)
-       && enif_get_atom(env, argv[1], (char*) dir, ATOM_LEN, ERL_NIF_LATIN1)
-        )) {
-        return enif_make_badarg(env);
-    }
-
-    parsed_dir = parseDir(dir);
-    if ((parsed_dir == -1)) 
-        return enif_make_badarg(env);
-
-    obj = utrans_open((char *) id, (UTransDirection) parsed_dir, 
-            NULL, 0, NULL, &status);
-    CHECK(env, status);
-
-
-
-    res = (cloner*) enif_alloc_resource(trans_type, sizeof(cloner));
-
-    if (trans_open(obj, res)) {
-        enif_release_resource(res);
-        return enif_make_badarg(env);
-    }
-    CHECK(env, status,
-        enif_release_resource(res);
-    );
-
-
-    out = enif_make_resource(env, res);
-    enif_release_resource(res);
-    /* resource now only owned by "Erlang" */
-    return out;
-}
-
-
-static ERL_NIF_TERM trans(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ErlNifBinary in;
-    cloner* ptr; 
-    const Transliterator* t; 
-    UnicodeString input;
 
     /* Second argument must be a binary */
-    if(!(enif_inspect_binary(env, argv[1], &in)
-      && enif_get_resource(env, argv[0], trans_type, (void**) &ptr))) {
+    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
+      && enif_inspect_binary(env, argv[1], &pattern)
+      && enif_inspect_binary(env, argv[2], &text))) {
         return enif_make_badarg(env);
     }
+    col = (UCollator*) cloner_get(ptr);
+    CHECK_RES(env, col);
 
-    t = (Transliterator*) cloner_get(ptr);
-    CHECK_RES(env, t);
-            
+    ss = usearch_openFromCollator(
+        (const UChar *) pattern.data,
+        (int32_t) TO_ULEN(pattern.size),
+        (const UChar *) text.data,
+        (int32_t) TO_ULEN(text.size),
+        col,
+        bi,
+        &status);
+    CHECK(env, status);
 
-    input = copy_binary_to_string(in);
+    pos = (int) usearch_last(ss, &status);
+    CHECK(env, status,
+        usearch_close(ss);
+    );
+    tail = enif_make_list(env, 0);
+    while (pos != USEARCH_DONE) 
+    {
+        head = enif_make_tuple2(env, 
+            enif_make_int(env, pos),
+            enif_make_int(env, (int) usearch_getMatchedLength(ss))
+        );
+        tail = enif_make_list_cell(env, head, tail);
 
-    t->transliterate(input);
-    
-    return string_to_term(env, input);
+        /* get the next elem. */
+        pos = (int) usearch_previous(ss, &status);
+        CHECK(env, status,
+            usearch_close(ss);
+        );
+    }
+    usearch_close(ss);
+
+    return tail;
 }
-
-static int i18n_trans_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    trans_type = enif_open_resource_type(env, NULL, "trans_type",
-        trans_dtor, ERL_NIF_RT_CREATE, NULL); 
-    if (collator_type == NULL) return 20;
-    
-    return 0;
+    ERL_NIF_TERM head, tail;
+    ErlNifBinary pattern, text;
+    int pos, len; 
+    cloner* ptr;
+    const UCollator* col;
+    UStringSearch* ss;
+    UBreakIterator* bi = NULL;
+    UErrorCode status = U_ZERO_ERROR;
+    UChar* bin;
+
+
+    /* Second argument must be a binary */
+    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
+      && enif_inspect_binary(env, argv[1], &pattern)
+      && enif_inspect_binary(env, argv[2], &text))) {
+        return enif_make_badarg(env);
+    }
+    col = (UCollator*) cloner_get(ptr);
+    CHECK_RES(env, col);
+
+    ss = usearch_openFromCollator(
+        (const UChar *) pattern.data,
+        (int32_t) TO_ULEN(pattern.size),
+        (const UChar *) text.data,
+        (int32_t) TO_ULEN(text.size),
+        col,
+        bi,
+        &status);
+    CHECK(env, status);
+
+    pos = (int) usearch_last(ss, &status);
+    CHECK(env, status,
+        usearch_close(ss);
+    );
+    tail = enif_make_list(env, 0);
+    while (pos != USEARCH_DONE) 
+    {
+        len = FROM_ULEN(usearch_getMatchedLength(ss));
+
+        bin = (UChar*) enif_make_new_binary(env, len, &head);
+        memcpy(bin, 
+            (const char*) (((const UChar *) text.data) + pos), 
+            len);
+        tail = enif_make_list_cell(env, head, tail);
+
+
+
+        /* get the next elem. */
+        pos = (int) usearch_previous(ss, &status);
+        CHECK(env, status,
+            usearch_close(ss);
+        );
+    }
+    usearch_close(ss);
+
+    return tail;
 }
 #endif
 
@@ -3249,6 +3241,195 @@ static int i18n_date_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_in
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef I18N_TRANS
+static ErlNifResourceType* trans_type = 0;
+
+
+
+// Called from erl_nif.
+void trans_dtor(ErlNifEnv* env, void* obj) 
+{
+    // Free memory
+    cloner_destroy((cloner*) obj); 
+}
+
+
+
+// Called from cloner for each thread.
+void trans_destr(char* obj) 
+{ 
+    if (obj != NULL)
+        utrans_close((UTransliterator*) obj);
+}
+char* trans_clone(char* obj) 
+{
+    UErrorCode status = U_ZERO_ERROR;
+
+    obj = (char*) utrans_clone(
+        (const UTransliterator *) obj,
+        &status 
+    );
+    if(U_FAILURE(status)) { 
+        return NULL;
+    } 
+    return obj;
+}
+
+int trans_open(UTransliterator * obj, cloner* c)
+{
+    return cloner_open((char *) obj, c, &trans_clone, &trans_destr);
+} 
+
+
+int parseDir(const char * type) 
+{
+    return (!strcmp((char*) "reverse", type)) ? UTRANS_REVERSE :
+        UTRANS_FORWARD;
+}
+
+
+static ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM
+argv[])
+{
+    ERL_NIF_TERM out;
+    UEnumeration* en; 
+    UErrorCode status = U_ZERO_ERROR;
+
+    en = utrans_openIDs(&status);   
+    CHECK(env, status);
+
+    out = enum_to_term(env, en);
+    uenum_close(en);
+
+    return out;
+}
+
+
+/* Get a transliterator */
+static ERL_NIF_TERM get_transliterator(ErlNifEnv* env, int argc, const
+ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM out;
+    char id[LOCALE_LEN], dir[ATOM_LEN];
+    UErrorCode status = U_ZERO_ERROR;
+    UTransliterator* obj;
+    cloner* res;
+    int parsed_dir;
+
+
+    if (!(enif_get_atom(env, argv[0], (char*) id, LOCALE_LEN, ERL_NIF_LATIN1)
+       && enif_get_atom(env, argv[1], (char*) dir, ATOM_LEN, ERL_NIF_LATIN1)
+        )) {
+        return enif_make_badarg(env);
+    }
+
+    parsed_dir = parseDir(dir);
+    if ((parsed_dir == -1)) 
+        return enif_make_badarg(env);
+
+    obj = utrans_open((char *) id, (UTransDirection) parsed_dir, 
+            NULL, 0, NULL, &status);
+    CHECK(env, status);
+
+
+
+    res = (cloner*) enif_alloc_resource(trans_type, sizeof(cloner));
+
+    if (trans_open(obj, res)) {
+        enif_release_resource(res);
+        return enif_make_badarg(env);
+    }
+    CHECK(env, status,
+        enif_release_resource(res);
+    );
+
+
+    out = enif_make_resource(env, res);
+    enif_release_resource(res);
+    /* resource now only owned by "Erlang" */
+    return out;
+}
+
+
+static ERL_NIF_TERM trans(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    cloner* ptr; 
+    const Transliterator* t; 
+    UnicodeString input;
+
+    /* Second argument must be a binary */
+    if(!(enif_inspect_binary(env, argv[1], &in)
+      && enif_get_resource(env, argv[0], trans_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }
+
+    t = (Transliterator*) cloner_get(ptr);
+    CHECK_RES(env, t);
+            
+
+    input = copy_binary_to_string(in);
+
+    t->transliterate(input);
+    
+    return string_to_term(env, input);
+}
+
+static int i18n_trans_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM
+load_info)
+{
+    trans_type = enif_open_resource_type(env, NULL, "trans_type",
+        trans_dtor, ERL_NIF_RT_CREATE, NULL); 
+    if (collator_type == NULL) return 20;
+    
+    return 0;
+}
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
     int code;
@@ -3352,6 +3533,13 @@ static ErlNifFunc nif_funcs[] =
     {"get_collator",      2, get_collator},
     {"sort_key",          2, sort_key},
     {"compare",           3, compare},
+#endif
+
+
+
+#ifdef I18N_COLLATION
+    {"search_index",      3, search_index},
+    {"search_match_all",  3, search_match_all},
 #endif
 
 

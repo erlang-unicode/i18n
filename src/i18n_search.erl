@@ -24,17 +24,14 @@
 -module(i18n_search).
 -include_lib("i18n.hrl").
 
-% NIFs
--export([open/0, open/1, open/2]).
 
-
+-export([index/3, match_all/3]).
 
 
 %%
 %% Types
 %%
 
--type i18n_locale_id() :: atom(). 
 -type i18n_string() :: binary().
 
 -type resource() :: <<>>.
@@ -47,17 +44,9 @@
 %%
 
 
--spec open() -> i18n_collator().
-open() ->
-    L = i18n_locale:get_locale(),
-    open(L).
+index(Col, Pattern, String) ->
+    ?TRY_LIST(?IM:search_index(Col, Pattern, String)).
 
--spec open(i18n_locale_id()) -> i18n_collator().
-open(_Locale) ->
-    ?I18N_NIF_NOT_LOADED.
-
--spec open(i18n_locale_id(), [i18n_search_option()]) -> i18n_collator().
-open(L, Options) ->
-    C = open(L).
-%   do_options(C, Options).
-
+match_all(Col, Pattern, String) ->
+    ?TRY_LIST(?IM:search_match_all(Col, Pattern, String)).
+    

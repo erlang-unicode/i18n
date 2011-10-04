@@ -72,13 +72,20 @@ open() ->
     L = i18n_locale:get_locale(),
     open(L).
 
--spec open(i18n_locale_id()) -> i18n_collator().
+-spec open(i18n_locale_id()) -> i18n_collator();
+          ([i18n_collation_option()]) -> i18n_collator().
 open(L) when is_atom(L) ->
-    ?TRY_RES(?IM:get_collator(L)).
+    ?TRY_RES(?IM:get_collator(L));
+open(Options) when is_list(Options) ->
+    L = i18n_locale:get_locale(),
+    open(L, Options).
 
 -spec open(i18n_locale_id(), [i18n_collation_option()]) -> i18n_collator().
 open(L, Options) ->
     ?TRY_RES(?IM:get_collator(L, lists:map(fun options/1, Options))).
+
+
+
 
 -spec sort_key(i18n_collator(), i18n_string()) -> i18n_sort_key().
 sort_key(C, S) ->
