@@ -24,8 +24,7 @@
 -module(i18n_search).
 -include_lib("i18n.hrl").
 
-
--export([index/3, match_all/3]).
+-export([index/3, match_all/3, test/3, match/3]).
 
 
 %%
@@ -50,3 +49,10 @@ index(Col, Pattern, String) ->
 match_all(Col, Pattern, String) ->
     ?TRY_LIST(?IM:search_match_all(Col, Pattern, String)).
     
+-spec test(i18n_collator(), i18n_string(), i18n_string()) -> boolean().
+%% @doc Test matches.
+test(Col, Pattern, String) ->
+    ?TRY_ATOM(?IM:search_test(Col, Pattern, String)).
+
+match(Col, Pattern, String) ->
+    ?TRY_STR_OR_ATOM(?IM:search_match(Col, Pattern, String)).

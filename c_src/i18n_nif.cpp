@@ -1840,6 +1840,95 @@ static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
     return tail;
 }
+static ERL_NIF_TERM search_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ERL_NIF_TERM res;
+    ErlNifBinary pattern, text;
+    int pos, len; 
+    cloner* ptr;
+    const UCollator* col;
+    UStringSearch* ss;
+    UBreakIterator* bi = NULL;
+    UErrorCode status = U_ZERO_ERROR;
+    UChar* bin;
+
+
+    /* Second argument must be a binary */
+    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
+      && enif_inspect_binary(env, argv[1], &pattern)
+      && enif_inspect_binary(env, argv[2], &text))) {
+        return enif_make_badarg(env);
+    }
+    col = (UCollator*) cloner_get(ptr);
+    CHECK_RES(env, col);
+
+    ss = usearch_openFromCollator(
+        (const UChar *) pattern.data,
+        (int32_t) TO_ULEN(pattern.size),
+        (const UChar *) text.data,
+        (int32_t) TO_ULEN(text.size),
+        col,
+        bi,
+        &status);
+    CHECK(env, status);
+
+    pos = (int) usearch_last(ss, &status);
+    CHECK(env, status,
+        usearch_close(ss);
+    );
+    if (pos != USEARCH_DONE) 
+    {
+        len = FROM_ULEN(usearch_getMatchedLength(ss));
+
+        bin = (UChar*) enif_make_new_binary(env, len, &res);
+        memcpy(bin, 
+            (const char*) (((const UChar *) text.data) + pos), 
+            len);
+    } else {
+        res = ATOM_FALSE;
+    }
+    usearch_close(ss);
+
+    return res;
+}
+static ERL_NIF_TERM search_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary pattern, text;
+    int pos; 
+    cloner* ptr;
+    const UCollator* col;
+    UStringSearch* ss;
+    UBreakIterator* bi = NULL;
+    UErrorCode status = U_ZERO_ERROR;
+
+
+    /* Second argument must be a binary */
+    if(!(enif_get_resource(env, argv[0], collator_type, (void**) &ptr)
+      && enif_inspect_binary(env, argv[1], &pattern)
+      && enif_inspect_binary(env, argv[2], &text))) {
+        return enif_make_badarg(env);
+    }
+    col = (UCollator*) cloner_get(ptr);
+    CHECK_RES(env, col);
+
+    ss = usearch_openFromCollator(
+        (const UChar *) pattern.data,
+        (int32_t) TO_ULEN(pattern.size),
+        (const UChar *) text.data,
+        (int32_t) TO_ULEN(text.size),
+        col,
+        bi,
+        &status);
+    CHECK(env, status);
+
+    pos = (int) usearch_last(ss, &status);
+    CHECK(env, status,
+        usearch_close(ss);
+    );
+    usearch_close(ss);
+
+    return bool_to_term(pos != USEARCH_DONE);
+}
 #endif
 
 
@@ -3537,9 +3626,11 @@ static ErlNifFunc nif_funcs[] =
 
 
 
-#ifdef I18N_COLLATION
+#ifdef I18N_SEARCH
     {"search_index",      3, search_index},
     {"search_match_all",  3, search_match_all},
+    {"search_match",      3, search_match},
+    {"search_test",       3, search_test},
 #endif
 
 
