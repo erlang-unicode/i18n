@@ -1,5 +1,5 @@
 -define(I18N_NIF_NOT_LOADED, erlang:nif_error(nif_not_loaded)).
--define(I18N_NIF_PATH(X), code:priv_dir('i18n')++"/"++atom_to_list(X)).
+-define(I18N_NIF_PATH(X), begin code:priv_dir('i18n')++"/"++X end).
 -define(IM, i18n_nif).
 -define(TRY_STR(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> {error, E} = Y, throw(E) end end).
 -define(TRY_LIST(X), begin Y = (X), try true=is_list(Y),    Y catch error:{badmatch, _V} -> {error, E} = Y, throw(E) end end).

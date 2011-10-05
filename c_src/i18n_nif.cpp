@@ -23,6 +23,7 @@
  *  =====================================================================
  */
 
+//#define I18N_INFO       true
 
 #define I18N_STRING     true
 #define I18N_COLLATION  true
@@ -114,6 +115,10 @@ ERL_NIF_TERM ATOM_EQUAL, ATOM_GREATER, ATOM_LESS;
 ERL_NIF_TERM ATOM_OK;
 ERL_NIF_TERM ATOM_ENDIAN;
 
+ERL_NIF_TERM ATOM_COUNT;
+ERL_NIF_TERM ATOM_RESOURCE;
+ERL_NIF_TERM ATOM_SEARCH;
+
 
 
 
@@ -154,15 +159,18 @@ static ERL_NIF_TERM list_element_error(ErlNifEnv* env, const ERL_NIF_TERM list,
 
 static int i18n_atom_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
-    ATOM_TRUE    = enif_make_atom(env, "true");
-    ATOM_FALSE   = enif_make_atom(env, "false");
+    ATOM_TRUE     = enif_make_atom(env, "true");
+    ATOM_FALSE    = enif_make_atom(env, "false");
 
-    ATOM_EQUAL   = enif_make_atom(env, "equal");
-    ATOM_GREATER = enif_make_atom(env, "greater");
-    ATOM_LESS    = enif_make_atom(env, "less");
+    ATOM_EQUAL    = enif_make_atom(env, "equal");
+    ATOM_GREATER  = enif_make_atom(env, "greater");
+    ATOM_LESS     = enif_make_atom(env, "less");
 
-    ATOM_OK      = enif_make_atom(env, "ok");
+    ATOM_OK       = enif_make_atom(env, "ok");
 
+    ATOM_COUNT    = enif_make_atom(env, "count");
+    ATOM_RESOURCE = enif_make_atom(env, "resource");
+    ATOM_SEARCH   = enif_make_atom(env, "search");
 
 #if U_IS_BIG_ENDIAN
     ATOM_ENDIAN = enif_make_atom(env, "big");
@@ -1732,6 +1740,14 @@ static void i18n_collation_unload(ErlNifEnv* env, void* priv)
 
 /* isearch_common_store: Stores const values for each copy of searcher */
 static ErlNifResourceType* isearch_common_type = 0;
+
+#ifdef I18N_INFO
+int isearch_count = 0;
+ErlNifMutex* isearch_count_mtx;
+int isearch_common_count = 0;
+ErlNifMutex* isearch_common_count_mtx;
+#endif
+
 /* Stores default text */
 static UChar isearch_text[1];
 static int32_t isearch_text_len = 1;
@@ -1743,12 +1759,35 @@ typedef struct {
 } ISearchCommon;
 
 
+inline ISearchCommon* isearch_common_alloc() 
+{
+#ifdef I18N_INFO
+    enif_mutex_lock(isearch_common_count_mtx);
+    isearch_common_count++;
+    enif_mutex_unlock(isearch_common_count_mtx);
+#endif
+
+    return (ISearchCommon*) enif_alloc_resource(isearch_common_type, 
+                sizeof(ISearchCommon));
+}
+
+void isearch_common_dtor(ErlNifEnv* env, void* obj) 
+{
+#ifdef I18N_INFO
+    enif_mutex_lock(isearch_common_count_mtx);
+    isearch_common_count--;
+    enif_mutex_unlock(isearch_common_count_mtx);
+#endif
+
+    enif_free_env(((ISearchCommon*) obj)->env);
+}
+
+
 ISearchCommon* isearch_common_open(const ERL_NIF_TERM& pattern, 
                                    const ERL_NIF_TERM& col)
 {
     ISearchCommon* isc;
-    isc = (ISearchCommon*) enif_alloc_resource(isearch_common_type, 
-                sizeof(ISearchCommon));
+    isc = isearch_common_alloc();
 
     isc->env = enif_alloc_env();
     isc->pattern = enif_make_copy(isc->env, pattern);
@@ -1756,13 +1795,6 @@ ISearchCommon* isearch_common_open(const ERL_NIF_TERM& pattern,
     
     return isc;
 }
-
-
-void isearch_common_dtor(ErlNifEnv* env, void* obj) 
-{
-    enif_free_env(((ISearchCommon*) obj)->env);
-}
-
 
 
 
@@ -1882,6 +1914,12 @@ static ErlNifResourceType* searcher_type = 0;
 // Called from erl_nif.
 void searcher_dtor(ErlNifEnv* env, void* obj) 
 {
+#ifdef I18N_INFO
+    enif_mutex_lock(isearch_count_mtx);
+    isearch_count--;
+    enif_mutex_unlock(isearch_count_mtx);
+#endif
+
     // Free memory
     cloner_destroy((cloner*) obj); 
 }
@@ -1901,6 +1939,12 @@ char* searcher_clone(char* obj)
 
 int searcher_open(ISearch * obj, cloner* c)
 {
+#ifdef I18N_INFO
+    enif_mutex_lock(isearch_count_mtx);
+    isearch_count++;
+    enif_mutex_unlock(isearch_count_mtx);
+#endif
+
     return cloner_open((char *) obj, c, &searcher_clone, &searcher_destr);
 } 
 
@@ -2104,8 +2148,39 @@ static ERL_NIF_TERM search_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     return bool_to_term(pos != USEARCH_DONE);
 }
 
+#ifdef I18N_INFO
+static ERL_NIF_TERM i18n_search_info(ErlNifEnv *env)
+{
+    return  enif_make_list1(env, 
+                enif_make_tuple2(env,
+                    ATOM_RESOURCE,
+                    enif_make_list2(env,
+                        enif_make_tuple2(env,
+                            enif_make_atom(env, (const char*) "isearch"),
+                                enif_make_list1(env, 
+                                    enif_make_tuple2(env,
+                                        ATOM_COUNT,
+                                        enif_make_int(env, isearch_count)))),
+                        enif_make_tuple2(env,
+                            enif_make_atom(env, (const char*) "isearch_common"),
+                                enif_make_list1(env, 
+                                    enif_make_tuple2(env,
+                                        ATOM_COUNT,
+                                        enif_make_int(env,
+                                            isearch_common_count))))
+            )));
+}
+#endif
+
 static int i18n_search_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
+#ifdef I18N_INFO
+    isearch_count_mtx = 
+        enif_mutex_create((char*) "isearch_count_mtx");
+    isearch_common_count_mtx = 
+        enif_mutex_create((char*) "isearch_common_count_mtx");
+#endif
+
     isearch_common_type = enif_open_resource_type(env, NULL, "isearch_common_type",
         isearch_common_dtor, ERL_NIF_RT_CREATE, NULL); 
     if (isearch_common_type == NULL) return 40;
@@ -2115,6 +2190,7 @@ static int i18n_search_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_
     if (searcher_type == NULL) return 41;
     return 0;
 }
+
 #endif
 
 
@@ -3697,6 +3773,23 @@ load_info)
 
 
 
+static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+#ifdef I18N_INFO
+    ERL_NIF_TERM head, tail;
+    tail = enif_make_list(env, 0);
+
+    #ifdef I18N_SEARCH
+        head = enif_make_tuple2(env, ATOM_SEARCH, i18n_search_info(env));
+        tail = enif_make_list_cell(env, head, tail);
+    #endif
+
+    return tail;
+#else
+    return enif_make_list(env, 0);
+#endif
+}
+
 
 
 
@@ -3758,8 +3851,10 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
     return 0;
 }
 
+
 static int reload(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
+    load(env, priv, load_info);
     return 0;
 }
 
@@ -3788,6 +3883,8 @@ static void unload(ErlNifEnv* env, void* priv)
 
 static ErlNifFunc nif_funcs[] =
 {
+    {"i18n_info",    0, i18n_info},
+
 #ifdef I18N_STRING
     {"to_utf8",      1, to_utf8},
     {"from_utf8",    1, from_utf8},
