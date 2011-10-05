@@ -23,6 +23,7 @@
  *  =====================================================================
  */
 
+
 //#define I18N_INFO       true
 
 #define I18N_STRING     true
@@ -3800,7 +3801,12 @@ static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
 static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
+    static int is_loaded = 0;
     int code;
+
+    if (is_loaded)
+        return 0;
+
     uloc_getDefault();
 
     code = i18n_atom_load(env, priv_data, load_info);
@@ -3847,6 +3853,7 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
     if (code) return code;
 #endif
      
+    is_loaded = 1;
      
     return 0;
 }
@@ -3854,8 +3861,7 @@ static int load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 
 static int reload(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
 {
-    load(env, priv, load_info);
-    return 0;
+    return load(env, priv, load_info);
 }
 
 static int upgrade(ErlNifEnv* env, void** priv, void** old_priv,
