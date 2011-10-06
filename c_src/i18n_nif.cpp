@@ -24,6 +24,7 @@
  */
 
 
+
 //#define I18N_INFO       true
 
 #define I18N_STRING     true
@@ -1320,9 +1321,11 @@ static ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 static int i18n_string_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
     UErrorCode status = U_ZERO_ERROR;
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
+        ERL_NIF_RT_TAKEOVER);
 
     iterator_type = enif_open_resource_type(env, NULL, "iterator_type",
-        iterator_dtor, ERL_NIF_RT_CREATE, NULL); 
+        iterator_dtor, flags, NULL); 
 
     if (iterator_type == NULL) return 1;
 
@@ -1692,13 +1695,15 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 static int i18n_collation_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
     UErrorCode status = U_ZERO_ERROR;
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
+        ERL_NIF_RT_TAKEOVER);
 
     base_col = ucol_open("", &status);
     if(U_FAILURE(status)) { 
         return 3;
     }
     collator_type = enif_open_resource_type(env, NULL, "collator_type",
-        collator_dtor, ERL_NIF_RT_CREATE, NULL); 
+        collator_dtor, flags, NULL); 
     if (collator_type == NULL) return 4;
     
     return 0;
@@ -2175,6 +2180,9 @@ static ERL_NIF_TERM i18n_search_info(ErlNifEnv *env)
 
 static int i18n_search_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
+        ERL_NIF_RT_TAKEOVER);
+
 #ifdef I18N_INFO
     isearch_count_mtx = 
         enif_mutex_create((char*) "isearch_count_mtx");
@@ -2183,11 +2191,11 @@ static int i18n_search_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_
 #endif
 
     isearch_common_type = enif_open_resource_type(env, NULL, "isearch_common_type",
-        isearch_common_dtor, ERL_NIF_RT_CREATE, NULL); 
+        isearch_common_dtor, flags, NULL); 
     if (isearch_common_type == NULL) return 40;
 
     searcher_type = enif_open_resource_type(env, NULL, "searcher_type",
-        searcher_dtor, ERL_NIF_RT_CREATE, NULL); 
+        searcher_dtor, flags, NULL); 
     if (searcher_type == NULL) return 41;
     return 0;
 }
@@ -2526,8 +2534,11 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
 static int i18n_message_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
+        ERL_NIF_RT_TAKEOVER);
+
     message_type = enif_open_resource_type(env, NULL, "message_type",
-        message_dtor, ERL_NIF_RT_CREATE, NULL); 
+        message_dtor, flags, NULL); 
     if (message_type == NULL) return 5;
     return 0;
 }
@@ -2898,8 +2909,11 @@ static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
 static int i18n_regex_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
+        ERL_NIF_RT_TAKEOVER);
+
     regex_type = enif_open_resource_type(env, NULL, "regex_type",
-        regex_dtor, ERL_NIF_RT_CREATE, NULL); 
+        regex_dtor, flags, NULL); 
     if (regex_type == NULL) return 6;
     return 0;
 }
@@ -3574,8 +3588,11 @@ static ERL_NIF_TERM date_get6(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 
 static int i18n_date_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
 {
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
+        ERL_NIF_RT_TAKEOVER);
+
     calendar_type = enif_open_resource_type(env, NULL, "calendar_type",
-        calendar_dtor, ERL_NIF_RT_CREATE, NULL); 
+        calendar_dtor, flags, NULL); 
     if (calendar_type == NULL) return 6;
     return 0;
 }
@@ -3755,8 +3772,11 @@ static ERL_NIF_TERM trans(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 static int i18n_trans_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM
 load_info)
 {
+    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
+        ERL_NIF_RT_TAKEOVER);
+
     trans_type = enif_open_resource_type(env, NULL, "trans_type",
-        trans_dtor, ERL_NIF_RT_CREATE, NULL); 
+        trans_dtor, flags, NULL); 
     if (collator_type == NULL) return 20;
     
     return 0;
