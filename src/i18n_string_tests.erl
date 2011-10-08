@@ -41,13 +41,6 @@ from_utf8_test() ->
     i18n_string:from_utf8(<<"F">>),
     ok.
 
-simple_open_test() ->
-    i18n_iterator:open('grapheme'),
-    i18n_iterator:open('word'),
-    i18n_iterator:open('line'),
-    i18n_iterator:open('sentence'),
-    ok.
-
 simple_normalization_test() ->
     S = i18n_string:from_utf8(<<"Simple test">>),
     i18n_string:to_nfc(S),

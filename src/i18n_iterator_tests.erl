@@ -21,32 +21,38 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
-%%% @doc Text Boundary Analysis (Break Iteration) 
-
--module(i18n_iterator).
--include("i18n.hrl").
-
--export([open/1, open/2]).
--export([available_locales/0]).
-
--type i18n_locale_id() :: atom(). 
-
--type resource() :: <<>>.   
--type i18n_iterator() :: resource().   
+%%% @private
+-module(i18n_iterator_tests).
+-include_lib("i18n/include/i18n.hrl").
 
 
--type i18n_string_iterator_type() :: 'grapheme' | 'word' | 'sentence' | 'line'.
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-include_lib("triq/include/triq.hrl").
+    
 
--spec open(i18n_string_iterator_type()) -> i18n_iterator().
-open(T) -> 
-    L = i18n_locale:get_locale(),
-    open(L, T).
 
--spec open(i18n_locale_id(), i18n_string_iterator_type()) -> i18n_iterator().
-open(L, T) when is_atom(T) -> 
-    ?TRY_RES(?IM:get_iterator(L, T)).
+simple_open_test(L) ->
+    i18n_iterator:open('grapheme'),
+    i18n_iterator:open('word'),
+    i18n_iterator:open('line'),
+    i18n_iterator:open('sentence'),
+    ok.
 
--spec available_locales() -> [i18n_locale_id()].
-available_locales() ->
-	?TRY_LIST(?IM:iterator_locales()).
+advanced_open_test() ->
+    lists:map(fun open_iterator_with_locale/1,
+        i18n_iterator:available_locales()),
+    ok.
 
+%%
+%% Helpers
+%%
+
+open_iterator_with_locale(L) ->
+    i18n_iterator:open(L, 'grapheme'),
+    i18n_iterator:open(L, 'word'),
+    i18n_iterator:open(L, 'line'),
+    i18n_iterator:open(L, 'sentence'),
+    ok.
+
+-endif.

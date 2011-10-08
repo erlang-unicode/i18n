@@ -21,26 +21,66 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
+%%% @doc This module containg functions to manage the locale of the process.
+
 -module(i18n_locale).
 -include("i18n.hrl").
+-define(SERVER, 'i18n_locale_server').
+
 -export([set_locale/1, set_default_locale/1, get_locale/0]).
 -export([base_name/1, parent_locale/1]).
 
+-type i18n_locale_id() :: atom(). 
 
--define(SERVER, 'i18n_locale_server').
+
+%% @doc Set the locale of this process.
+%%      It will affect on all case-sensitive operations
+%%      when the locale parameter will be skipped.
+-spec set_locale(i18n_locale_id()) -> i18n_locale_id().
 
 set_locale(Value) -> 
     LName = ?TRY_ATOM(?IM:locale_name(Value)),
     set_value('i18n_locale', fix_locale(LName)).
 
+
+%% @doc Extract the locale of all processes, in which
+%%      there is no call of `set_locale/1'.
+-spec set_default_locale(i18n_locale_id()) -> i18n_locale_id().
+
 set_default_locale(Value) -> 
     set_default_value('i18n_locale', fix_locale(Value)).
+
+
+%% @doc Extract the locale of this process
+-spec get_locale() -> i18n_locale_id().
 
 get_locale() -> 
     get_value('i18n_locale').
 
 
 
+
+
+%% @doc `ru_RU@col=COL' -> `ru_RU'
+-spec base_name(i18n_locale_id()) -> i18n_locale_id().
+
+base_name(LocaleId) ->
+    fix_locale(?TRY_ATOM(?IM:locale_base_name(LocaleId))).
+
+
+%% @doc `ru_RU' -> `ru'
+-spec parent_locale(i18n_locale_id()) -> i18n_locale_id().
+
+parent_locale(Locale) ->
+    fix_locale(?TRY_ATOM(?IM:locale_parent(Locale))).
+
+
+%%
+%% Helpers
+%%
+
+fix_locale('') -> 'root';
+fix_locale(X) -> X.
 
 
 set_value(Key, Value) ->
@@ -63,18 +103,3 @@ get_value(Key) ->
     Value ->
         Value
     end.
-
-
-base_name(LocaleId) ->
-    fix_locale(?TRY_ATOM(?IM:locale_base_name(LocaleId))).
-
-parent_locale(Locale) ->
-    fix_locale(?TRY_ATOM(?IM:locale_parent(Locale))).
-
-
-%%
-%% Helpers
-%%
-
-fix_locale('') -> 'root';
-fix_locale(X) -> X.
