@@ -44,19 +44,33 @@
 %% API
 %%
 
+-spec open(i18n_collator(), i18n_string()) -> i18n_searcher().
+
 open(Col, Pattern) ->
     ?TRY_RES(?IM:search_open(Col, Pattern)).
 
 
+-spec index(i18n_searcher(), i18n_string()) -> [{Start::non_neg_integer(),
+        Length::non_neg_integer()}].
+
 index(Searcher, String) ->
     ?TRY_LIST(?IM:search_index(Searcher, String)).
+
+
+-spec match_all(i18n_searcher(), i18n_string()) -> [i18n_string()].
 
 match_all(Searcher, String) ->
     ?TRY_LIST(?IM:search_match_all(Searcher, String)).
     
+
 %% @doc Test matches.
+-spec test(i18n_searcher(), i18n_string()) -> boolean().
+
 test(Searcher, String) ->
     ?TRY_ATOM(?IM:search_index(Searcher, String)).
+
+
+-spec match(i18n_searcher(), i18n_string()) -> i18n_string() | 'false'.
 
 match(Searcher, String) ->
     ?TRY_STR_OR_ATOM(?IM:search_match(Searcher, String)).

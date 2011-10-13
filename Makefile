@@ -2,14 +2,9 @@
 PREFIX:=../
 DEST:=$(PREFIX)$(PROJECT)
 
-REBAR=./rebar
+REBAR=./rebar -v
+-include setenv.mk
 
-export CC=$(shell icu-config --cc)
-export CXX=$(shell icu-config --cxx)
-export ICU_CFLAGS=$(shell icu-config --cflags) 
-export ICU_CXXFLAGS=$(shell icu-config --cxxflags) 
-export ICU_LDFLAGS=$(shell icu-config --ldflags) 
-export VERSION=.$(shell date +%s)
 
 
 
