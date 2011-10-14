@@ -13,6 +13,10 @@ Module i18n_collation
 
 
 
+Copyright (c) 2010-2011 Michael Uvarov
+
+__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+
 
 <h2><a name="types">Data Types</a></h2>
 
@@ -86,12 +90,24 @@ Module i18n_collation
 
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#compare-3">compare/3</a></td><td></td></tr><tr><td valign="top"><a href="#init-0">init/0</a></td><td></td></tr><tr><td valign="top"><a href="#map_sort-2">map_sort/2</a></td><td>Xx list of strings to sort.</td></tr><tr><td valign="top"><a href="#open-0">open/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td></td></tr><tr><td valign="top"><a href="#sort-2">sort/2</a></td><td></td></tr><tr><td valign="top"><a href="#sort_key-2">sort_key/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#available_locales-0">available_locales/0</a></td><td></td></tr><tr><td valign="top"><a href="#compare-3">compare/3</a></td><td></td></tr><tr><td valign="top"><a href="#map_sort-2">map_sort/2</a></td><td>Xx list of strings to sort.</td></tr><tr><td valign="top"><a href="#open-0">open/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td></td></tr><tr><td valign="top"><a href="#sort-2">sort/2</a></td><td></td></tr><tr><td valign="top"><a href="#sort_key-2">sort_key/2</a></td><td></td></tr></table>
 
 
 
 
 <h2><a name="functions">Function Details</a></h2>
+
+
+<a name="available_locales-0"></a>
+
+<h3>available_locales/0</h3>
+
+
+
+
+
+<pre>available_locales() -> [<a href="#type-i18n_locale_id">i18n_locale_id()</a>]</pre>
+<br></br>
 
 
 <a name="compare-3"></a>
@@ -102,19 +118,9 @@ Module i18n_collation
 
 
 
-<pre>compare(CollatorResource::<a href="#type-i18n_collator">i18n_collator()</a>, String::<a href="#type-i18n_string">i18n_string()</a>, String2::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_compare_result">i18n_compare_result()</a></pre>
+<pre>compare(C::<a href="#type-i18n_collator">i18n_collator()</a>, S1::<a href="#type-i18n_string">i18n_string()</a>, S2::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_compare_result">i18n_compare_result()</a></pre>
 <br></br>
 
-
-<a name="init-0"></a>
-
-<h3>init/0</h3>
-
-
-
-
-
-`init() -> any()`
 
 <a name="map_sort-2"></a>
 
@@ -151,7 +157,7 @@ F produces a sort keys.<a name="open-0"></a>
 
 
 
-<pre>open(Locale::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
+<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
 <br></br>
 
 
@@ -163,7 +169,7 @@ F produces a sort keys.<a name="open-0"></a>
 
 
 
-<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, Options::<a href="#type-i18n_collation_option">i18n_collation_option()</a>) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
+<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, Options::[<a href="#type-i18n_collation_option">i18n_collation_option()</a>]) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
 <br></br>
 
 
@@ -187,7 +193,7 @@ F produces a sort keys.<a name="open-0"></a>
 
 
 
-<pre>sort_key(CollatorResource::<a href="#type-i18n_collator">i18n_collator()</a>, String::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_sort_key">i18n_sort_key()</a></pre>
+<pre>sort_key(C::<a href="#type-i18n_collator">i18n_collator()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_sort_key">i18n_sort_key()</a></pre>
 <br></br>
 
 

@@ -11,10 +11,17 @@ The i18n application
 
 
 <table width="100%" border="0" summary="list of modules">
+<tr><td><a href="ct_expand.md" class="module">ct_expand</a></td></tr>
 <tr><td><a href="i18n_app.md" class="module">i18n_app</a></td></tr>
+<tr><td><a href="i18n_calendar.md" class="module">i18n_calendar</a></td></tr>
 <tr><td><a href="i18n_collation.md" class="module">i18n_collation</a></td></tr>
+<tr><td><a href="i18n_date.md" class="module">i18n_date</a></td></tr>
+<tr><td><a href="i18n_expand.md" class="module">i18n_expand</a></td></tr>
+<tr><td><a href="i18n_iterator.md" class="module">i18n_iterator</a></td></tr>
 <tr><td><a href="i18n_locale.md" class="module">i18n_locale</a></td></tr>
 <tr><td><a href="i18n_message.md" class="module">i18n_message</a></td></tr>
+<tr><td><a href="i18n_regex.md" class="module">i18n_regex</a></td></tr>
+<tr><td><a href="i18n_search.md" class="module">i18n_search</a></td></tr>
 <tr><td><a href="i18n_string.md" class="module">i18n_string</a></td></tr>
-<tr><td><a href="i18n_sup.md" class="module">i18n_sup</a></td></tr></table>
+<tr><td><a href="i18n_transliteration.md" class="module">i18n_transliteration</a></td></tr></table>
 

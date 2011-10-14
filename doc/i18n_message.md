@@ -13,6 +13,10 @@ Module i18n_message
 
 
 
+Copyright (c) 2010-2011 Michael Uvarov
+
+__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+
 
 <h2><a name="types">Data Types</a></h2>
 
@@ -77,7 +81,7 @@ Module i18n_message
 
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#format-2">format/2</a></td><td></td></tr><tr><td valign="top"><a href="#format-3">format/3</a></td><td></td></tr><tr><td valign="top"><a href="#init-0">init/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td>Parse a message to a resourse.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#format-2">format/2</a></td><td></td></tr><tr><td valign="top"><a href="#format-3">format/3</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td>Parse a message to a resourse.</td></tr></table>
 
 
 
@@ -93,7 +97,7 @@ Module i18n_message
 
 
 
-<pre>format(Mesage::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, Parameters::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>]) -> <a href="#type-i18n_string">i18n_string()</a></pre>
+<pre>format(M::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, P::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>]) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
@@ -105,19 +109,9 @@ Module i18n_message
 
 
 
-<pre>format(Mesage::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, Parameters::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>], AppendTo::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
+<pre>format(M::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, P::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>], A::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
-
-<a name="init-0"></a>
-
-<h3>init/0</h3>
-
-
-
-
-
-`init() -> any()`
 
 <a name="open-1"></a>
 

@@ -12,7 +12,11 @@ Module i18n_app
 
 
 
+Copyright (c) 2010-2011 Michael Uvarov
+
 __Behaviours:__ [`application`](application.md).
+
+__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 <h2><a name="index">Function Index</a></h2>
 

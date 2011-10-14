@@ -27,10 +27,11 @@
 -export([available_locales/0]).
 
 -type i18n_locale_id() :: atom(). 
+-type i18n_string() :: binary().   
 -type resource() :: <<>>.   
 -type i18n_calendar() :: resource(). 
 -type i18n_timezone() :: atom() | i18n_string(). 
--type i18n_calendar_type() :: .
+-type i18n_calendar_type() :: 'gregorian' | 'traditional'.
 
 -spec open() -> i18n_calendar().
 
@@ -39,12 +40,12 @@ open() ->
     open(Locale).
 
 
--spec open(i18n_locale()) -> i18n_calendar().
+-spec open(i18n_locale_id()) -> i18n_calendar().
 
 open(Locale) ->
 	?TRY_RES(?IM:open_calendar(Locale)).
 
--spec open(i18n_locale(), i18n_timezone()) -> i18n_calendar().
+-spec open(i18n_locale_id(), i18n_timezone()) -> i18n_calendar().
 
 open(Locale, TZ) when is_atom(TZ) ->
 	?TRY_RES(?IM:open_calendar(Locale, i18n_string:from(TZ)));
@@ -52,7 +53,7 @@ open(Locale, TZ) ->
 	?TRY_RES(?IM:open_calendar(Locale, TZ)).
 
 
--spec open(i18n_locale(), i18n_timezone(), i18n_calendar_type()) -> 
+-spec open(i18n_locale_id(), i18n_timezone(), i18n_calendar_type()) -> 
         i18n_calendar().
 
 open(Locale, TZ, Type) when is_atom(TZ) ->
