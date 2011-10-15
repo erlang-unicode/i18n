@@ -54,7 +54,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#match-2">match/2</a></td><td></td></tr><tr><td valign="top"><a href="#match_all-2">match_all/2</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td>Parse a message to a resourse.</td></tr><tr><td valign="top"><a href="#replace-3">replace/3</a></td><td></td></tr><tr><td valign="top"><a href="#replace_all-3">replace_all/3</a></td><td></td></tr><tr><td valign="top"><a href="#split-2">split/2</a></td><td></td></tr><tr><td valign="top"><a href="#test-2">test/2</a></td><td>Test matches.</td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#match-2">match/2</a></td><td>Return first match as a list.</td></tr><tr><td valign="top"><a href="#match_all-2">match_all/2</a></td><td>Return all matches as a list of lists.</td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td>Parse a message to a resourse.</td></tr><tr><td valign="top"><a href="#replace-3">replace/3</a></td><td>Replace first element of the text by the pattern.</td></tr><tr><td valign="top"><a href="#replace_all-3">replace_all/3</a></td><td>Replace all finded elements.</td></tr><tr><td valign="top"><a href="#split-2">split/2</a></td><td>Split a string to a list.</td></tr><tr><td valign="top"><a href="#test-2">test/2</a></td><td>Test matches.</td></tr></table>
 
 
 
@@ -74,7 +74,9 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 <br></br>
 
 
-<a name="match_all-2"></a>
+
+
+Return first match as a list.<a name="match_all-2"></a>
 
 <h3>match_all/2</h3>
 
@@ -86,7 +88,9 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 <br></br>
 
 
-<a name="open-1"></a>
+
+
+Return all matches as a list of lists.<a name="open-1"></a>
 
 <h3>open/1</h3>
 
@@ -108,11 +112,13 @@ Parse a message to a resourse.<a name="replace-3"></a>
 
 
 
-<pre>replace(Re::<a href="#type-i18n_regex">i18n_regex()</a>, R::<a href="#type-i18n_string">i18n_string()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
+<pre>replace(Re::<a href="#type-i18n_regex">i18n_regex()</a>, Pattern::<a href="#type-i18n_string">i18n_string()</a>, Source::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
-<a name="replace_all-3"></a>
+
+
+Replace first element of the text by the pattern.<a name="replace_all-3"></a>
 
 <h3>replace_all/3</h3>
 
@@ -120,11 +126,13 @@ Parse a message to a resourse.<a name="replace-3"></a>
 
 
 
-<pre>replace_all(Re::<a href="#type-i18n_regex">i18n_regex()</a>, R::<a href="#type-i18n_string">i18n_string()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
+<pre>replace_all(Re::<a href="#type-i18n_regex">i18n_regex()</a>, Pattern::<a href="#type-i18n_string">i18n_string()</a>, Source::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
-<a name="split-2"></a>
+
+
+Replace all finded elements.<a name="split-2"></a>
 
 <h3>split/2</h3>
 
@@ -132,11 +140,13 @@ Parse a message to a resourse.<a name="replace-3"></a>
 
 
 
-<pre>split(Re::<a href="#type-i18n_regex">i18n_regex()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
+<pre>split(Re::<a href="#type-i18n_regex">i18n_regex()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
 <br></br>
 
 
-<a name="test-2"></a>
+
+
+Split a string to a list.<a name="test-2"></a>
 
 <h3>test/2</h3>
 

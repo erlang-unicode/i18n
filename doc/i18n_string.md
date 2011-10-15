@@ -72,7 +72,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#concat-2">concat/2</a></td><td></td></tr><tr><td valign="top"><a href="#from-1">from/1</a></td><td></td></tr><tr><td valign="top"><a href="#from_utf8-1">from_utf8/1</a></td><td></td></tr><tr><td valign="top"><a href="#len-1">len/1</a></td><td>Count of code paints.</td></tr><tr><td valign="top"><a href="#len-2">len/2</a></td><td>Count the length og the string with help of an iterator.</td></tr><tr><td valign="top"><a href="#split-2">split/2</a></td><td></td></tr><tr><td valign="top"><a href="#split_index-2">split_index/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_lower-1">to_lower/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_lower-2">to_lower/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfc-1">to_nfc/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfd-1">to_nfd/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfkc-1">to_nfkc/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfkd-1">to_nfkd/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_title-1">to_title/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_title-2">to_title/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_upper-1">to_upper/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_upper-2">to_upper/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_utf8-1">to_utf8/1</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#concat-2">concat/2</a></td><td>Concatinate two strings.</td></tr><tr><td valign="top"><a href="#from-1">from/1</a></td><td>Convert a term to a UTF-16 string.</td></tr><tr><td valign="top"><a href="#from_utf8-1">from_utf8/1</a></td><td>Convert a UTF-8 string to a UTF-16 string.</td></tr><tr><td valign="top"><a href="#len-1">len/1</a></td><td>Count of code paints.</td></tr><tr><td valign="top"><a href="#len-2">len/2</a></td><td>Count the length og the string with help of an iterator.</td></tr><tr><td valign="top"><a href="#split-2">split/2</a></td><td>This functions breaks a string on parts.</td></tr><tr><td valign="top"><a href="#split_index-2">split_index/2</a></td><td>Return the list of indexes of beginnings of parts of a string.</td></tr><tr><td valign="top"><a href="#to_lower-1">to_lower/1</a></td><td>Convert a string to lower case.</td></tr><tr><td valign="top"><a href="#to_lower-2">to_lower/2</a></td><td>Convert a string to lower case.</td></tr><tr><td valign="top"><a href="#to_nfc-1">to_nfc/1</a></td><td>Convert a string to Unicode Normalization Form NFC.</td></tr><tr><td valign="top"><a href="#to_nfd-1">to_nfd/1</a></td><td>Convert a string to Unicode Normalization Form NFD.</td></tr><tr><td valign="top"><a href="#to_nfkc-1">to_nfkc/1</a></td><td>Convert a string to Unicode Normalization Form NFKD.</td></tr><tr><td valign="top"><a href="#to_nfkd-1">to_nfkd/1</a></td><td>Convert a string to Unicode Normalization Form NFKD.</td></tr><tr><td valign="top"><a href="#to_title-1">to_title/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_title-2">to_title/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_upper-1">to_upper/1</a></td><td>Convert a string to upper case.</td></tr><tr><td valign="top"><a href="#to_upper-2">to_upper/2</a></td><td>Convert a string to upper case.</td></tr><tr><td valign="top"><a href="#to_utf8-1">to_utf8/1</a></td><td>Convert a UTF-16 string to a UTF-8 string.</td></tr></table>
 
 
 
@@ -92,7 +92,9 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 <br></br>
 
 
-<a name="from-1"></a>
+
+
+Concatinate two strings.<a name="from-1"></a>
 
 <h3>from/1</h3>
 
@@ -100,9 +102,13 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-`from(B) -> any()`
+<pre>from(B::binary() | list() | atom()) -> <a href="#type-i18n_string">i18n_string()</a></pre>
+<br></br>
 
-<a name="from_utf8-1"></a>
+
+
+
+Convert a term to a UTF-16 string.<a name="from_utf8-1"></a>
 
 <h3>from_utf8/1</h3>
 
@@ -114,7 +120,9 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 <br></br>
 
 
-<a name="len-1"></a>
+
+
+Convert a UTF-8 string to a UTF-16 string.<a name="len-1"></a>
 
 <h3>len/1</h3>
 
@@ -154,9 +162,13 @@ Count the length og the string with help of an iterator.
 
 
 
-`split(I, S) -> any()`
+<pre>split(I::<a href="#type-i18n_iterator">i18n_iterator()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
+<br></br>
 
-<a name="split_index-2"></a>
+
+
+
+This functions breaks a string on parts.<a name="split_index-2"></a>
 
 <h3>split_index/2</h3>
 
@@ -164,9 +176,13 @@ Count the length og the string with help of an iterator.
 
 
 
-`split_index(I, S) -> any()`
+<pre>split_index(I::<a href="#type-i18n_iterator">i18n_iterator()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [non_neg_integer()]</pre>
+<br></br>
 
-<a name="to_lower-1"></a>
+
+
+
+Return the list of indexes of beginnings of parts of a string.<a name="to_lower-1"></a>
 
 <h3>to_lower/1</h3>
 
@@ -178,7 +194,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_lower-2"></a>
+
+
+Convert a string to lower case.<a name="to_lower-2"></a>
 
 <h3>to_lower/2</h3>
 
@@ -190,7 +208,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_nfc-1"></a>
+
+
+Convert a string to lower case.<a name="to_nfc-1"></a>
 
 <h3>to_nfc/1</h3>
 
@@ -202,7 +222,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_nfd-1"></a>
+
+
+Convert a string to Unicode Normalization Form NFC.<a name="to_nfd-1"></a>
 
 <h3>to_nfd/1</h3>
 
@@ -214,7 +236,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_nfkc-1"></a>
+
+
+Convert a string to Unicode Normalization Form NFD.<a name="to_nfkc-1"></a>
 
 <h3>to_nfkc/1</h3>
 
@@ -226,7 +250,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_nfkd-1"></a>
+
+
+Convert a string to Unicode Normalization Form NFKD.<a name="to_nfkd-1"></a>
 
 <h3>to_nfkd/1</h3>
 
@@ -238,7 +264,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_title-1"></a>
+
+
+Convert a string to Unicode Normalization Form NFKD.<a name="to_title-1"></a>
 
 <h3>to_title/1</h3>
 
@@ -274,7 +302,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_upper-2"></a>
+
+
+Convert a string to upper case.<a name="to_upper-2"></a>
 
 <h3>to_upper/2</h3>
 
@@ -286,7 +316,9 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
-<a name="to_utf8-1"></a>
+
+
+Convert a string to upper case.<a name="to_utf8-1"></a>
 
 <h3>to_utf8/1</h3>
 
@@ -298,3 +330,6 @@ Count the length og the string with help of an iterator.
 <br></br>
 
 
+
+
+Convert a UTF-16 string to a UTF-8 string.
