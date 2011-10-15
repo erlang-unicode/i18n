@@ -39,7 +39,7 @@
 -export([to_nfc/1, to_nfd/1, to_nfkc/1, to_nfkd/1]).
 
 -export([to_lower/2, to_upper/2, to_title/2]).
--export([get_iterator/2, len/2]).
+-export([get_iterator/2, len/2, split/2, split_index/2]).
 
 
 -export([get_collator/1, get_collator/2]).
@@ -124,6 +124,12 @@ endian() ->
       ?I18N_NIF_NOT_LOADED.
 
 len(_IterResource, _String) -> 
+    ?I18N_NIF_NOT_LOADED.
+
+split(_IterResource, _String) -> 
+    ?I18N_NIF_NOT_LOADED.
+
+split_index(_IterResource, _String) -> 
     ?I18N_NIF_NOT_LOADED.
 
 to_lower(_Locale, _String) ->

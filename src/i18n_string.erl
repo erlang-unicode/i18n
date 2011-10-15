@@ -45,7 +45,7 @@
 
 -export([to_lower/2, to_upper/2, to_title/2]).
 -export([to_lower/1, to_upper/1, to_title/1]).
--export([len/1, len/2]).
+-export([len/1, len/2, split/2, split_index/2]).
 
 
 from(B) 
@@ -125,6 +125,17 @@ len(S) when is_integer(S) ->
 -spec len(i18n_iterator(), i18n_string()) -> non_neg_integer().
 len(I, S) -> 
     ?TRY_INT(?IM:len(I, S)).
+
+split(I, S) ->
+    ?TRY_LIST(?IM:split(I, S)).
+
+split_index(I, S) ->
+    ?TRY_LIST(?IM:split_index(I, S)).
+
+
+%%
+%% Case
+%%
 
 -spec to_lower(i18n_locale_id(), i18n_string()) -> i18n_string().
 to_lower(L, S) when is_atom(L) ->

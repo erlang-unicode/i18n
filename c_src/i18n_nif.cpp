@@ -35,7 +35,8 @@
 #define I18N_DATE   	1
 #define I18N_TRANS  	1
 
-#define BUF_SIZE        65536 /* 2^16, since we're using a 2-byte length header */
+/* 2^16, since we're using a 2-byte length header */
+#define BUF_SIZE        65536 
 #define STR_LEN         32768
 #define LOCALE_LEN      255
 #define ATOM_LEN        16
@@ -102,10 +103,10 @@ extern "C" {
 
 
 /* Divide by 2 */
-#define TO_ULEN(X)   (X / sizeof(UChar))
+#define TO_ULEN(X)   ((X) / sizeof(UChar))
 
 /* Multiply by 2 */
-#define FROM_ULEN(X) (X * sizeof(UChar))
+#define FROM_ULEN(X) ((X) * sizeof(UChar))
 
 #define ERROR(ENV, X) return get_error_code(ENV, X);
 
@@ -147,8 +148,8 @@ static ERL_NIF_TERM parse_error(ErlNifEnv* env, const char* code,
         );
 }
 
-static ERL_NIF_TERM list_element_error(ErlNifEnv* env, const ERL_NIF_TERM list,
-        int32_t num) {
+static ERL_NIF_TERM list_element_error(ErlNifEnv* env, 
+    const ERL_NIF_TERM list, int32_t num) {
     return enif_make_tuple4(env,
         enif_make_atom(env, "error"),
         enif_make_atom(env, "bad_element"),
@@ -162,7 +163,8 @@ static ERL_NIF_TERM list_element_error(ErlNifEnv* env, const ERL_NIF_TERM list,
 }
 
 
-static int i18n_atom_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     ATOM_TRUE     = enif_make_atom(env, "true");
     ATOM_FALSE    = enif_make_atom(env, "false");
@@ -843,7 +845,7 @@ static const Normalizer2* nfkd_normalizer = 0;
 
 
 /* Called from erl_nif. */
-void iterator_dtor(ErlNifEnv* env, void* obj) 
+void iterator_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
     /* Free memory */
     cloner_destroy((cloner*) obj); 
@@ -1021,15 +1023,15 @@ static ERL_NIF_TERM to_utf8(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 }
 
 ERL_NIF_TERM endian(ErlNifEnv* env, int argc,
-                            const ERL_NIF_TERM argv[]) {
+                            const ERL_NIF_TERM /*argv*/[]) {
     if (argc != 0)
         return enif_make_badarg(env);
 
     return ATOM_ENDIAN;
 }
 
-static ERL_NIF_TERM do_norm(ErlNifEnv* env, const ErlNifBinary& in, const
-    Normalizer2* norm)
+static ERL_NIF_TERM do_norm(ErlNifEnv* env, const ErlNifBinary& in, 
+    const Normalizer2* norm)
 {
     UnicodeString out_str;
     UErrorCode status = U_ZERO_ERROR;
@@ -1143,7 +1145,8 @@ inline void do_case(
     }
 }
 
-static ERL_NIF_TERM to_upper(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM to_upper(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, out;
     int32_t ulen; 
@@ -1168,7 +1171,8 @@ static ERL_NIF_TERM to_upper(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     );
     return enif_make_binary(env, &out);
 }
-static ERL_NIF_TERM to_lower(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM to_lower(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, out;
     int32_t ulen; 
@@ -1227,7 +1231,8 @@ inline void do_to_title(
         enif_realloc_binary(&out, FROM_ULEN(ulen));
     }
 }
-static ERL_NIF_TERM to_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM to_title(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, out;
     int32_t ulen; 
@@ -1280,10 +1285,9 @@ static ERL_NIF_TERM to_title(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
 static ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
-    int currb;
     cloner* ptr; 
     UBreakIterator* iter; 
-    int len = -1;
+    int count = -1, pos;
     UErrorCode status = U_ZERO_ERROR;
 
     if (argc != 2)
@@ -1308,15 +1312,121 @@ static ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         &status);
     CHECK(env, status);
 
-    for (currb = ubrk_first(iter);
-        currb != UBRK_DONE;
-        currb = ubrk_next(iter)) {
-        len++;
+    for (pos = ubrk_first(iter);
+         pos != UBRK_DONE;
+         pos = ubrk_next(iter)) {
+        count++;
     }
 
-    return enif_make_int(env, len);
+    return enif_make_int(env, count);
 }
-static ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    cloner* ptr; 
+    UBreakIterator* iter; 
+    int len = -1, last, pos;
+    UErrorCode status = U_ZERO_ERROR;
+    ERL_NIF_TERM head, tail;
+    UChar* bin; 
+    UChar* text;
+    
+
+    if (argc != 2)
+        return enif_make_badarg(env);
+
+    /* Last argument must be a binary */
+    if (!(enif_inspect_binary(env, argv[1], &in)
+       && enif_get_resource(env, argv[0], iterator_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }    
+    iter = (UBreakIterator*) cloner_get(ptr);
+    CHECK_RES(env, iter);
+
+    if (iter == NULL) {
+        return enif_make_badarg(env);
+    }
+    text = (UChar*) in.data;
+
+    ubrk_setText(iter, text, TO_ULEN(in.size), &status);
+    CHECK(env, status);
+    
+    tail = enif_make_list(env, 0);
+    pos = (int) ubrk_last(iter);
+
+    while (pos) {
+        last = pos;
+
+        /* get the next elem. */
+        pos = (int) ubrk_previous(iter);
+
+        if (pos == UBRK_DONE)
+            pos = 0;
+
+        len = FROM_ULEN(last - pos);
+
+        if (len<0)
+            return enif_make_badarg(env);
+
+        bin = (UChar*) enif_make_new_binary(env, len, &head);
+        memcpy(bin, 
+            (const char*) (text + pos), 
+            len);
+        tail = enif_make_list_cell(env, head, tail);
+    };
+
+    return tail;
+}
+static ERL_NIF_TERM split_index(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    cloner* ptr; 
+    UBreakIterator* iter; 
+    int pos;
+    UErrorCode status = U_ZERO_ERROR;
+    ERL_NIF_TERM head, tail;
+    
+
+    if (argc != 2)
+        return enif_make_badarg(env);
+
+    /* Last argument must be a binary */
+    if (!(enif_inspect_binary(env, argv[1], &in)
+       && enif_get_resource(env, argv[0], iterator_type, (void**) &ptr))) {
+        return enif_make_badarg(env);
+    }    
+    iter = (UBreakIterator*) cloner_get(ptr);
+    CHECK_RES(env, iter);
+
+    if (iter == NULL) {
+        return enif_make_badarg(env);
+    }
+
+    ubrk_setText(iter, 
+        (UChar*) in.data, 
+        TO_ULEN(in.size), 
+        &status);
+    CHECK(env, status);
+    
+    tail = enif_make_list(env, 0);
+    pos = (int) ubrk_last(iter);
+
+    while (1) {
+        if ((pos == UBRK_DONE) || (pos == 0))
+            break;
+
+        head = enif_make_int(env, pos);
+        tail = enif_make_list_cell(env, head, tail);
+
+        /* get the next elem. */
+        pos = (int) ubrk_previous(iter);
+    };
+
+    return tail;
+}
+static ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
     int32_t atom_len; 
@@ -1378,7 +1488,8 @@ static ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
 
 
-static ERL_NIF_TERM iterator_locales(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM iterator_locales(ErlNifEnv* env, int argc, const
+    ERL_NIF_TERM /*argv*/[])
 {
     if (argc != 0)
         return enif_make_badarg(env);
@@ -1387,7 +1498,8 @@ static ERL_NIF_TERM iterator_locales(ErlNifEnv* env, int argc, const ERL_NIF_TER
 }
 
 
-static int i18n_string_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static int i18n_string_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     UErrorCode status = U_ZERO_ERROR;
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
@@ -1469,7 +1581,7 @@ static ErlNifResourceType* collator_type = 0;
 
 
 /* Called from erl_nif. */
-void collator_dtor(ErlNifEnv* env, void* obj) 
+void collator_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
     /* Free memory */
     cloner_destroy((cloner*) obj); 
@@ -1536,7 +1648,8 @@ int parseAttrKey(const char * type)
            (!strcmp((char*) "case_level", type))     ? UCOL_CASE_LEVEL  :
            (!strcmp((char*) "normalization", type))  ? UCOL_NORMALIZATION_MODE :
            (!strcmp((char*) "strength", type))       ? UCOL_STRENGTH :
-           (!strcmp((char*) "hiragana", type))       ? UCOL_HIRAGANA_QUATERNARY_MODE :
+           (!strcmp((char*) "hiragana", type))       ? 
+                UCOL_HIRAGANA_QUATERNARY_MODE :
            (!strcmp((char*) "numeric", type))        ? UCOL_NUMERIC_COLLATION :
             -1;
 }
@@ -1573,8 +1686,10 @@ int do_iterator_options(ErlNifEnv* env, UCollator* col,
 
             /* Set an attribute start */
 
-            if (!(enif_get_atom(env, tuple[0], (char*) key,   ATOM_LEN, ERL_NIF_LATIN1) 
-               && enif_get_atom(env, tuple[1], (char*) value, ATOM_LEN, ERL_NIF_LATIN1))) 
+            if (!(enif_get_atom(env, tuple[0], (char*) key,   
+                        ATOM_LEN, ERL_NIF_LATIN1) 
+               && enif_get_atom(env, tuple[1], (char*) value, 
+                        ATOM_LEN, ERL_NIF_LATIN1))) 
                 return 0;
                 
     
@@ -1600,7 +1715,8 @@ int do_iterator_options(ErlNifEnv* env, UCollator* col,
 }
 
 /* Get a collator */
-static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
     char locale[LOCALE_LEN];
@@ -1613,7 +1729,8 @@ static ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     if ((argc != 2) && (argc != 1))
         return enif_make_badarg(env);
 
-    if (!enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)) {
+    if (!enif_get_atom(env, argv[0], (char*) locale, 
+            LOCALE_LEN, ERL_NIF_LATIN1)) {
         return enif_make_badarg(env);
     }
 
@@ -1689,7 +1806,8 @@ inline void do_sort_key(
         enif_realloc_binary(&out, len);
     }
 }
-static ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, out;
     int32_t len; 
@@ -1770,7 +1888,8 @@ static ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
 
 
-static int i18n_collation_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static int i18n_collation_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     UErrorCode status = U_ZERO_ERROR;
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
@@ -1787,7 +1906,8 @@ static int i18n_collation_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM lo
     return 0;
 }
 
-static ERL_NIF_TERM collator_locales(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM collator_locales(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
 {
     if (argc != 0)
         return enif_make_badarg(env);
@@ -1795,7 +1915,7 @@ static ERL_NIF_TERM collator_locales(ErlNifEnv* env, int argc, const ERL_NIF_TER
     return generate_available(env, ucol_getAvailable, ucol_countAvailable());
 }
 
-static void i18n_collation_unload(ErlNifEnv* env, void* priv)
+static void i18n_collation_unload(ErlNifEnv* /*env*/, void* /*priv*/)
 {
     ucol_close(base_col);
     return;
@@ -1863,7 +1983,7 @@ inline ISearchCommon* isearch_common_alloc()
                 sizeof(ISearchCommon));
 }
 
-void isearch_common_dtor(ErlNifEnv* env, void* obj) 
+void isearch_common_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
 #if I18N_INFO
     enif_mutex_lock(isearch_common_count_mtx);
@@ -2007,7 +2127,7 @@ static ErlNifResourceType* searcher_type = 0;
 
 
 /* Called from erl_nif. */
-void searcher_dtor(ErlNifEnv* env, void* obj) 
+void searcher_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
 #if I18N_INFO
     enif_mutex_lock(isearch_count_mtx);
@@ -2052,7 +2172,8 @@ int searcher_open(ISearch * obj, cloner* c)
  */
 
 
-static ERL_NIF_TERM search_open(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM search_open(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ISearch* is;
     cloner* res;
@@ -2110,7 +2231,8 @@ inline UStringSearch* search_read_args(ErlNifEnv* env,
 
 }
 
-static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UStringSearch* ss;
     UErrorCode status = U_ZERO_ERROR;
@@ -2143,7 +2265,8 @@ static ERL_NIF_TERM search_index(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
     return tail;
 }
-static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UStringSearch* ss;
     UErrorCode status = U_ZERO_ERROR;
@@ -2185,7 +2308,8 @@ static ERL_NIF_TERM search_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TER
 
     return tail;
 }
-static ERL_NIF_TERM search_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM search_match(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UStringSearch* ss;
     UErrorCode status = U_ZERO_ERROR;
@@ -2221,7 +2345,8 @@ static ERL_NIF_TERM search_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 
     return res;
 }
-static ERL_NIF_TERM search_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM search_test(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UStringSearch* ss;
     UErrorCode status = U_ZERO_ERROR;
@@ -2265,7 +2390,8 @@ static ERL_NIF_TERM i18n_search_info(ErlNifEnv *env)
 }
 #endif
 
-static int i18n_search_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static int i18n_search_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
         ERL_NIF_RT_TAKEOVER);
@@ -2277,8 +2403,8 @@ static int i18n_search_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_
         enif_mutex_create((char*) "isearch_common_count_mtx");
 #endif
 
-    isearch_common_type = enif_open_resource_type(env, NULL, "isearch_common_type",
-        isearch_common_dtor, flags, NULL); 
+    isearch_common_type = enif_open_resource_type(env, NULL, 
+        "isearch_common_type", isearch_common_dtor, flags, NULL); 
     if (isearch_common_type == NULL) return 40;
 
     searcher_type = enif_open_resource_type(env, NULL, "searcher_type",
@@ -2345,7 +2471,7 @@ static ErlNifResourceType* message_type = 0;
 
 
 /* Called from erl_nif. */
-void message_dtor(ErlNifEnv* env, void* obj) 
+void message_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
     /* Free memory */
     cloner_destroy((cloner*) obj); 
@@ -2394,7 +2520,8 @@ int message_open(UMessageFormat * obj, cloner* c)
  * [{i18n:from("0"), i18n_nif:date_now()}])).  
  * <<"2011 9 28">> */
 
-static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
     ErlNifBinary in;
@@ -2406,7 +2533,8 @@ static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     if (argc != 2)
         return enif_make_badarg(env);
 
-    if (!(enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1)
+    if (!(enif_get_atom(env, argv[0], (char*) locale, 
+                LOCALE_LEN, ERL_NIF_LATIN1)
           && enif_inspect_binary(env, argv[1], &in))) {
         return enif_make_badarg(env);
     }
@@ -2627,7 +2755,8 @@ static ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
 
 
-static int i18n_message_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static int i18n_message_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
         ERL_NIF_RT_TAKEOVER);
@@ -2682,7 +2811,7 @@ static ErlNifResourceType* regex_type = 0;
 
 
 /* Called from erl_nif. */
-void regex_dtor(ErlNifEnv* env, void* obj) 
+void regex_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
     /* Free memory */
     cloner_destroy((cloner*) obj); 
@@ -2721,7 +2850,8 @@ int regex_open(RegexPattern * obj, cloner* c)
  */
 
 /* Get a message format  */
-static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
     ErlNifBinary in;
@@ -2764,7 +2894,8 @@ static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 
 /* i18n_regex:replace(i18n_regex:open(i18n_string:from("G")),
    i18n_string:from("$1"), i18n_string:from("G")). */
-static ERL_NIF_TERM regex_replace_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM regex_replace_all(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, in2;
     RegexPattern* re;
@@ -2841,7 +2972,8 @@ static ERL_NIF_TERM regex_replace(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 /* i18n_regex:split(i18n_regex:open(i18n_string:from("G")),
        i18n_string:from("4")). */
 #define BUF_CNT 20
-static ERL_NIF_TERM regex_split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM regex_split(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     ERL_NIF_TERM head, tail;
@@ -2884,7 +3016,8 @@ static ERL_NIF_TERM regex_split(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     return tail;
 }
 
-static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     RegexPattern* re;
@@ -2920,7 +3053,8 @@ static ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 }
 
 
-inline static ERL_NIF_TERM do_regex_match(ErlNifEnv* env, RegexMatcher* rm, UErrorCode& status)
+inline static ERL_NIF_TERM do_regex_match(ErlNifEnv* env, 
+    RegexMatcher* rm, UErrorCode& status)
 {
     ERL_NIF_TERM head, tail;
     UnicodeString group;
@@ -2942,7 +3076,8 @@ inline static ERL_NIF_TERM do_regex_match(ErlNifEnv* env, RegexMatcher* rm, UErr
     return tail;
 }
 
-static ERL_NIF_TERM regex_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM regex_match_all(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     ERL_NIF_TERM head, tail;
@@ -2982,7 +3117,8 @@ static ERL_NIF_TERM regex_match_all(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     return tail;
 }
 
-static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     ERL_NIF_TERM out;
@@ -3022,7 +3158,8 @@ static ERL_NIF_TERM regex_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
     return out;
 }
 
-static int i18n_regex_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static int i18n_regex_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
         ERL_NIF_RT_TAKEOVER);
@@ -3045,24 +3182,26 @@ static int i18n_regex_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_i
 
 
 #if I18N_LOCALE
-static ERL_NIF_TERM locale_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM locale_name(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
 
-    int32_t value_len,         key_len; 
+    int32_t /*value_len,*/     key_len; 
     char    value[LOCALE_LEN], key[LOCALE_LEN];
 
     if (argc != 1)
         return enif_make_badarg(env);
 
-    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+    key_len = enif_get_atom(env, argv[0], (char*) key, 
+                    LOCALE_LEN, ERL_NIF_LATIN1);
 
     if (!key_len) {
         return enif_make_badarg(env);
     }
 
     
-    value_len = uloc_getName((const char*) key, /* Locale Id */
+    /*value_len =*/ uloc_getName((const char*) key, /* Locale Id */
         (char *)  value, /* Name */
         (int32_t) LOCALE_LEN,
         &status);
@@ -3070,24 +3209,26 @@ static ERL_NIF_TERM locale_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM arg
 
     return enif_make_atom(env, value);
 }
-static ERL_NIF_TERM locale_parent(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM locale_parent(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
 
-    int32_t value_len,         key_len; 
+    int32_t /*value_len,*/     key_len; 
     char    value[LOCALE_LEN], key[LOCALE_LEN];
 
     if (argc != 1)
         return enif_make_badarg(env);
 
-    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+    key_len = enif_get_atom(env, argv[0], (char*) key, 
+                    LOCALE_LEN, ERL_NIF_LATIN1);
 
     if (!key_len) {
         return enif_make_badarg(env);
     }
 
     
-    value_len = uloc_getParent((const char*) key, /* Locale Id */
+    /*value_len =*/ uloc_getParent((const char*) key, /* Locale Id */
         (char *)  value, /* Name */
         (int32_t) LOCALE_LEN,
         &status);
@@ -3095,24 +3236,26 @@ static ERL_NIF_TERM locale_parent(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
 
     return enif_make_atom(env, value);
 }
-static ERL_NIF_TERM locale_language_tag(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM locale_language_tag(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
 
-    int32_t value_len,         key_len; 
+    int32_t /*value_len,*/     key_len; 
     char    value[LOCALE_LEN], key[LOCALE_LEN];
 
     if (argc != 1)
         return enif_make_badarg(env);
 
-    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+    key_len = enif_get_atom(env, argv[0], (char*) key, 
+                    LOCALE_LEN, ERL_NIF_LATIN1);
 
     if (!key_len) {
         return enif_make_badarg(env);
     }
 
     
-    value_len = uloc_toLanguageTag((const char*) key, /* Locale Id */
+    /*value_len =*/ uloc_toLanguageTag((const char*) key, /* Locale Id */
         (char *)  value, /* Name */
         (int32_t) LOCALE_LEN,
         FALSE,
@@ -3121,24 +3264,26 @@ static ERL_NIF_TERM locale_language_tag(ErlNifEnv* env, int argc, const ERL_NIF_
 
     return enif_make_atom(env, value);
 }
-static ERL_NIF_TERM locale_base_name(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM locale_base_name(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
 
-    int32_t value_len,         key_len; 
+    int32_t /*value_len,*/     key_len; 
     char    value[LOCALE_LEN], key[LOCALE_LEN];
 
     if (argc != 1)
         return enif_make_badarg(env);
 
-    key_len = enif_get_atom(env, argv[0], (char*) key, LOCALE_LEN, ERL_NIF_LATIN1);
+    key_len = enif_get_atom(env, argv[0], (char*) key, 
+                    LOCALE_LEN, ERL_NIF_LATIN1);
 
     if (!key_len) {
         return enif_make_badarg(env);
     }
 
     
-    value_len = uloc_getBaseName((const char*) key, /* Locale Id */
+    /*value_len =*/ uloc_getBaseName((const char*) key, /* Locale Id */
         (char *)  value, /* name */
         (int32_t) LOCALE_LEN,
         &status);
@@ -3156,7 +3301,7 @@ static ErlNifResourceType* calendar_type = 0;
 
 
 /* Called from erl_nif. */
-void calendar_dtor(ErlNifEnv* env, void* obj) 
+void calendar_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
     /* Free memory */
     cloner_destroy((cloner*) obj); 
@@ -3204,7 +3349,8 @@ inline UCalendarType parserCalendarType(const char * type)
            (!strcmp((char*) "traditional", type)) ? UCAL_TRADITIONAL :
             UCAL_DEFAULT;
 }
-static ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
     ErlNifBinary tz;
@@ -3228,7 +3374,8 @@ static ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, const ERL_NIF_TERM a
             if (!enif_inspect_binary(env, argv[1], &tz))
                 return enif_make_badarg(env);
         case 1:
-            if (!enif_get_atom(env, argv[0], (char*) locale, LOCALE_LEN, ERL_NIF_LATIN1))
+            if (!enif_get_atom(env, argv[0], (char*) locale, 
+                    LOCALE_LEN, ERL_NIF_LATIN1))
                 return enif_make_badarg(env);
         break;
         default:
@@ -3317,7 +3464,8 @@ inline static ERL_NIF_TERM do_offset(ErlNifEnv* env,
 
             /* Set an attribute start */
 
-            if (!(enif_get_atom(env, tuple[0], (char*) value, ATOM_LEN, ERL_NIF_LATIN1) 
+            if (!(enif_get_atom(env, tuple[0], (char*) value, 
+                        ATOM_LEN, ERL_NIF_LATIN1) 
                && enif_get_int(env, tuple[1], &offset))) 
                 goto bad_elem;
                 
@@ -3348,13 +3496,14 @@ inline static ERL_NIF_TERM do_offset(ErlNifEnv* env,
 void do_ucal_set(UCalendar * cal,
         UCalendarDateFields field,
         int32_t amount,
-        UErrorCode * status) {
+        UErrorCode * /*status*/) {
     if (field == UCAL_MONTH)
         amount--; /* month from 0 */
     ucal_set(cal, field, amount);
 } 
 
-static ERL_NIF_TERM date_set(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_set(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3376,7 +3525,8 @@ static ERL_NIF_TERM date_set(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     return do_offset(env, cal, do_ucal_set, argv[2]);
 }
 
-static ERL_NIF_TERM date_add(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_add(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3398,7 +3548,8 @@ static ERL_NIF_TERM date_add(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     return do_offset(env, cal, ucal_add, argv[2]);
 }
 
-static ERL_NIF_TERM date_roll(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_roll(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3421,7 +3572,8 @@ static ERL_NIF_TERM date_roll(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 }
 
 
-static ERL_NIF_TERM date_clear(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_clear(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3453,7 +3605,8 @@ static ERL_NIF_TERM date_clear(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
 
             /* Set an attribute start */
 
-            if (!enif_get_atom(env, head, (char*) value, ATOM_LEN, ERL_NIF_LATIN1)) 
+            if (!enif_get_atom(env, head, (char*) value, 
+                    ATOM_LEN, ERL_NIF_LATIN1)) 
                 goto bad_elem;
                 
             parsed_value = parseCalendarDateField(value);
@@ -3508,7 +3661,8 @@ static ERL_NIF_TERM do_date_get_field(ErlNifEnv* env, UCalendar* cal,
     return enif_make_int(env, amount);
 }
 
-static ERL_NIF_TERM date_get_field(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_get_field(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3535,7 +3689,8 @@ static ERL_NIF_TERM date_get_field(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
     return res;
 }
 
-static ERL_NIF_TERM date_get_fields(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_get_fields(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3578,7 +3733,8 @@ static ERL_NIF_TERM date_get_fields(ErlNifEnv* env, int argc, const ERL_NIF_TERM
     return out;
 }
 
-static ERL_NIF_TERM date_now(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_now(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
 {
     if (argc != 0)
         return enif_make_badarg(env);
@@ -3586,7 +3742,8 @@ static ERL_NIF_TERM date_now(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]
     return enif_make_double(env, (double) ucal_getNow());
 }
 
-static ERL_NIF_TERM date_is_weekend(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_is_weekend(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3610,7 +3767,8 @@ static ERL_NIF_TERM date_is_weekend(ErlNifEnv* env, int argc, const ERL_NIF_TERM
 }
 
 
-static ERL_NIF_TERM date_get3(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_get3(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3639,7 +3797,8 @@ static ERL_NIF_TERM date_get3(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
     return calendar_to_double(env, (const UCalendar*) cal);
 }
 
-static ERL_NIF_TERM date_get6(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM date_get6(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     UErrorCode status = U_ZERO_ERROR;
     UCalendar* cal;
@@ -3675,15 +3834,18 @@ static ERL_NIF_TERM date_get6(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 }
 
 
-static ERL_NIF_TERM calendar_locales(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM calendar_locales(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
 {
     if (argc != 0)
         return enif_make_badarg(env);
 
-    return generate_available(env, ucal_getAvailable, ucal_countAvailable());
+    return generate_available(env, ucal_getAvailable, 
+            ucal_countAvailable());
 }
 
-static int i18n_date_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM load_info)
+static int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
         ERL_NIF_RT_TAKEOVER);
@@ -3738,7 +3900,7 @@ static ErlNifResourceType* trans_type = 0;
 
 
 /* Called from erl_nif. */
-void trans_dtor(ErlNifEnv* env, void* obj) 
+void trans_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
     /* Free memory */
     cloner_destroy((cloner*) obj); 
@@ -3779,8 +3941,8 @@ int parseDir(const char * type)
 }
 
 
-static ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, const ERL_NIF_TERM
-argv[])
+static ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
 {
     ERL_NIF_TERM out;
     UEnumeration* en; 
@@ -3800,8 +3962,8 @@ argv[])
 
 
 /* Get a transliterator */
-static ERL_NIF_TERM get_transliterator(ErlNifEnv* env, int argc, const
-ERL_NIF_TERM argv[])
+static ERL_NIF_TERM get_transliterator(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM out;
     char id[LOCALE_LEN], dir[ATOM_LEN];
@@ -3875,8 +4037,8 @@ static ERL_NIF_TERM trans(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     return string_to_term(env, input);
 }
 
-static int i18n_trans_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM
-load_info)
+static int i18n_trans_load(ErlNifEnv *env, void ** /*priv_data*/, 
+    ERL_NIF_TERM /*load_info*/)
 {
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
         ERL_NIF_RT_TAKEOVER);
@@ -3900,7 +4062,8 @@ load_info)
 
 
 
-static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
 {
     if (argc != 0)
         return enif_make_badarg(env);
@@ -3993,8 +4156,8 @@ static int reload(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
     return load(env, priv, load_info);
 }
 
-static int upgrade(ErlNifEnv* env, void** priv, void** old_priv,
-          ERL_NIF_TERM load_info)
+static int upgrade(ErlNifEnv* /*env*/, void** /*priv*/, void** /*old_priv*/,
+          ERL_NIF_TERM /*load_info*/)
 {
     return 0;
 }
@@ -4028,6 +4191,8 @@ static ErlNifFunc nif_funcs[] =
     /* Locale dependible */
     {"get_iterator", 2, get_iterator},
     {"len",          2, len},
+    {"split",        2, split},
+    {"split_index",  2, split_index},
     {"to_lower",     2, to_lower},
     {"to_upper",     2, to_upper},
     {"to_title",     2, to_title},
