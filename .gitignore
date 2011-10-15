@@ -7,3 +7,4 @@ deps/*
 *.so
 *.dll
 .eunit
+doc/README.md
