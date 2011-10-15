@@ -107,7 +107,9 @@ sort(C, Ss) ->
     map_sort(F, Ss).
 
 
-%% @doc Xx list of strings to sort.
+%% @doc Sort a list.
+%%
+%%      Xx is a list of strings to sort.
 %%      F produces a sort keys.
 -spec map_sort(fun(), [any()]) -> [any()].
 map_sort(F, Xx) 
