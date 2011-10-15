@@ -1,8 +1,8 @@
 -module(i18n_expand).
 -export([parse_transform/2]).
 
-%% @private
-%% Used in compiling time.
+%%% @private
+%%% Used in compiling time.
 
 -import(ct_expand, [function/4]).
 

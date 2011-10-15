@@ -72,7 +72,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#concat-2">concat/2</a></td><td></td></tr><tr><td valign="top"><a href="#from-1">from/1</a></td><td></td></tr><tr><td valign="top"><a href="#from_utf8-1">from_utf8/1</a></td><td></td></tr><tr><td valign="top"><a href="#len-1">len/1</a></td><td>Count of code paints.</td></tr><tr><td valign="top"><a href="#len-2">len/2</a></td><td>Count the length og the string with help of an iterator.</td></tr><tr><td valign="top"><a href="#to_lower-1">to_lower/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_lower-2">to_lower/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfc-1">to_nfc/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfd-1">to_nfd/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfkc-1">to_nfkc/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfkd-1">to_nfkd/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_title-1">to_title/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_title-2">to_title/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_upper-1">to_upper/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_upper-2">to_upper/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_utf8-1">to_utf8/1</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#concat-2">concat/2</a></td><td></td></tr><tr><td valign="top"><a href="#from-1">from/1</a></td><td></td></tr><tr><td valign="top"><a href="#from_utf8-1">from_utf8/1</a></td><td></td></tr><tr><td valign="top"><a href="#len-1">len/1</a></td><td>Count of code paints.</td></tr><tr><td valign="top"><a href="#len-2">len/2</a></td><td>Count the length og the string with help of an iterator.</td></tr><tr><td valign="top"><a href="#split-2">split/2</a></td><td></td></tr><tr><td valign="top"><a href="#split_index-2">split_index/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_lower-1">to_lower/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_lower-2">to_lower/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfc-1">to_nfc/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfd-1">to_nfd/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfkc-1">to_nfkc/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_nfkd-1">to_nfkd/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_title-1">to_title/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_title-2">to_title/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_upper-1">to_upper/1</a></td><td></td></tr><tr><td valign="top"><a href="#to_upper-2">to_upper/2</a></td><td></td></tr><tr><td valign="top"><a href="#to_utf8-1">to_utf8/1</a></td><td></td></tr></table>
 
 
 
@@ -146,7 +146,27 @@ Count of code paints.<a name="len-2"></a>
 
 Count the length og the string with help of an iterator.
 
-<pre>  i18n_string:len(i18n_iterator:open('grapheme'), ?ISTR("Example"));</pre><a name="to_lower-1"></a>
+<pre>  i18n_string:len(i18n_iterator:open('grapheme'), ?ISTR("Example"));</pre><a name="split-2"></a>
+
+<h3>split/2</h3>
+
+
+
+
+
+`split(I, S) -> any()`
+
+<a name="split_index-2"></a>
+
+<h3>split_index/2</h3>
+
+
+
+
+
+`split_index(I, S) -> any()`
+
+<a name="to_lower-1"></a>
 
 <h3>to_lower/1</h3>
 

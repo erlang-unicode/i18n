@@ -16,7 +16,7 @@ Module ct_expand
 
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#format_error-1">format_error/1</a></td><td></td></tr><tr><td valign="top"><a href="#function-4">function/4</a></td><td></td></tr><tr><td valign="top"><a href="#parse_transform-2">parse_transform/2</a></td><td></td></tr><tr><td valign="top"><a href="#term-1">term/1</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#format_error-1">format_error/1</a></td><td></td></tr><tr><td valign="top"><a href="#function-4">function/4</a></td><td></td></tr><tr><td valign="top"><a href="#parse_transform-2">parse_transform/2</a></td><td></td></tr></table>
 
 
 
@@ -53,14 +53,4 @@ Module ct_expand
 
 
 `parse_transform(Forms, Options) -> any()`
-
-<a name="term-1"></a>
-
-<h3>term/1</h3>
-
-
-
-
-
-`term(X) -> any()`
 

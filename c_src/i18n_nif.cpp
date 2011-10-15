@@ -1365,9 +1365,6 @@ static ERL_NIF_TERM split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
         len = FROM_ULEN(last - pos);
 
-        if (len<0)
-            return enif_make_badarg(env);
-
         bin = (UChar*) enif_make_new_binary(env, len, &head);
         memcpy(bin, 
             (const char*) (text + pos), 
@@ -1412,10 +1409,7 @@ static ERL_NIF_TERM split_index(ErlNifEnv* env, int argc,
     tail = enif_make_list(env, 0);
     pos = (int) ubrk_last(iter);
 
-    while (1) {
-        if ((pos == UBRK_DONE) || (pos == 0))
-            break;
-
+    while ((pos != UBRK_DONE) && (pos != 0)) {
         head = enif_make_int(env, pos);
         tail = enif_make_list_cell(env, head, tail);
 

@@ -21,6 +21,8 @@
 %%% @author Michael Uvarov <freeakk@gmail.com>
 %%% =====================================================================
 
+%%% @private
+
 -module(i18n_app).
 
 -behaviour(application).

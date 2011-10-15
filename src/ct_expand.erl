@@ -39,6 +39,7 @@
 %%% f() -> [a, atoms, is, list, 'of', this].
 %%%
 
+%%% @private
 
 -export([function/4,
 	 format_error/1]).
