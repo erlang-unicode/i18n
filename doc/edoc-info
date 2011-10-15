@@ -1,5 +1,5 @@
 {application,i18n}.
 {packages,[]}.
-{modules,[ct_expand,i18n_calendar,i18n_collation,i18n_date,i18n_expand,
-          i18n_iterator,i18n_locale,i18n_message,i18n_regex,i18n_search,
-          i18n_string,i18n_transliteration]}.
+{modules,[i18n_calendar,i18n_collation,i18n_date,i18n_iterator,i18n_locale,
+          i18n_message,i18n_regex,i18n_search,i18n_string,
+          i18n_transliteration]}.
