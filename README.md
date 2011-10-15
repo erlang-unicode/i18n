@@ -139,13 +139,13 @@ i18n_search:match_all(SCSP, S).
 Modules
 -------
 
-* [i18n_calendar](doc/i18n_calendar.md)
-* [i18n_collation](doc/i18n_collation.md)
-* [i18n_date](doc/i18n_date.md)
-* [i18n_iterator](doc/i18n_iterator.md)
-* [i18n_locale](doc/i18n_locale.md)
-* [i18n_message](doc/i18n_message.md)
-* [i18n_regex](doc/i18n_regex.md)
-* [i18n_search](doc/i18n_search.md)
-* [i18n_string](doc/i18n_string.md)
-* [i18n_transliteration](doc/i18n_transliteration.md)
+* [i18n_calendar](https://github.com/freeakk/i18n/blob/master/doc/i18n_calendar.md)
+* [i18n_collation](https://github.com/freeakk/i18n/blob/master/doc/i18n_collation.md)
+* [i18n_date](https://github.com/freeakk/i18n/blob/master/doc/i18n_date.md)
+* [i18n_iterator](https://github.com/freeakk/i18n/blob/master/doc/i18n_iterator.md)
+* [i18n_locale](https://github.com/freeakk/i18n/blob/master/doc/i18n_locale.md)
+* [i18n_message](https://github.com/freeakk/i18n/blob/master/doc/i18n_message.md)
+* [i18n_regex](https://github.com/freeakk/i18n/blob/master/doc/i18n_regex.md)
+* [i18n_search](https://github.com/freeakk/i18n/blob/master/doc/i18n_search.md)
+* [i18n_string](https://github.com/freeakk/i18n/blob/master/doc/i18n_string.md)
+* [i18n_transliteration](https://github.com/freeakk/i18n/blob/master/doc/i18n_transliteration.md)
