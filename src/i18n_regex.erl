@@ -40,15 +40,20 @@
 open(S) ->
     ?TRY_RES(?IM:open_regex(S)).
 
--spec split(i18n_regex(), i18n_string()) -> i18n_string().
+%% @doc Split a string to a list.
+-spec split(i18n_regex(), i18n_string()) -> [i18n_string()].
 split(Re, S) ->
     ?TRY_LIST(?IM:regex_split(Re, S)).
 
--spec replace(i18n_regex(), i18n_string(), i18n_string()) -> [i18n_string()].
+%% @doc Replace first element of the text by the pattern.
+-spec replace(i18n_regex(), Pattern::i18n_string(), Source::i18n_string()) -> 
+        i18n_string().
 replace(Re, R, S) ->
     ?TRY_STR(?IM:regex_replace(Re, R, S)).
 
--spec replace_all(i18n_regex(), i18n_string(), i18n_string()) -> [i18n_string()].
+%% @doc Replace all finded elements.
+-spec replace_all(i18n_regex(), Pattern::i18n_string(), Source::i18n_string()) -> 
+        i18n_string().
 replace_all(Re, R, S) ->
     ?TRY_STR(?IM:regex_replace_all(Re, R, S)).
 
@@ -57,10 +62,12 @@ replace_all(Re, R, S) ->
 test(Re, S) ->
     ?TRY_ATOM(?IM:regex_test(Re, S)).
 
+%% @doc Return first match as a list.
 -spec match(i18n_regex(), i18n_string()) -> [i18n_string()].
 match(Re, S) ->
     ?TRY_LIST(?IM:regex_match(Re, S)).
 
+%% @doc Return all matches as a list of lists.
 -spec match_all(i18n_regex(), i18n_string()) -> [[i18n_string()]].
 match_all(Re, S) ->
     ?TRY_LIST(?IM:regex_match_all(Re, S)).

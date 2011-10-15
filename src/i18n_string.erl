@@ -48,6 +48,8 @@
 -export([len/1, len/2, split/2, split_index/2]).
 
 
+%% @doc Convert a term to a UTF-16 string.
+-spec from(binary() | list() | atom()) -> i18n_string().
 from(B) 
     when is_binary(B) ->
     from_utf8(B);
@@ -62,10 +64,12 @@ from(A)
     from_utf8(B).
 
 
+%% @doc Convert a UTF-8 string to a UTF-16 string.
 -spec from_utf8(unicode_binary()) -> i18n_string().
 from_utf8(B) ->
     ?TRY_STR(?IM:from_utf8(B)).
 
+%% @doc Convert a UTF-16 string to a UTF-8 string.
 -spec to_utf8(i18n_string()) -> unicode_binary().
 to_utf8(B) ->
     ?TRY_BIN(?IM:to_utf8(B)).
@@ -74,43 +78,32 @@ to_utf8(B) ->
 %% Normalization
 %%
 
+%% @doc Convert a string to Unicode Normalization Form NFC.
 -spec to_nfc(i18n_string()) -> unicode_binary().
 to_nfc(B) ->
     ?TRY_BIN(?IM:to_nfc(B)).
 
+%% @doc Convert a string to Unicode Normalization Form NFD.
 -spec to_nfd(i18n_string()) -> unicode_binary().
 to_nfd(B) ->
     ?TRY_BIN(?IM:to_nfd(B)).
 
+%% @doc Convert a string to Unicode Normalization Form NFKD.
 -spec to_nfkc(i18n_string()) -> unicode_binary().
 to_nfkc(B) ->
     ?TRY_BIN(?IM:to_nfkc(B)).
 
+%% @doc Convert a string to Unicode Normalization Form NFKD.
 -spec to_nfkd(i18n_string()) -> unicode_binary().
 to_nfkd(B) ->
     ?TRY_BIN(?IM:to_nfkd(B)).
 
 
-
+%% @doc Concatinate two strings.
 -spec concat(i18n_string(), i18n_string()) -> i18n_string().
 concat(B1, B2) -> 
     <<B1/binary, B2/binary>>.
 
-
--spec to_lower(i18n_string()) -> i18n_string().
-to_lower(S) ->
-    L = i18n_locale:get_locale(),
-    to_lower(L, S).
-
--spec to_upper(i18n_string()) -> i18n_string().
-to_upper(S) ->
-    L = i18n_locale:get_locale(),
-    to_upper(L, S).
-
--spec to_title(i18n_string()) -> i18n_string().
-to_title(S) ->
-    L = i18n_locale:get_locale(),
-    to_title(L, S).
 
 %% @doc Count of code paints.
 -spec len(i18n_string()) -> non_neg_integer().
@@ -126,9 +119,13 @@ len(S) when is_integer(S) ->
 len(I, S) -> 
     ?TRY_INT(?IM:len(I, S)).
 
+%% @doc This functions breaks a string on parts.
+-spec split(i18n_iterator(), i18n_string()) -> [i18n_string()].
 split(I, S) ->
     ?TRY_LIST(?IM:split(I, S)).
 
+%% @doc Return the list of indexes of beginnings of parts of a string.
+-spec split_index(i18n_iterator(), i18n_string()) -> [non_neg_integer()].
 split_index(I, S) ->
     ?TRY_LIST(?IM:split_index(I, S)).
 
@@ -137,13 +134,32 @@ split_index(I, S) ->
 %% Case
 %%
 
+%% @doc Convert a string to lower case.
+-spec to_lower(i18n_string()) -> i18n_string().
+to_lower(S) ->
+    L = i18n_locale:get_locale(),
+    to_lower(L, S).
+
+%% @doc Convert a string to lower case.
 -spec to_lower(i18n_locale_id(), i18n_string()) -> i18n_string().
 to_lower(L, S) when is_atom(L) ->
     ?TRY_STR(?IM:to_lower(L, S)).
 
+%% @doc Convert a string to upper case.
+-spec to_upper(i18n_string()) -> i18n_string().
+to_upper(S) ->
+    L = i18n_locale:get_locale(),
+    to_upper(L, S).
+
+%% @doc Convert a string to upper case.
 -spec to_upper(i18n_locale_id(), i18n_string()) -> i18n_string().
 to_upper(L, S) when is_atom(L) ->
     ?TRY_STR(?IM:to_upper(L, S)).
+
+-spec to_title(i18n_string()) -> i18n_string().
+to_title(S) ->
+    L = i18n_locale:get_locale(),
+    to_title(L, S).
 
 -spec to_title(i18n_locale_id() | i18n_iterator(), i18n_string()) -> i18n_string().
 to_title(L, S) ->
