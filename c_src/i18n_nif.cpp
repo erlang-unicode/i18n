@@ -138,11 +138,11 @@ static ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code) {
         enif_make_atom(env, code));
 }
 
-static ERL_NIF_TERM parse_error(ErlNifEnv* env, const char* code, 
+static ERL_NIF_TERM parse_error(ErlNifEnv* env, UErrorCode status, 
         UParseError* e) {
     return build_error(env, 
         enif_make_tuple3(env,
-            enif_make_atom(env, code),
+            enif_make_atom(env, u_errorName(status)),
             enif_make_tuple2(env,
                 enif_make_atom(env, "line"),
                 enif_make_int(env, (int) e->line)),
@@ -1999,6 +1999,7 @@ static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc,
     ErlNifBinary in;
     char locale[LOCALE_LEN];
     UErrorCode status = U_ZERO_ERROR;
+    UParseError pe;
     UMessageFormat* msg;
     cloner* res;
 
@@ -2015,9 +2016,11 @@ static ERL_NIF_TERM open_format(ErlNifEnv* env, int argc,
     msg = umsg_open((UChar *) in.data, 
             TO_ULEN(in.size),
             (char *) locale, 
-            NULL, 
+            &pe, 
             &status);
-    CHECK(env, status);
+    if (U_FAILURE(status)) {
+        return parse_error(env, status, &pe);
+    }
 
 
     res = (cloner*) enif_alloc_resource(message_type, sizeof(cloner));
@@ -2349,7 +2352,7 @@ static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc,
             pe, 
             status);
     if (U_FAILURE(status)) {
-        return parse_error(env, "regex_syntax_error", &pe);
+        return parse_error(env, status, &pe);
     }
 
     res = (cloner*) enif_alloc_resource(regex_type, sizeof(cloner));

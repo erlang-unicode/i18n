@@ -103,6 +103,26 @@ as long as you need it for processing and then encode strings back to `UTF-8`.
 Processing of long strings and first resource allocations can stop other erlang processes, which are scheduled in the same thread. Dirty schedulers can fix this
 problem, so we wait R15, when they are planned.
 
+Functions can throw `badarg' or exceptions:
+
+```erlang
+{i18n_error, Code :: atom(), tuple()}
+```
+
+For example:
+
+```erlang
+(i18n@delta)1> i18n_regex:open(i18n:from("[[]")).
+** exception throw: {i18n_error,{'U_REGEX_MISSING_CLOSE_BRACKET',{line,1},
+                                                                 {offset,3}}}
+
+
+(i18n@delta)2>  i18n_message:open(i18n:from("{rr")).
+** exception throw: {i18n_error,{'U_UNMATCHED_BRACES',{line,0},{offset,3}}}
+     in function  i18n_message:open/2
+```
+
+
 
 Examples
 ========
