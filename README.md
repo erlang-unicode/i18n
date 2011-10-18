@@ -9,7 +9,7 @@ __License__: [Apache License, Version 2.0](http://www.apache.org/licenses/LICENS
 __Author__: Uvarov Michael ([`freeakk@gmail.com`](mailto:freeakk@gmail.com))
 
 
-Module for working with strings.
+Module for working with strings and dates.
 A string is a binary UTF-16 string.
 
 

@@ -128,38 +128,42 @@ ERL_NIF_TERM ATOM_SEARCH;
 
 
 
+/* Define an interface for errors. */
+static ERL_NIF_TERM build_error(ErlNifEnv* env, ERL_NIF_TERM body) {
+    return enif_make_tuple2(env, enif_make_atom(env, "i18n_error"), body);
+}
+
 static ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code) {
-    return enif_make_tuple2(env,
-        enif_make_atom(env, "error"),
+    return build_error(env,
         enif_make_atom(env, code));
 }
 
 static ERL_NIF_TERM parse_error(ErlNifEnv* env, const char* code, 
         UParseError* e) {
-    return enif_make_tuple4(env,
-        enif_make_atom(env, "error"), 
-        enif_make_atom(env, code),
-        enif_make_tuple2(env,
-            enif_make_atom(env, "line"),
-            enif_make_int(env, (int) e->line)),
-        enif_make_tuple2(env,
-            enif_make_atom(env, "offset"),
-            enif_make_int(env, (int) e->offset))
-        );
+    return build_error(env, 
+        enif_make_tuple3(env,
+            enif_make_atom(env, code),
+            enif_make_tuple2(env,
+                enif_make_atom(env, "line"),
+                enif_make_int(env, (int) e->line)),
+            enif_make_tuple2(env,
+                enif_make_atom(env, "offset"),
+                enif_make_int(env, (int) e->offset))
+            ));
 }
 
 static ERL_NIF_TERM list_element_error(ErlNifEnv* env, 
     const ERL_NIF_TERM list, int32_t num) {
-    return enif_make_tuple4(env,
-        enif_make_atom(env, "error"),
-        enif_make_atom(env, "bad_element"),
-        enif_make_tuple2(env,
-            enif_make_atom(env, "list"),
-            list),
-        enif_make_tuple2(env,
-            enif_make_atom(env, "index"),
-            enif_make_int(env, (int) num))
-        );
+    return build_error(env, 
+        enif_make_tuple3(env,
+            enif_make_atom(env, "bad_element"),
+            enif_make_tuple2(env,
+                enif_make_atom(env, "list"),
+                list),
+            enif_make_tuple2(env,
+                enif_make_atom(env, "index"),
+                enif_make_int(env, (int) num))
+            ));
 }
 
 
@@ -185,7 +189,7 @@ static int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/,
     ATOM_ENDIAN = enif_make_atom(env, "little");
 #endif
 
-    res_error_term = make_error(env, "i18n_resource_error");
+    res_error_term = make_error(env, "resource_error");
 
     return 0;
 }
@@ -197,534 +201,8 @@ static int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/,
  * http://icu-project.org/apiref/icu4c/utypes_8h.html#a3343c1c8a8377277046774691c98d78c
  */
 static ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status) {
-    switch (status) {
-#if U_ILLEGAL_ARGUMENT_ERROR
-        case U_ILLEGAL_ARGUMENT_ERROR:
-            return make_error(env, "i18n_illegal_argument_error");
-#endif
-#if U_MISSING_RESOURCE_ERROR
-        case U_MISSING_RESOURCE_ERROR:
-            return make_error(env, "i18n_resourse_error");
-#endif
-#if U_INVALID_FORMAT_ERROR
-        case U_INVALID_FORMAT_ERROR:
-            return make_error(env, "i18n_format_error");
-#endif
-#if U_FILE_ACCESS_ERROR
-        case U_FILE_ACCESS_ERROR:
-            return make_error(env, "i18n_access_error");
-#endif
-#if U_INTERNAL_PROGRAM_ERROR
-        case U_INTERNAL_PROGRAM_ERROR:
-            return make_error(env, "i18n_internal_program_error");
-#endif
-#if U_MESSAGE_PARSE_ERROR
-        case U_MESSAGE_PARSE_ERROR:
-            return make_error(env, "i18n_parse_error");
-#endif
-#if U_MEMORY_ALLOCATION_ERROR
-        case U_MEMORY_ALLOCATION_ERROR:
-            return make_error(env, "i18n_memory_allocation_error");
-#endif
-#if U_INDEX_OUTOFBOUNDS_ERROR
-        case U_INDEX_OUTOFBOUNDS_ERROR:
-            return make_error(env, "i18n_index_out_of_bounds_error");
-#endif
-#if U_INVALID_CHAR_FOUND
-        case U_INVALID_CHAR_FOUND:
-            return make_error(env, "i18n_invalid_char_found");
-#endif
-#if U_TRUNCATED_CHAR_FOUND
-        case U_TRUNCATED_CHAR_FOUND:
-            return make_error(env, "i18n_truncated_char_found");
-#endif
-#if U_ILLEGAL_CHAR_FOUND
-        case U_ILLEGAL_CHAR_FOUND:
-            return make_error(env, "i18n_illegal_char_found");
-#endif
-#if U_INVALID_TABLE_FORMAT
-        case U_INVALID_TABLE_FORMAT:
-            return make_error(env, "i18n_invalid_table_format");
-#endif
-#if U_INVALID_TABLE_FILE
-        case U_INVALID_TABLE_FILE:
-            return make_error(env, "i18n_invalid_table_file");
-#endif
-#if U_BUFFER_OVERFLOW_ERROR
-        case U_BUFFER_OVERFLOW_ERROR:
-            return make_error(env, "i18n_buffer_overflow_error");
-#endif
-#if U_UNSUPPORTED_ERROR
-        case U_UNSUPPORTED_ERROR:
-            return make_error(env, "i18n_unsupported_error");
-#endif
-#if U_RESOURCE_TYPE_MISMATCH
-        case U_RESOURCE_TYPE_MISMATCH:
-            return make_error(env, "i18n_resource_type_mismatch");
-#endif
-#if U_ILLEGAL_ESCAPE_SEQUENCE
-        case U_ILLEGAL_ESCAPE_SEQUENCE:
-            return make_error(env, "i18n_escape_sequence");
-#endif
-#if U_UNSUPPORTED_ESCAPE_SEQUENCE
-        case U_UNSUPPORTED_ESCAPE_SEQUENCE:
-            return make_error(env, "i18n_unsupported_escape_sequence");
-#endif
-#if U_NO_SPACE_AVAILABLE
-        case U_NO_SPACE_AVAILABLE:
-            return make_error(env, "i18n_no_space_available");
-#endif
-#if U_CE_NOT_FOUND_ERROR
-        case U_CE_NOT_FOUND_ERROR:
-            return make_error(env, "i18n_ce_not_found_error");
-#endif
-#if U_PRIMARY_TOO_LONG_ERROR
-        case U_PRIMARY_TOO_LONG_ERROR:
-            return make_error(env, "i18n_primary_too_long_error");
-#endif
-#if U_STATE_TOO_OLD_ERROR
-        case U_STATE_TOO_OLD_ERROR:
-            return make_error(env, "i18n_state_too_old_error");
-#endif
-#if U_TOO_MANY_ALIASES_ERROR
-        case U_TOO_MANY_ALIASES_ERROR:
-            return make_error(env, "i18n_too_many_aliases_error");
-#endif
-#if U_ENUM_OUT_OF_SYNC_ERROR
-        case U_ENUM_OUT_OF_SYNC_ERROR:
-            return make_error(env, "i18n_enum_out_of_sync_error");
-#endif
-#if U_INVARIANT_CONVERSION_ERROR
-        case U_INVARIANT_CONVERSION_ERROR:
-            return make_error(env, "i18n_invariant_conversion_error");
-#endif
-#if U_INVALID_STATE_ERROR
-        case U_INVALID_STATE_ERROR:
-            return make_error(env, "i18n_invalid_state_error");
-#endif
-#if U_COLLATOR_VERSION_MISMATCH
-        case U_COLLATOR_VERSION_MISMATCH:
-            return make_error(env, "i18n_collator_version_mismatch");
-#endif
-#if U_USELESS_COLLATOR_ERROR
-        case U_USELESS_COLLATOR_ERROR:
-            return make_error(env, "i18n_useless_collator_error");
-#endif
-#if U_NO_WRITE_PERMISSION
-        case U_NO_WRITE_PERMISSION:
-            return make_error(env, "i18n_no_write_permission");
-#endif
-#if U_STANDARD_ERROR_LIMIT
-        case U_STANDARD_ERROR_LIMIT:
-            return make_error(env, "i18n_standard_error_limit");
-#endif
-#if U_BAD_VARIABLE_DEFINITION
-        case U_BAD_VARIABLE_DEFINITION:
-            return make_error(env, "i18n_bad_variable_definition");
-#endif
-#if U_PARSE_ERROR_START
-        case U_PARSE_ERROR_START:
-            return make_error(env, "i18n_parse_error_start");
-#endif
-#if U_MALFORMED_RULE
-        case U_MALFORMED_RULE:
-            return make_error(env, "i18n_malformed_rule");
-#endif
-#if U_MALFORMED_SET
-        case U_MALFORMED_SET:
-            return make_error(env, "i18n_malformed_set");
-#endif
-#if U_MALFORMED_SYMBOL_REFERENCE
-        case U_MALFORMED_SYMBOL_REFERENCE:
-            return make_error(env, "i18n_malformed_symbol_reference");
-#endif
-#if U_MALFORMED_UNICODE_ESCAPE
-        case U_MALFORMED_UNICODE_ESCAPE:
-            return make_error(env, "i18n_malformed_unicode_escape");
-#endif
-#if U_MALFORMED_VARIABLE_DEFINITION
-        case U_MALFORMED_VARIABLE_DEFINITION:
-            return make_error(env, "i18n_malformed_variable_definition");
-#endif
-#if U_MALFORMED_VARIABLE_REFERENCE
-        case U_MALFORMED_VARIABLE_REFERENCE:
-            return make_error(env, "i18n_malformed_variable_reference");
-#endif
-#if U_MISMATCHED_SEGMENT_DELIMITERS
-        case U_MISMATCHED_SEGMENT_DELIMITERS:
-            return make_error(env, "i18n_mismatched_segment_delimiters");
-#endif
-#if U_MISPLACED_ANCHOR_START
-        case U_MISPLACED_ANCHOR_START:
-            return make_error(env, "i18n_misplaced_anchor_start");
-#endif
-#if U_MISPLACED_CURSOR_OFFSET
-        case U_MISPLACED_CURSOR_OFFSET:
-            return make_error(env, "i18n_misplaced_cursor_offset");
-#endif
-#if U_MISPLACED_QUANTIFIER
-        case U_MISPLACED_QUANTIFIER:
-            return make_error(env, "i18n_misplaced_quantifier");
-#endif
-#if U_MISSING_OPERATOR
-        case U_MISSING_OPERATOR:
-            return make_error(env, "i18n_missing_operator");
-#endif
-#if U_MISSING_SEGMENT_CLOSE
-        case U_MISSING_SEGMENT_CLOSE:
-            return make_error(env, "i18n_missing_segment_close");
-#endif
-#if U_MULTIPLE_ANTE_CONTEXTS
-        case U_MULTIPLE_ANTE_CONTEXTS:
-            return make_error(env, "i18n_multiple_ante_contexts");
-#endif
-#if U_MULTIPLE_CURSORS
-        case U_MULTIPLE_CURSORS:
-            return make_error(env, "i18n_multiple_cursors");
-#endif
-#if U_MULTIPLE_POST_CONTEXTS
-        case U_MULTIPLE_POST_CONTEXTS:
-            return make_error(env, "i18n_multiple_post_contexts");
-#endif
-#if U_TRAILING_BACKSLASH
-        case U_TRAILING_BACKSLASH:
-            return make_error(env, "i18n_trailing_backslash");
-#endif
-#if U_UNDEFINED_SEGMENT_REFERENCE
-        case U_UNDEFINED_SEGMENT_REFERENCE:
-            return make_error(env, "i18n_undefined_segment_reference");
-#endif
-#if U_UNDEFINED_VARIABLE
-        case U_UNDEFINED_VARIABLE:
-            return make_error(env, "i18n_undefined_variable");
-#endif
-#if U_UNQUOTED_SPECIAL
-        case U_UNQUOTED_SPECIAL:
-            return make_error(env, "i18n_unquoted_special");
-#endif
-#if U_UNTERMINATED_QUOTE
-        case U_UNTERMINATED_QUOTE:
-            return make_error(env, "i18n_unterminated_quote");
-#endif
-#if U_RULE_MASK_ERROR
-        case U_RULE_MASK_ERROR:
-            return make_error(env, "i18n_rule_mask_error");
-#endif
-#if U_MISPLACED_COMPOUND_FILTER
-        case U_MISPLACED_COMPOUND_FILTER:
-            return make_error(env, "i18n_misplaced_compound_filter");
-#endif
-#if U_MULTIPLE_COMPOUND_FILTERS
-        case U_MULTIPLE_COMPOUND_FILTERS:
-            return make_error(env, "i18n_multiple_compound_filters");
-#endif
-#if U_INVALID_RBT_SYNTAX
-        case U_INVALID_RBT_SYNTAX:
-            return make_error(env, "i18n_invalid_rbt_syntax");
-#endif
-#if U_INVALID_PROPERTY_PATTERN
-        case U_INVALID_PROPERTY_PATTERN:
-            return make_error(env, "i18n_invalid_property_pattern");
-#endif
-#if U_MALFORMED_PRAGMA
-        case U_MALFORMED_PRAGMA:
-            return enif_make_atom(env, "i19n_malformed_pragma");
-#endif
-#if U_UNCLOSED_SEGMENT
-        case U_UNCLOSED_SEGMENT:
-            return make_error(env, "i18n_unclosed_segment");
-#endif
-#if U_ILLEGAL_CHAR_IN_SEGMENT
-        case U_ILLEGAL_CHAR_IN_SEGMENT:
-            return make_error(env, "i18n_illegal_char_in_segment");
-#endif
-#if U_VARIABLE_RANGE_EXHAUSTED
-        case U_VARIABLE_RANGE_EXHAUSTED:
-            return make_error(env, "i18n_variable_range_exhausted");
-#endif
-#if U_VARIABLE_RANGE_OVERLAP
-        case U_VARIABLE_RANGE_OVERLAP:
-            return make_error(env, "i18n_variable_range_overlap");
-#endif
-#if U_ILLEGAL_CHARACTER
-        case U_ILLEGAL_CHARACTER:
-            return make_error(env, "i18n_illegal_character");
-#endif
-#if U_INTERNAL_TRANSLITERATOR_ERROR
-        case U_INTERNAL_TRANSLITERATOR_ERROR:
-            return make_error(env, "i18n_internal_transliterator_error");
-#endif
-#if U_INVALID_ID
-        case U_INVALID_ID:
-            return make_error(env, "i18n_invalid_id");
-#endif
-#if U_INVALID_FUNCTION
-        case U_INVALID_FUNCTION:
-            return make_error(env, "i18n_invalid_function");
-#endif
-#if U_PARSE_ERROR_LIMIT
-        case U_PARSE_ERROR_LIMIT:
-            return make_error(env, "i18n_parse_error_limit");
-#endif
-#if U_UNEXPECTED_TOKEN
-        case U_UNEXPECTED_TOKEN:
-            return make_error(env, "i18n_unexpected_token");
-#endif
-#if U_FMT_PARSE_ERROR_START
-        case U_FMT_PARSE_ERROR_START:
-            return make_error(env, "i18n_fmt_parse_error_start");
-#endif
-#if U_MULTIPLE_DECIMAL_SEPARATORS
-        case U_MULTIPLE_DECIMAL_SEPARATORS:
-            return make_error(env, "i18n_multiple_decimal_separators");
-#endif
-#if U_MULTIPLE_DECIMAL_SEPERATORS
-        case U_MULTIPLE_DECIMAL_SEPERATORS:
-            return make_error(env, "i18n_multiple_decimal_seperators");
-#endif
-#if U_MULTIPLE_EXPONENTIAL_SYMBOLS
-        case U_MULTIPLE_EXPONENTIAL_SYMBOLS:
-            return make_error(env, "i18n_multiple_exponential_symbols");
-#endif
-#if U_MALFORMED_EXPONENTIAL_PATTERN
-        case U_MALFORMED_EXPONENTIAL_PATTERN:
-            return make_error(env, "i18n_malformed_exponential_pattern");
-#endif
-#if U_MULTIPLE_PERCENT_SYMBOLS
-        case U_MULTIPLE_PERCENT_SYMBOLS:
-            return make_error(env, "i18n_multiple_percent_symbols");
-#endif
-#if U_MULTIPLE_PERMILL_SYMBOLS
-        case U_MULTIPLE_PERMILL_SYMBOLS:
-            return make_error(env, "i18n_multiple_permill_symbols");
-#endif
-#if U_MULTIPLE_PAD_SPECIFIERS
-        case U_MULTIPLE_PAD_SPECIFIERS:
-            return make_error(env, "i18n_multiple_pad_specifiers");
-#endif
-#if U_PATTERN_SYNTAX_ERROR
-        case U_PATTERN_SYNTAX_ERROR:
-            return make_error(env, "i18n_pattern_syntax_error");
-#endif
-#if U_ILLEGAL_PAD_POSITION
-        case U_ILLEGAL_PAD_POSITION:
-            return make_error(env, "i18n_illegal_pad_position");
-#endif
-#if U_UNMATCHED_BRACES
-        case U_UNMATCHED_BRACES:
-            return make_error(env, "i18n_unmatched_braces");
-#endif
-#if U_UNSUPPORTED_PROPERTY
-        case U_UNSUPPORTED_PROPERTY:
-            return make_error(env, "i18n_unsupported_property");
-#endif
-#if U_UNSUPPORTED_ATTRIBUTE
-        case U_UNSUPPORTED_ATTRIBUTE:
-            return make_error(env, "i18n_unsupported_attribute");
-#endif
-#if U_ARGUMENT_TYPE_MISMATCH
-        case U_ARGUMENT_TYPE_MISMATCH:
-            return make_error(env, "i18n_argument_type_mismatch");
-#endif
-#if U_DUPLICATE_KEYWORD
-        case U_DUPLICATE_KEYWORD:
-            return make_error(env, "i18n_duplicate_keyword");
-#endif
-#if U_UNDEFINED_KEYWORD
-        case U_UNDEFINED_KEYWORD:
-            return make_error(env, "i18n_undefined_keyword");
-#endif
-#if U_DEFAULT_KEYWORD_MISSING
-        case U_DEFAULT_KEYWORD_MISSING:
-            return make_error(env, "i18n_default_keyword_missing");
-#endif
-#if U_DECIMAL_NUMBER_SYNTAX_ERROR
-        case U_DECIMAL_NUMBER_SYNTAX_ERROR:
-            return make_error(env, "i18n_decimal_number_syntax_error");
-#endif
-#if U_FORMAT_INEXACT_ERROR
-        case U_FORMAT_INEXACT_ERROR:
-            return make_error(env, "i18n_format_inexact_error");
-#endif
-#if U_FMT_PARSE_ERROR_LIMIT
-        case U_FMT_PARSE_ERROR_LIMIT:
-            return make_error(env, "i18n_fmt_parse_error_limit");
-#endif
-#if U_BRK_INTERNAL_ERROR
-        case U_BRK_INTERNAL_ERROR:
-            return make_error(env, "i18n_brk_internal_error");
-#endif
-#if U_BRK_ERROR_START
-        case U_BRK_ERROR_START:
-            return make_error(env, "i18n_brk_error_start");
-#endif
-#if U_BRK_HEX_DIGITS_EXPECTED
-        case U_BRK_HEX_DIGITS_EXPECTED:
-            return make_error(env, "i18n_brk_hex_digits_expected");
-#endif
-#if U_BRK_SEMICOLON_EXPECTED
-        case U_BRK_SEMICOLON_EXPECTED:
-            return make_error(env, "i18n_brk_semicolon_expected");
-#endif
-#if U_BRK_RULE_SYNTAX
-        case U_BRK_RULE_SYNTAX:
-            return make_error(env, "i18n_brk_rule_syntax");
-#endif
-#if U_BRK_UNCLOSED_SET
-        case U_BRK_UNCLOSED_SET:
-            return make_error(env, "i18n_brk_unclosed_set");
-#endif
-#if U_BRK_ASSIGN_ERROR
-        case U_BRK_ASSIGN_ERROR:
-            return make_error(env, "i18n_brk_assign_error");
-#endif
-#if U_BRK_VARIABLE_REDFINITION
-        case U_BRK_VARIABLE_REDFINITION:
-            return make_error(env, "i18n_brk_variable_redfinition");
-#endif
-#if U_BRK_MISMATCHED_PAREN
-        case U_BRK_MISMATCHED_PAREN:
-            return make_error(env, "i18n_brk_mismatched_paren");
-#endif
-#if U_BRK_NEW_LINE_IN_QUOTED_STRING
-        case U_BRK_NEW_LINE_IN_QUOTED_STRING:
-            return make_error(env, "i18n_brk_new_line_in_quoted_string");
-#endif
-#if U_BRK_UNDEFINED_VARIABLE
-        case U_BRK_UNDEFINED_VARIABLE:
-            return make_error(env, "i18n_brk_undefined_variable");
-#endif
-#if U_BRK_INIT_ERROR
-        case U_BRK_INIT_ERROR:
-            return make_error(env, "i18n_brk_init_error");
-#endif
-#if U_BRK_RULE_EMPTY_SET
-        case U_BRK_RULE_EMPTY_SET:
-            return make_error(env, "i18n_brk_rule_empty_set");
-#endif
-#if U_BRK_UNRECOGNIZED_OPTION
-        case U_BRK_UNRECOGNIZED_OPTION:
-            return make_error(env, "i18n_brk_unrecognized_option");
-#endif
-#if U_BRK_MALFORMED_RULE_TAG
-        case U_BRK_MALFORMED_RULE_TAG:
-            return make_error(env, "i18n_brk_malformed_rule_tag");
-#endif
-#if U_BRK_ERROR_LIMIT
-        case U_BRK_ERROR_LIMIT:
-            return make_error(env, "i18n_brk_error_limit");
-#endif
-#if U_REGEX_INTERNAL_ERROR
-        case U_REGEX_INTERNAL_ERROR:
-            return make_error(env, "i18n_regex_internal_error");
-#endif
-#if U_REGEX_ERROR_START
-        case U_REGEX_ERROR_START:
-            return make_error(env, "i18n_regex_error_start");
-#endif
-#if U_REGEX_RULE_SYNTAX
-        case U_REGEX_RULE_SYNTAX:
-            return make_error(env, "i18n_regex_rule_syntax");
-#endif
-#if U_REGEX_INVALID_STATE
-        case U_REGEX_INVALID_STATE:
-            return make_error(env, "i18n_regex_invalid_state");
-#endif
-#if U_REGEX_BAD_ESCAPE_SEQUENCE
-        case U_REGEX_BAD_ESCAPE_SEQUENCE:
-            return make_error(env, "i18n_regex_bad_escape_sequence");
-#endif
-#if U_REGEX_PROPERTY_SYNTAX
-        case U_REGEX_PROPERTY_SYNTAX:
-            return make_error(env, "i18n_regex_property_syntax");
-#endif
-#if U_REGEX_UNIMPLEMENTED
-        case U_REGEX_UNIMPLEMENTED:
-            return make_error(env, "i18n_regex_unimplemented");
-#endif
-#if U_REGEX_MISMATCHED_PAREN
-        case U_REGEX_MISMATCHED_PAREN:
-            return make_error(env, "i18n_regex_mismatched_paren");
-#endif
-#if U_REGEX_NUMBER_TOO_BIG
-        case U_REGEX_NUMBER_TOO_BIG:
-            return make_error(env, "i18n_regex_number_too_big");
-#endif
-#if U_REGEX_BAD_INTERVAL
-        case U_REGEX_BAD_INTERVAL:
-            return make_error(env, "i18n_regex_bad_interval");
-#endif
-#if U_REGEX_MAX_LT_MIN
-        case U_REGEX_MAX_LT_MIN:
-            return make_error(env, "i18n_regex_max_lt_min");
-#endif
-#if U_REGEX_INVALID_BACK_REF
-        case U_REGEX_INVALID_BACK_REF:
-            return make_error(env, "i18n_regex_invalid_back_ref");
-#endif
-#if U_REGEX_INVALID_FLAG
-        case U_REGEX_INVALID_FLAG:
-            return make_error(env, "i18n_regex_invalid_flag");
-#endif
-#if U_REGEX_LOOK_BEHIND_LIMIT
-        case U_REGEX_LOOK_BEHIND_LIMIT:
-            return make_error(env, "i18n_regex_look_behind_limit");
-#endif
-#if U_REGEX_SET_CONTAINS_STRING
-        case U_REGEX_SET_CONTAINS_STRING:
-            return make_error(env, "i18n_regex_set_contains_string");
-#endif
-#if U_REGEX_OCTAL_TOO_BIG
-        case U_REGEX_OCTAL_TOO_BIG:
-            return make_error(env, "i18n_regex_octal_too_big");
-#endif
-#if U_REGEX_MISSING_CLOSE_BRACKET
-        case U_REGEX_MISSING_CLOSE_BRACKET:
-            return make_error(env, "i18n_regex_missing_close_bracket");
-#endif
-#if U_REGEX_INVALID_RANGE
-        case U_REGEX_INVALID_RANGE:
-            return make_error(env, "i18n_regex_invalid_range");
-#endif
-#if U_REGEX_STACK_OVERFLOW
-        case U_REGEX_STACK_OVERFLOW:
-            return make_error(env, "i18n_regex_stack_overflow");
-#endif
-#if U_REGEX_TIME_OUT
-        case U_REGEX_TIME_OUT:
-            return make_error(env, "i18n_regex_time_out");
-#endif
-#if U_REGEX_STOPPED_BY_CALLER
-        case U_REGEX_STOPPED_BY_CALLER:
-            return make_error(env, "i18n_regex_stopped_by_caller");
-#endif
-#if U_REGEX_ERROR_LIMIT
-        case U_REGEX_ERROR_LIMIT:
-            return make_error(env, "i18n_regex_error_limit");
-#endif
-#if U_PLUGIN_ERROR_START
-        case U_PLUGIN_ERROR_START:
-            return make_error(env, "i18n_plugin_error_start");
-#endif
-#if U_PLUGIN_TOO_HIGH
-        case U_PLUGIN_TOO_HIGH:
-            return make_error(env, "i18n_plugin_too_high");
-#endif
-#if U_PLUGIN_DIDNT_SET_LEVEL
-        case U_PLUGIN_DIDNT_SET_LEVEL:
-            return make_error(env, "i18n_plugin_didnt_set_level");
-#endif
-#if U_PLUGIN_ERROR_LIMIT
-        case U_PLUGIN_ERROR_LIMIT:
-            return make_error(env, "i18n_plugin_error_limit");
-#endif
-        default:
-            return make_error(env, "i18n_unknown");
-    }
+    return make_error(env, u_errorName(status));
 }
-
-
-
 
 
 inline ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en) {
@@ -747,7 +225,7 @@ inline ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en) {
             return tail;
 
         if (len > 255) 
-            return make_error(env, "i18n_enum_elem_too_long");
+            return make_error(env, "too_long_enum_element");
 
         head = enif_make_atom(env, buf);
         tail = enif_make_list_cell(env, head, tail);
@@ -2871,7 +2349,7 @@ static ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc,
             pe, 
             status);
     if (U_FAILURE(status)) {
-        return parse_error(env, "i18n_regex_error", &pe);
+        return parse_error(env, "regex_syntax_error", &pe);
     }
 
     res = (cloner*) enif_alloc_resource(regex_type, sizeof(cloner));
