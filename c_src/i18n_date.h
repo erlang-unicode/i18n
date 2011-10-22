@@ -27,29 +27,20 @@
 #include "i18n_nif.h"
 
 
-/**
- * i18n_string
- */
-#if I18N_STRING
+#if I18N_DATE
+    NIF_EXPORT(date_now)
+    NIF_EXPORT(open_calendar)
+    NIF_EXPORT(date_set)
+    NIF_EXPORT(date_add)
+    NIF_EXPORT(date_roll)
+    NIF_EXPORT(date_clear)
+    NIF_EXPORT(date_is_weekend)
+    NIF_EXPORT(date_get3)
+    NIF_EXPORT(date_get6)
+    NIF_EXPORT(date_get_field)
+    NIF_EXPORT(date_get_fields)
+    NIF_EXPORT(calendar_locales)
 
-NIF_EXPORT(from_utf8)
-NIF_EXPORT(to_utf8)
-NIF_EXPORT(endian)
-NIF_EXPORT(to_nfc)
-NIF_EXPORT(to_nfd)
-NIF_EXPORT(to_nfkc)
-NIF_EXPORT(to_nfkd)
-NIF_EXPORT(to_upper)
-NIF_EXPORT(to_lower)
-NIF_EXPORT(to_title)
-NIF_EXPORT(len)
-NIF_EXPORT(split)
-NIF_EXPORT(split)
-NIF_EXPORT(split_index)
-NIF_EXPORT(get_iterator)
-NIF_EXPORT(iterator_locales)
+int i18n_date_load(ErlNifEnv *, void **, ERL_NIF_TERM);
 
-
-int i18n_string_load(ErlNifEnv *, void **, 
-    ERL_NIF_TERM);
 #endif

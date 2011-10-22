@@ -27,29 +27,16 @@
 #include "i18n_nif.h"
 
 
-/**
- * i18n_string
- */
-#if I18N_STRING
-
-NIF_EXPORT(from_utf8)
-NIF_EXPORT(to_utf8)
-NIF_EXPORT(endian)
-NIF_EXPORT(to_nfc)
-NIF_EXPORT(to_nfd)
-NIF_EXPORT(to_nfkc)
-NIF_EXPORT(to_nfkd)
-NIF_EXPORT(to_upper)
-NIF_EXPORT(to_lower)
-NIF_EXPORT(to_title)
-NIF_EXPORT(len)
-NIF_EXPORT(split)
-NIF_EXPORT(split)
-NIF_EXPORT(split_index)
-NIF_EXPORT(get_iterator)
-NIF_EXPORT(iterator_locales)
+#if I18N_REGEX
+NIF_EXPORT(open_regex)
+NIF_EXPORT(regex_replace)
+NIF_EXPORT(regex_replace_all)
+NIF_EXPORT(regex_split)
+NIF_EXPORT(regex_test)
+NIF_EXPORT(regex_match)
+NIF_EXPORT(regex_match_all)
 
 
-int i18n_string_load(ErlNifEnv *, void **, 
-    ERL_NIF_TERM);
+int i18n_regex_load(ErlNifEnv *, void **, ERL_NIF_TERM);
+
 #endif

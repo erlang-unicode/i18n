@@ -28,6 +28,7 @@
 #define I18N_NIF        1
 
 
+/* This parameter is for debug only */
 #define I18N_INFO       0
 
 #define I18N_STRING     1

@@ -27,29 +27,9 @@
 #include "i18n_nif.h"
 
 
-/**
- * i18n_string
- */
-#if I18N_STRING
-
-NIF_EXPORT(from_utf8)
-NIF_EXPORT(to_utf8)
-NIF_EXPORT(endian)
-NIF_EXPORT(to_nfc)
-NIF_EXPORT(to_nfd)
-NIF_EXPORT(to_nfkc)
-NIF_EXPORT(to_nfkd)
-NIF_EXPORT(to_upper)
-NIF_EXPORT(to_lower)
-NIF_EXPORT(to_title)
-NIF_EXPORT(len)
-NIF_EXPORT(split)
-NIF_EXPORT(split)
-NIF_EXPORT(split_index)
-NIF_EXPORT(get_iterator)
-NIF_EXPORT(iterator_locales)
-
-
-int i18n_string_load(ErlNifEnv *, void **, 
-    ERL_NIF_TERM);
+#if I18N_LOCALE
+NIF_EXPORT(locale_name)
+NIF_EXPORT(locale_parent)
+NIF_EXPORT(locale_language_tag)
+NIF_EXPORT(locale_base_name)
 #endif
