@@ -156,6 +156,17 @@ i18n_search:match_all(SCSP, S).
 ```
 
 
+Extract words
+-------------
+
+```erlang
+1> lists:map(fun i18n:to/1,
+    i18n_string:split(i18n_iterator:open(word_only), 
+        i18n:from("This string contains 5 words."))).
+[<<"This">>,<<"string">>,<<"contains">>,<<"5">>,<<"words">>]
+```
+
+
 Modules
 -------
 

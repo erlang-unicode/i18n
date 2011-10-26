@@ -89,13 +89,46 @@ static int iterator_open(UBreakIterator * obj, cloner* c)
 /**
  * Helpers
  */
+#define UBRK_MAX (UBRK_SENTENCE + 1)
+#define UBRK_WORD_ONLY (UBRK_WORD + UBRK_MAX)
+#define TO_UBRK(X) ((UBreakIteratorType) ((X) % UBRK_MAX))
+
+typedef struct {
+    cloner res;
+    int (*skip_elem)(int32_t);
+} cloner_break;
+
+int elem_word_none(int32_t breakType)
+{
+    return ((breakType == UBRK_WORD_NONE) ? 1 : 0);
+}
+
 static int parseIteratorType(const char * type) 
 {
     return (!strcmp((char*) "grapheme", type)) ? UBRK_CHARACTER :
            (!strcmp((char*) "word", type))     ? UBRK_WORD      :
            (!strcmp((char*) "line", type))     ? UBRK_LINE      :
            (!strcmp((char*) "sentence", type)) ? UBRK_SENTENCE  :
+           (!strcmp((char*) "word_only", type))     
+                    ? UBRK_WORD_ONLY :
             -1;
+}
+
+/**
+ * Is current element in this iterator valid?
+ * If result is false, the element will be skipped.
+ * Used for word_only. 
+ */
+inline int is_valid_elem(cloner* res, UBreakIterator* iter)
+{
+    cloner_break* res_brk = (cloner_break*) res;
+    int32_t type;
+
+    if (res_brk->skip_elem == NULL)
+        return 1;
+
+    type = ubrk_getRuleStatus(iter);
+    return !((res_brk->skip_elem)(type));
 }
 
 
@@ -485,7 +518,7 @@ ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     ErlNifBinary in;
     cloner* ptr; 
     UBreakIterator* iter; 
-    int count = -1, pos;
+    int count = 0, pos;
     UErrorCode status = U_ZERO_ERROR;
 
     if (argc != 2)
@@ -510,20 +543,26 @@ ERL_NIF_TERM len(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         &status);
     CHECK(env, status);
 
-    for (pos = ubrk_first(iter);
-         pos != UBRK_DONE;
-         pos = ubrk_next(iter)) {
-        count++;
-    }
+    pos = ubrk_first(iter);
+    if (pos != UBRK_DONE)
+        while (1) {
+            pos = ubrk_next(iter);
+            if (pos == UBRK_DONE)
+                break;
+
+            if (is_valid_elem(ptr, iter))
+                count++;
+        }
 
     return enif_make_int(env, count);
 }
+
 ERL_NIF_TERM split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     cloner* ptr; 
     UBreakIterator* iter; 
-    int len = -1, last, pos;
+    int len = -1, last, pos, is_valid;
     UErrorCode status = U_ZERO_ERROR;
     ERL_NIF_TERM head, tail;
     UChar* bin; 
@@ -544,6 +583,8 @@ ERL_NIF_TERM split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (iter == NULL) {
         return enif_make_badarg(env);
     }
+
+
     text = (UChar*) in.data;
 
     ubrk_setText(iter, text, TO_ULEN(in.size), &status);
@@ -554,6 +595,7 @@ ERL_NIF_TERM split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     while (pos) {
         last = pos;
+        is_valid = is_valid_elem(ptr, iter);
 
         /* get the next elem. */
         pos = (int) ubrk_previous(iter);
@@ -561,13 +603,16 @@ ERL_NIF_TERM split(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         if (pos == UBRK_DONE)
             pos = 0;
 
-        len = FROM_ULEN(last - pos);
+        if (is_valid) /* Is the old element valid? */
+        {
+            len = FROM_ULEN(last - pos);
 
-        bin = (UChar*) enif_make_new_binary(env, len, &head);
-        memcpy(bin, 
-            (const char*) (text + pos), 
-            len);
-        tail = enif_make_list_cell(env, head, tail);
+            bin = (UChar*) enif_make_new_binary(env, len, &head);
+            memcpy(bin, 
+                (const char*) (text + pos), 
+                len);
+            tail = enif_make_list_cell(env, head, tail);
+        }
     };
 
     return tail;
@@ -608,8 +653,11 @@ ERL_NIF_TERM split_index(ErlNifEnv* env, int argc,
     pos = (int) ubrk_last(iter);
 
     while ((pos != UBRK_DONE) && (pos != 0)) {
-        head = enif_make_int(env, pos);
-        tail = enif_make_list_cell(env, head, tail);
+        if (is_valid_elem(ptr, iter))
+        {
+            head = enif_make_int(env, pos);
+            tail = enif_make_list_cell(env, head, tail);
+        }
 
         /* get the next elem. */
         pos = (int) ubrk_previous(iter);
@@ -629,6 +677,7 @@ ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc,
     UBreakIteratorType iterType;
     UBreakIterator* iter; 
     cloner* res;
+    cloner_break* res_brk;
 
     if (argc != 2)
         return enif_make_badarg(env);
@@ -641,13 +690,13 @@ ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc,
     /* atom_len is free. */
 
     /* If -1 then throw error (unknown type). */
-      type = parseIteratorType((char*) atom);
+    type = parseIteratorType((char*) atom);
+
     /* atom is free. */
     if (type == -1) {
         return enif_make_badarg(env);
     }
-    iterType = (UBreakIteratorType) type;
-    /* currb is free. */
+    iterType = TO_UBRK(type);
 
     /* Get locale id: reuse atom and atom_len variables. */
     atom_len = enif_get_atom(env, argv[0], atom, LOCALE_LEN, ERL_NIF_LATIN1);
@@ -667,17 +716,28 @@ ERL_NIF_TERM get_iterator(ErlNifEnv* env, int argc,
         return enif_make_badarg(env);
     } 
 
-    res = (cloner*) enif_alloc_resource(iterator_type, sizeof(cloner));
+    res = (cloner*) enif_alloc_resource(iterator_type, 
+                sizeof(cloner_break));
+    res_brk = (cloner_break*) res;
+
     if (iterator_open(iter, res)) {
         enif_release_resource(res);
         return enif_make_badarg(env);
     }
+
+    switch (type) {
+        case UBRK_WORD_ONLY:
+            res_brk->skip_elem = &elem_word_none;
+            break;
+        default:
+            res_brk->skip_elem = NULL;
+    }
+
     out = enif_make_resource(env, res);
     enif_release_resource(res);
     /* resource now only owned by "Erlang" */
     return out;
 }
-
 
 
 ERL_NIF_TERM iterator_locales(ErlNifEnv* env, int argc, const

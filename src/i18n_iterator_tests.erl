@@ -34,7 +34,7 @@
 
 simple_open_test(L) ->
     i18n_iterator:open('grapheme'),
-    i18n_iterator:open('word'),
+    i18n_iterator:open('word_only'),
     i18n_iterator:open('line'),
     i18n_iterator:open('sentence'),
     ok.
@@ -51,8 +51,40 @@ advanced_open_test() ->
 open_iterator_with_locale(L) ->
     i18n_iterator:open(L, 'grapheme'),
     i18n_iterator:open(L, 'word'),
+    i18n_iterator:open(L, 'word_only'),
     i18n_iterator:open(L, 'line'),
     i18n_iterator:open(L, 'sentence'),
     ok.
+
+len_test_() ->
+    F = fun(X) ->
+        I = i18n_iterator:open(X),
+        i18n_string:len(I, ?ISTR("Test my string.")) end,
+
+    [?_assertEqual(F('grapheme'), 15)
+    ,?_assertEqual(F('word'), 6)
+    ,?_assertEqual(F('word_only'), 3)
+    ,?_assertEqual(F('line'), 3)
+    ,?_assertEqual(F('sentence'), 1)].
+    
+split_test_() ->
+    F = fun(X) ->
+        I = i18n_iterator:open(X),
+        lists:map(fun i18n:to/1, 
+            i18n_string:split(I, 
+                ?ISTR("Test my string."))) end,
+
+    [?_assertEqual(F('grapheme'), 
+        [<<"T">>,<<"e">>,<<"s">>,<<"t">>,<<" ">>,<<"m">>,<<"y">>,
+         <<" ">>,<<"s">>,<<"t">>,<<"r">>,<<"i">>,<<"n">>,<<"g">>,
+         <<".">>])
+    ,?_assertEqual(F('word'), 
+        [<<"Test">>,<<" ">>,<<"my">>,<<" ">>,<<"string">>,<<".">>])
+    ,?_assertEqual(F('word_only'), 
+        [<<"Test">>,<<"my">>,<<"string">>])
+    ,?_assertEqual(F('line'), 
+        [<<"Test ">>,<<"my ">>,<<"string.">>])
+    ,?_assertEqual(F('sentence'), 
+        [<<"Test my string.">>])].
 
 -endif.

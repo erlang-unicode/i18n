@@ -35,7 +35,8 @@
 -type i18n_iterator() :: resource().   
 
 
--type i18n_string_iterator_type() :: 'grapheme' | 'word' | 'sentence' | 'line'.
+-type i18n_string_iterator_type() :: 'grapheme' | 'word' | 'sentence' | 'line'
+            | 'word_only'.
 
 -spec open(i18n_string_iterator_type()) -> i18n_iterator().
 open(T) -> 
