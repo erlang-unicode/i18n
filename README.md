@@ -19,6 +19,39 @@ Erlang NIF [erl_nif API](http://www.erlang.org/doc/man/erl_nif.html).
 
 
 
+
+Installation
+============
+
+__i18n__ is based on [ICU](http://icu-project.org/), which you need to have
+installed:
+
+`port install icu` with MacPorts on OSX;
+`apt-get install libicu38 libicu-dev` on Ubuntu.
+
+Also you need to have gcc for compilation :).
+
+You can configure the compilation process with enviroment variables.
+This application uses rebar for building, it also uses 
+[this patch](https://github.com/basho/rebar/pull/129) for checking env vars.
+The list of variables can be found here: `setenv.mk` or `setenv.sh`. 
+If you use old version of rebar, you need to include one of this files in your
+Makefile.
+
+
+
+Try it
+======
+
+Run in the terminal:
+
+```
+./start-dev.sh
+```
+
+
+
+
 Motivation
 ==========
 

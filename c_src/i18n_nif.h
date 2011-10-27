@@ -46,6 +46,14 @@
 #define LOCALE_LEN      255
 #define ATOM_LEN        16
 
+
+#if I18N_INFO
+#ifdef __GNUC__
+#warning "HARD DEBUG IS ENABLED!"
+#endif
+#endif
+
+
 #include "erl_nif.h"
 
 extern "C" {
