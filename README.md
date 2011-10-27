@@ -27,9 +27,15 @@ __i18n__ is based on [ICU](http://icu-project.org/), which you need to have
 installed:
 
 `port install icu` with MacPorts on OSX;
+
 `apt-get install libicu38 libicu-dev` on Ubuntu.
 
 Also you need to have gcc for compilation :).
+
+
+
+Enviroment Variables
+====================
 
 You can configure the compilation process with enviroment variables.
 This application uses rebar for building, it also uses 
