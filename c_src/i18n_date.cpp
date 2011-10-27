@@ -88,6 +88,7 @@ inline static UCalendarType parserCalendarType(const char * type)
            (!strcmp((char*) "traditional", type)) ? UCAL_TRADITIONAL :
             UCAL_DEFAULT;
 }
+
 ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
 {
@@ -173,6 +174,7 @@ typedef void (*date_fun_ptr)(
     int32_t,
     UErrorCode *
     );
+
 inline static ERL_NIF_TERM do_offset(ErlNifEnv* env, 
     UCalendar* cal,
     date_fun_ptr fun,
@@ -594,4 +596,5 @@ int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/,
     if (calendar_type == NULL) return 6;
     return 0;
 }
+
 #endif

@@ -38,7 +38,6 @@
 -type resource() :: <<>>.   
 -type i18n_calendar() :: resource().   
 
--type i18n_locale_id() :: atom(). 
 -type i18n_date_field() :: 
       era          
     | year         
@@ -60,7 +59,7 @@
     
 -type double() :: number().
 -type i18n_date() :: double().
--type fields() :: [{i18n_date_field(), integer()}].
+-type fields() :: [{i18n_date_field(), double()}].
 
 %% @doc Return the timestamp 
 %%		(count of milliseconds from starting of the 1970 year).
@@ -132,7 +131,7 @@ roll(Cal, Date, Fields) ->
 
 
 
-%% @doc Set the value of the field or fields.
+%% @doc Set the value of the field or fields for now().
 
 -spec set(fields()) -> i18n_date().
 
@@ -143,6 +142,7 @@ set(Fields) ->
 
 
 
+%% @doc Set the value of the field or fields for date.
 -spec set(i18n_calendar() | i18n_date(), fields()) -> i18n_date().
 
 set(Date, Fields)
@@ -155,6 +155,8 @@ set(Cal, Fields)
 	set(Cal, Date, Fields).
 
 
+%% @doc Set the value of the field or fields for date.
+%%      Take a calendar as argument.
 -spec set(i18n_calendar(), i18n_date(), fields()) -> i18n_date().
 
 set(Cal, Date, Fields) 
@@ -212,31 +214,48 @@ get(Cal, Date, Field)
 
 
 
-%% @doc Constructors
+%% @doc Create date from fields' values (YMD).
+-spec new(integer(), integer(), integer()) -> i18n_date().
+
 new(Year, Month, Day) ->
     Cal = i18n_calendar:open(),
     ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day)).
 
+
+%% @doc Create date from fields' values (YMD).
+-spec new(i18n_calendar(), integer(), integer(), integer()) -> i18n_date().
+
 new(Cal, Year, Month, Day) ->
     ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day)).
 
-new(Cal, Year, Month, Day, Hour, Minute, Second) ->
-    ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day, Hour, Minute, Second)).
+
+%% @doc Create date from fields' values (YMDHMS).
+-spec new(integer(), integer(), integer(), integer(), 
+            integer(), integer()) -> i18n_date().
 
 new(Year, Month, Day, Hour, Minute, Second) ->
     Cal = i18n_calendar:open(),
     ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day, Hour, Minute, Second)).
 
 
+%% @doc Create date from fields' values (YMDHMS).
+-spec new(i18n_calendar(), integer(), integer(), integer(), integer(), 
+            integer(), integer()) -> i18n_date().
+
+new(Cal, Year, Month, Day, Hour, Minute, Second) ->
+    ?TRY_NUM(?IM:date_get(Cal, Year, Month, Day, Hour, Minute, Second)).
+
+
 -spec clear(i18n_date(), [i18n_date_field()]) -> i18n_date().
 
-%% @doc Clear the field value.
+%% @doc Clear the field value (values).
 clear(Date, Fields)
     when is_number(Date) ->
     Cal = i18n_calendar:open(),
 	clear(Cal, Date, Fields).
 
 
+%% @doc Clear the field value (values).
 -spec clear(i18n_calendar(), i18n_date(), [i18n_date_field()]) -> i18n_date().
 
 clear(Cal, Date, Fields) ->

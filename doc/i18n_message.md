@@ -1,9 +1,6 @@
-Module i18n_message
-===================
 
 
-<h1>Module i18n_message</h1>
-
+#Module i18n_message#
 * [Data Types](#types)
 * [Function Index](#index)
 * [Function Details](#functions)
@@ -16,16 +13,14 @@ Module i18n_message
 Copyright (c) 2010-2011 Michael Uvarov
 
 __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+<a name="types"></a>
+
+##Data Types##
 
 
-<h2><a name="types">Data Types</a></h2>
 
 
-
-
-
-<h3 class="typedecl"><a name="type-i18n_locale_id">i18n_locale_id()</a></h3>
-
+###<a name="type-i18n_locale_id">i18n_locale_id()</a>##
 
 
 
@@ -33,8 +28,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<h3 class="typedecl"><a name="type-i18n_msg_arg">i18n_msg_arg()</a></h3>
-
+###<a name="type-i18n_msg_arg">i18n_msg_arg()</a>##
 
 
 
@@ -42,26 +36,23 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<h3 class="typedecl"><a name="type-i18n_msg_format">i18n_msg_format()</a></h3>
+###<a name="type-i18n_msg_format">i18n_msg_format()</a>##
 
 
 
-
-<pre>i18n_msg_format() = <a href="#type-resource">resource()</a></pre>
-
-
-
-<h3 class="typedecl"><a name="type-i18n_msg_param">i18n_msg_param()</a></h3>
+<pre>i18n_msg_format() = [resource()](#type-resource)</pre>
 
 
 
-
-<pre>i18n_msg_param() = {atom(), <a href="#type-i18n_msg_arg">i18n_msg_arg()</a>}</pre>
-
+###<a name="type-i18n_msg_param">i18n_msg_param()</a>##
 
 
-<h3 class="typedecl"><a name="type-i18n_string">i18n_string()</a></h3>
 
+<pre>i18n_msg_param() = {atom(), [i18n_msg_arg()](#type-i18n_msg_arg)}</pre>
+
+
+
+###<a name="type-i18n_string">i18n_string()</a>##
 
 
 
@@ -69,71 +60,64 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<h3 class="typedecl"><a name="type-resource">resource()</a></h3>
+###<a name="type-resource">resource()</a>##
 
 
 
+<pre>resource() = &lt;&lt;&gt;&gt;</pre>
+<a name="index"></a>
 
-<pre>resource() = <<>></pre>
-
-
-<h2><a name="index">Function Index</a></h2>
-
+##Function Index##
 
 
 <table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#format-2">format/2</a></td><td></td></tr><tr><td valign="top"><a href="#format-3">format/3</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td>Parse a message to a resourse.</td></tr></table>
 
 
+<a name="functions"></a>
 
-
-<h2><a name="functions">Function Details</a></h2>
-
+##Function Details##
 
 <a name="format-2"></a>
 
-<h3>format/2</h3>
+###format/2##
 
 
 
 
-
-<pre>format(M::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, P::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>]) -> <a href="#type-i18n_string">i18n_string()</a></pre>
+<pre>format(M::[i18n_msg_format()](#type-i18n_msg_format), P::[[i18n_msg_param()](#type-i18n_msg_param)]) -&gt; [i18n_string()](#type-i18n_string)</pre>
 <br></br>
 
 
 <a name="format-3"></a>
 
-<h3>format/3</h3>
+###format/3##
 
 
 
 
-
-<pre>format(M::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, P::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>], A::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
+<pre>format(M::[i18n_msg_format()](#type-i18n_msg_format), P::[[i18n_msg_param()](#type-i18n_msg_param)], A::[i18n_string()](#type-i18n_string)) -&gt; [i18n_string()](#type-i18n_string)</pre>
 <br></br>
 
 
 <a name="open-1"></a>
 
-<h3>open/1</h3>
+###open/1##
 
 
 
 
-
-<pre>open(S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_msg_format">i18n_msg_format()</a></pre>
+<pre>open(S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_msg_format()](#type-i18n_msg_format)</pre>
 <br></br>
 
 
 <a name="open-2"></a>
 
-<h3>open/2</h3>
+###open/2##
 
 
 
 
-
-<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_msg_format">i18n_msg_format()</a></pre>
+<pre>open(L::[i18n_locale_id()](#type-i18n_locale_id), S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_msg_format()](#type-i18n_msg_format)</pre>
 <br></br>
 
 

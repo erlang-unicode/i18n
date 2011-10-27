@@ -72,6 +72,7 @@ static void message_close(char* obj)
     if (obj != NULL)
         umsg_close((UMessageFormat*) obj);
 }
+
 static char* message_clone(char* obj) 
 {
     UErrorCode status = U_ZERO_ERROR;

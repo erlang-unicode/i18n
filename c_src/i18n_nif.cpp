@@ -32,6 +32,7 @@
 #include "i18n_regex.h"
 #include "i18n_locale.h"
 #include "i18n_date.h"
+#include "i18n_trans.h"
 
 
 ERL_NIF_TERM res_error_term;
@@ -54,11 +55,18 @@ ERL_NIF_TERM build_error(ErlNifEnv* env, ERL_NIF_TERM body) {
     return enif_make_tuple2(env, enif_make_atom(env, "i18n_error"), body);
 }
 
+/**
+ * Pass an error to Erlang code.
+ * Error as a string will be converted to an atom.
+ */
 ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code) {
     return build_error(env,
         enif_make_atom(env, code));
 }
 
+/**
+ * Convert an UErrorCode to an atom. 
+ */
 ERL_NIF_TERM parse_error(ErlNifEnv* env, UErrorCode status, 
         UParseError* e) {
     return build_error(env, 
@@ -73,6 +81,10 @@ ERL_NIF_TERM parse_error(ErlNifEnv* env, UErrorCode status,
             ));
 }
 
+/**
+ * An element it the list has a bad type.
+ * Used by i18n_message. 
+ */
 ERL_NIF_TERM list_element_error(ErlNifEnv* env, 
     const ERL_NIF_TERM list, int32_t num) {
     return build_error(env, 
@@ -88,6 +100,9 @@ ERL_NIF_TERM list_element_error(ErlNifEnv* env,
 }
 
 
+/**
+ * Alloc atoms
+ */
 int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/, 
     ERL_NIF_TERM /*load_info*/)
 {
@@ -119,7 +134,11 @@ int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/,
 
 
 
-
+/**
+ * Convert an ICU enum to a list of atoms.
+ * Used by some C++ code, when we need to extract the list of locales.
+ * Used by i18n_trans.
+ */
 ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en) {
     
     ERL_NIF_TERM head, tail;
@@ -152,7 +171,9 @@ ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en) {
 
 
 
-
+/**
+ * Generate a list if locales.
+ */
 ERL_NIF_TERM generate_available(ErlNifEnv* env, avail_fun fun, 
     int32_t i)
 {
@@ -169,301 +190,6 @@ ERL_NIF_TERM generate_available(ErlNifEnv* env, avail_fun fun,
 
     return tail;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if I18N_TRANS
-static ErlNifResourceType* trans_type = 0;
-
-
-
-/* Called from erl_nif. */
-void trans_dtor(ErlNifEnv* /*env*/, void* obj) 
-{
-    /* Free memory */
-    cloner_destroy((cloner*) obj); 
-}
-
-
-
-/* Called from cloner for each thread. */
-void trans_close(char* obj) 
-{ 
-    if (obj != NULL)
-        utrans_close((UTransliterator*) obj);
-}
-char* trans_clone(char* obj) 
-{
-    UErrorCode status = U_ZERO_ERROR;
-
-    obj = (char*) utrans_clone(
-        (const UTransliterator *) obj,
-        &status 
-    );
-    if(U_FAILURE(status)) { 
-        return NULL;
-    } 
-    return obj;
-}
-
-int trans_open(UTransliterator * obj, cloner* c)
-{
-    return cloner_open((char *) obj, c, &trans_clone, &trans_close);
-} 
-
-
-int parseDir(const char * type) 
-{
-    return (!strcmp((char*) "reverse", type)) ? UTRANS_REVERSE :
-        UTRANS_FORWARD;
-}
-
-
-static ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, 
-    const ERL_NIF_TERM /*argv*/[])
-{
-    ERL_NIF_TERM out;
-    UEnumeration* en; 
-    UErrorCode status = U_ZERO_ERROR;
-
-    if (argc != 0)
-        return enif_make_badarg(env);
-
-    en = utrans_openIDs(&status);   
-    CHECK(env, status);
-
-    out = enum_to_term(env, en);
-    uenum_close(en);
-
-    return out;
-}
-
-
-/* Get a transliterator */
-static ERL_NIF_TERM get_transliterator(ErlNifEnv* env, int argc, 
-    const ERL_NIF_TERM argv[])
-{
-    ERL_NIF_TERM out;
-    char id[LOCALE_LEN], dir[ATOM_LEN];
-    UErrorCode status = U_ZERO_ERROR;
-    UTransliterator* obj;
-    cloner* res;
-    int parsed_dir;
-
-
-    if (argc != 2)
-        return enif_make_badarg(env);
-
-    if (!(enif_get_atom(env, argv[0], (char*) id, LOCALE_LEN, ERL_NIF_LATIN1)
-       && enif_get_atom(env, argv[1], (char*) dir, ATOM_LEN, ERL_NIF_LATIN1)
-        )) {
-        return enif_make_badarg(env);
-    }
-
-    parsed_dir = parseDir(dir);
-    if ((parsed_dir == -1)) 
-        return enif_make_badarg(env);
-
-    obj = utrans_open((char *) id, (UTransDirection) parsed_dir, 
-            NULL, 0, NULL, &status);
-    CHECK(env, status);
-
-
-
-    res = (cloner*) enif_alloc_resource(trans_type, sizeof(cloner));
-
-    if (trans_open(obj, res)) {
-        enif_release_resource(res);
-        return enif_make_badarg(env);
-    }
-    CHECK_DEST(env, status,
-        enif_release_resource(res);
-    );
-
-
-    out = enif_make_resource(env, res);
-    enif_release_resource(res);
-    /* resource now only owned by "Erlang" */
-    return out;
-}
-
-
-static ERL_NIF_TERM trans(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
-{
-    ErlNifBinary in;
-    cloner* ptr; 
-    const Transliterator* t; 
-    UnicodeString input;
-
-    if (argc != 2)
-        return enif_make_badarg(env);
-
-    /* Second argument must be a binary */
-    if(!(enif_inspect_binary(env, argv[1], &in)
-      && enif_get_resource(env, argv[0], trans_type, (void**) &ptr))) {
-        return enif_make_badarg(env);
-    }
-
-    t = (Transliterator*) cloner_get(ptr);
-    CHECK_RES(env, t);
-            
-
-    input = copy_binary_to_string(in);
-
-    t->transliterate(input);
-    
-    return string_to_term(env, input);
-}
-
-static int i18n_trans_load(ErlNifEnv *env, void ** /*priv_data*/, 
-    ERL_NIF_TERM /*load_info*/)
-{
-    ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
-        ERL_NIF_RT_TAKEOVER);
-
-    trans_type = enif_open_resource_type(env, NULL, "trans_type",
-        trans_dtor, flags, NULL); 
-    if (collator_type == NULL) return 20;
-    
-    return 0;
-}
-#endif
 
 
 
@@ -570,11 +296,13 @@ static int reload(ErlNifEnv* env, void** priv, ERL_NIF_TERM load_info)
     return load(env, priv, load_info);
 }
 
+
 static int upgrade(ErlNifEnv* /*env*/, void** /*priv*/, void** /*old_priv*/,
           ERL_NIF_TERM /*load_info*/)
 {
     return 0;
 }
+
 
 static void unload(ErlNifEnv* env, void* priv)
 {
@@ -592,6 +320,9 @@ static void unload(ErlNifEnv* env, void* priv)
 
 
 
+/**
+ * Define the private API.
+ */
 
 static ErlNifFunc nif_funcs[] =
 {
@@ -705,6 +436,8 @@ static ErlNifFunc nif_funcs[] =
 #endif
 
 };
+
+/* Pass information to VM */
 ERL_NIF_INIT(i18n_nif,nif_funcs,load,reload,upgrade,unload)
 
 

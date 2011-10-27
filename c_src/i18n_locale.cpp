@@ -57,6 +57,7 @@ ERL_NIF_TERM locale_name(ErlNifEnv* env, int argc,
 
     return enif_make_atom(env, value);
 }
+
 ERL_NIF_TERM locale_parent(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
 {
@@ -84,6 +85,7 @@ ERL_NIF_TERM locale_parent(ErlNifEnv* env, int argc,
 
     return enif_make_atom(env, value);
 }
+
 ERL_NIF_TERM locale_language_tag(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
 {
@@ -112,6 +114,7 @@ ERL_NIF_TERM locale_language_tag(ErlNifEnv* env, int argc,
 
     return enif_make_atom(env, value);
 }
+
 ERL_NIF_TERM locale_base_name(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
 {

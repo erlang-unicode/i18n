@@ -261,6 +261,7 @@ inline static void do_sort_key(
         enif_realloc_binary(&out, len);
     }
 }
+
 ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
 {
@@ -292,6 +293,7 @@ ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc,
     );
     return enif_make_binary(env, &out);
 }
+
 ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, in2;
@@ -373,5 +375,6 @@ void i18n_collation_unload(ErlNifEnv* /*env*/, void* /*priv*/)
     ucol_close(base_col);
     return;
 }
+
 #endif
 

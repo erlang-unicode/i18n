@@ -1,9 +1,6 @@
-Module i18n_transliteration
-===========================
 
 
-<h1>Module i18n_transliteration</h1>
-
+#Module i18n_transliteration#
 * [Description](#description)
 * [Data Types](#types)
 * [Function Index](#index)
@@ -17,16 +14,14 @@ Text Trasliteration.
 Copyright (c) 2010-2011 Michael Uvarov
 
 __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+<a name="types"></a>
+
+##Data Types##
 
 
-<h2><a name="types">Data Types</a></h2>
 
 
-
-
-
-<h3 class="typedecl"><a name="type-i18n_direction">i18n_direction()</a></h3>
-
+###<a name="type-i18n_direction">i18n_direction()</a>##
 
 
 
@@ -34,8 +29,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<h3 class="typedecl"><a name="type-i18n_string">i18n_string()</a></h3>
-
+###<a name="type-i18n_string">i18n_string()</a>##
 
 
 
@@ -43,17 +37,15 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<h3 class="typedecl"><a name="type-i18n_transliterator">i18n_transliterator()</a></h3>
+###<a name="type-i18n_transliterator">i18n_transliterator()</a>##
 
 
 
-
-<pre>i18n_transliterator() = <a href="#type-resource">resource()</a></pre>
-
+<pre>i18n_transliterator() = [resource()](#type-resource)</pre>
 
 
-<h3 class="typedecl"><a name="type-i18n_transliterator_id">i18n_transliterator_id()</a></h3>
 
+###<a name="type-i18n_transliterator_id">i18n_transliterator_id()</a>##
 
 
 
@@ -61,71 +53,64 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<h3 class="typedecl"><a name="type-resource">resource()</a></h3>
+###<a name="type-resource">resource()</a>##
 
 
 
+<pre>resource() = &lt;&lt;&gt;&gt;</pre>
+<a name="index"></a>
 
-<pre>resource() = <<>></pre>
-
-
-<h2><a name="index">Function Index</a></h2>
-
+##Function Index##
 
 
 <table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#available_ids-0">available_ids/0</a></td><td></td></tr><tr><td valign="top"><a href="#do-2">do/2</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td></td></tr></table>
 
 
+<a name="functions"></a>
 
-
-<h2><a name="functions">Function Details</a></h2>
-
+##Function Details##
 
 <a name="available_ids-0"></a>
 
-<h3>available_ids/0</h3>
+###available_ids/0##
 
 
 
 
-
-<pre>available_ids() -> [<a href="#type-i18n_transliterator_id">i18n_transliterator_id()</a>]</pre>
+<pre>available_ids() -&gt; [[i18n_transliterator_id()](#type-i18n_transliterator_id)]</pre>
 <br></br>
 
 
 <a name="do-2"></a>
 
-<h3>do/2</h3>
+###do/2##
 
 
 
 
-
-<pre>do(T::<a href="#type-i18n_transliterator">i18n_transliterator()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
+<pre>do(T::[i18n_transliterator()](#type-i18n_transliterator), S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_string()](#type-i18n_string)</pre>
 <br></br>
 
 
 <a name="open-1"></a>
 
-<h3>open/1</h3>
+###open/1##
 
 
 
 
-
-<pre>open(Id::<a href="#type-i18n_transliterator_id">i18n_transliterator_id()</a>) -> <a href="#type-i18n_transliterator">i18n_transliterator()</a></pre>
+<pre>open(Id::[i18n_transliterator_id()](#type-i18n_transliterator_id)) -&gt; [i18n_transliterator()](#type-i18n_transliterator)</pre>
 <br></br>
 
 
 <a name="open-2"></a>
 
-<h3>open/2</h3>
+###open/2##
 
 
 
 
-
-<pre>open(Id::<a href="#type-i18n_transliterator_id">i18n_transliterator_id()</a>, Dir::<a href="#type-i18n_direction">i18n_direction()</a>) -> <a href="#type-i18n_transliterator">i18n_transliterator()</a></pre>
+<pre>open(Id::[i18n_transliterator_id()](#type-i18n_transliterator_id), Dir::[i18n_direction()](#type-i18n_direction)) -&gt; [i18n_transliterator()](#type-i18n_transliterator)</pre>
 <br></br>
 
 
