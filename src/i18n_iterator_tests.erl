@@ -67,6 +67,8 @@ len_test_() ->
     ,?_assertEqual(F('line'), 3)
     ,?_assertEqual(F('sentence'), 1)].
     
+
+
 split_test_() ->
     F = fun(X) ->
         I = i18n_iterator:open(X),
@@ -86,5 +88,17 @@ split_test_() ->
         [<<"Test ">>,<<"my ">>,<<"string.">>])
     ,?_assertEqual(F('sentence'), 
         [<<"Test my string.">>])].
+    
+split_index_test_() ->
+    F = fun(X) ->
+        I = i18n_iterator:open(X),
+        i18n_string:split_index(I, 
+            ?ISTR("Test my string.")) end,
+
+    [?_assertEqual(F('grapheme'), lists:seq(1,15))
+    ,?_assertEqual(F('word'), [4,5,7,8,14,15])
+    ,?_assertEqual(F('word_only'), [4,7,14])
+    ,?_assertEqual(F('line'), [5,8,15])
+    ,?_assertEqual(F('sentence'), [15])].
 
 -endif.
