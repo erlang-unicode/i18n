@@ -120,12 +120,16 @@ When you get a string from the user or from the database, it is often in
 transform it back to `UTF-8`. You can do it in two ways:
 
 ```erlang
+% Bad example
+
 Len   = i18n_string:len(?ISTR(Utf8Str)),
 Up    = ?ITS(i18n_string:to_upper(?ISTR(Up))),
 UpLen = i18n_string:len(?ISTR(Up)).
 ```
 
 ```erlang
+% Good example
+
 Str   = ?ISTR(Utf8Str),
 Len   = i18n_string:len(Str),
 Up    = i18n_string:to_upper(Str),
@@ -139,8 +143,9 @@ to another very often, this example will be longer.
 Main advice is to convert string when you get it, store string in this form
 as long as you need it for processing and then encode strings back to `UTF-8`.
 
-Processing of long strings and first resource allocations can stop other erlang processes, which are scheduled in the same thread. Dirty schedulers can fix this
-problem, so we wait R15, when they are planned.
+Processing of long strings or first resource allocations can stop other 
+erlang processes, which are scheduled in the same thread. Dirty schedulers 
+can fix this problem, so I am waiting __R15__.
 
 Functions can throw `badarg' or exceptions:
 
