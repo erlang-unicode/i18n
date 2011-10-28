@@ -217,6 +217,63 @@ ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc,
     /* resource now only owned by "Erlang" */
     return out;
 }
+
+
+/* Get a rule-based collator */
+ERL_NIF_TERM get_rule_collator(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in;
+    ERL_NIF_TERM out;
+    UErrorCode status = U_ZERO_ERROR;
+    UParseError pe;
+    UCollator* col;
+    cloner* res;
+    unsigned int index;
+
+
+
+    if ((argc != 2) && (argc != 1))
+        return enif_make_badarg(env);
+
+    if(!enif_inspect_binary(env, argv[0], &in))
+        return enif_make_badarg(env);
+
+    col = ucol_openRules(
+        (const UChar*) in.data, /* rules */
+        TO_ULEN(in.size),
+        UCOL_DEFAULT,
+        UCOL_DEFAULT_STRENGTH,
+        &pe,
+        &status);
+    if (U_FAILURE(status)) {
+        return parse_error(env, status, &pe);
+    }
+
+    res = (cloner*) enif_alloc_resource(collator_type, sizeof(cloner));
+
+    if (collator_open(col, res)) {
+        enif_release_resource(res);
+        return enif_make_badarg(env);
+    }
+    CHECK_DEST(env, status,
+        enif_release_resource(res);
+    );
+
+
+    if (argc == 2) {
+        if (!do_iterator_options(env, col, argv[1], index)) {
+            enif_release_resource(res);
+            return list_element_error(env, argv[1], index);
+        }
+    }
+
+    out = enif_make_resource(env, res);
+    enif_release_resource(res);
+    /* resource now only owned by "Erlang" */
+    return out;
+}
+
 inline static void do_sort_key(
     ErlNifBinary  in,
     ErlNifBinary& out, 

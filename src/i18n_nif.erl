@@ -22,7 +22,8 @@
 %%% =====================================================================
 
 %%% @private
-%%% Private functions. Use API functions from modules instead.
+%%% Private functions. Do not use directly.
+%%% Use API functions from other modules instead.
 
 -module(i18n_nif).
 -include("i18n.hrl").
@@ -42,7 +43,8 @@
 -export([get_iterator/2, len/2, split/2, split_index/2]).
 
 
--export([get_collator/1, get_collator/2]).
+-export([get_collator/1, get_collator/2, get_rule_collator/1,
+        get_rule_collator/2]).
 -export([sort_key/2, compare/3]).
 
 -export([search_open/2, 
@@ -169,6 +171,12 @@ get_collator(_Locale) ->
     ?I18N_NIF_NOT_LOADED.
 
 get_collator(_Locale, _Opts) ->
+    ?I18N_NIF_NOT_LOADED.
+
+get_rule_collator(_Rules) ->
+    ?I18N_NIF_NOT_LOADED.
+
+get_rule_collator(_Rules, _Opts) ->
     ?I18N_NIF_NOT_LOADED.
 
 sort_key(_CollatorResource, _String) ->

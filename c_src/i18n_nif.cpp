@@ -356,6 +356,8 @@ static ErlNifFunc nif_funcs[] =
 #if I18N_COLLATION
     {"get_collator",      1, get_collator},
     {"get_collator",      2, get_collator},
+    {"get_rule_collator", 1, get_rule_collator},
+    {"get_rule_collator", 2, get_rule_collator},
     {"sort_key",          2, sort_key},
     {"compare",           3, compare},
 

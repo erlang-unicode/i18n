@@ -30,7 +30,7 @@
 #if I18N_COLLATION
 
 NIF_EXPORT(get_collator)
-NIF_EXPORT(get_collator)
+NIF_EXPORT(get_rule_collator)
 NIF_EXPORT(sort_key)
 NIF_EXPORT(compare)
 NIF_EXPORT(collator_locales)

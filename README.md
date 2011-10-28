@@ -199,6 +199,32 @@ i18n_search:index(SCTP, S).
 i18n_search:match_all(SCSP, S).           
 ```
 
+Rule-based collation
+--------------------
+
+```erlang
+R1 = i18n_collation:open().
+R2 = i18n_collation:open_rules(i18n:from("& g <<< ca")).                                             
+F = fun(R, L) -> 
+    lists:map(fun i18n:to/1, 
+        i18n_collation:sort(R,
+            lists:map(fun i18n:from/1, L))) end.
+L = ["ca", "h", "f", "cà"].
+{F(R1, L), F(R2, L)}.
+{[<<"ca">>,<<"cÃ ">>,<<"f">>,<<"h">>],
+ [<<"cÃ ">>,<<"f">>,<<"ca">>,<<"h">>]}
+```
+
+```erlang
+io:format("~ts", [<<"cÃ ">>]).
+cà
+```
+
+
+
+
+
+
 
 Extract words
 -------------

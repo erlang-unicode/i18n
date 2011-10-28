@@ -27,7 +27,7 @@
 
 
 % NIFs
--export([open/0, open/1, open/2]).
+-export([open/0, open/1, open/2, open_rules/1, open_rules/2]).
 -export([sort_key/2, compare/3, sort/2]).
 
 -export([map_sort/2]).
@@ -84,6 +84,19 @@ open(Options) when is_list(Options) ->
 open(L, Options) ->
     ?TRY_RES(?IM:get_collator(L, lists:map(fun options/1, Options))).
 
+
+
+
+%% @doc Get a rules-based collator.
+-spec open_rules(i18n_string()) -> i18n_collator().
+open_rules(Rules) ->
+    ?TRY_RES(?IM:get_rule_collator(Rules)).
+
+%% @doc Get a rule-based collator with options.
+%% @see http://userguide.icu-project.org/collation/customization
+-spec open_rules(i18n_string(), [i18n_collation_option()]) -> i18n_collator().
+open_rules(Rules, Options) ->
+    ?TRY_RES(?IM:get_rule_collator(Rules, lists:map(fun options/1, Options))).
 
 
 
