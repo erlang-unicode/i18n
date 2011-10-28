@@ -51,11 +51,20 @@ simple_normalization_test() ->
 
 case_compare_test_() ->
     F = fun i18n_string:case_compare/3,
-    [?_assertEqual('less',  F(tr, ?ISTR("I"),   ?ISTR("i")))
-    ,?_assertEqual('equal', F(tr, ?ISTR("L"),   ?ISTR("l")))
-    ,?_assertEqual('equal', F(root, ?ISTR("L"), ?ISTR("l")))
-    ,?_assertEqual('less',  F(root, ?ISTR("z"), ?ISTR("i")))
-    ,?_assertEqual('equal', F(root, ?ISTR("word"), ?ISTR("word")))
+    [?_assertEqual('greater', F(tr, ?ISTR("I"),   ?ISTR("i")))
+    ,?_assertEqual('equal',   F(tr, ?ISTR("L"),   ?ISTR("l")))
+    ,?_assertEqual('equal',   F(root, ?ISTR("L"), ?ISTR("l")))
+    ,?_assertEqual('greater', F(root, ?ISTR("z"), ?ISTR("i")))
+    ,?_assertEqual('less',    F(root, ?ISTR("i"), ?ISTR("z")))
+    ,?_assertEqual('equal',   F(root, ?ISTR("word"), ?ISTR("word")))
+    ].
+
+compare_test_() ->
+    F = fun i18n_string:compare/2,
+    [?_assertEqual('less',    F(?ISTR("I"), ?ISTR("i")))
+    ,?_assertEqual('greater', F(?ISTR("z"), ?ISTR("i")))
+    ,?_assertEqual('less',    F(?ISTR("i"), ?ISTR("z")))
+    ,?_assertEqual('equal',   F(?ISTR("word"), ?ISTR("word")))
     ].
 
 

@@ -41,7 +41,7 @@
 -export([from_utf8/1, to_utf8/1]).
 -export([to_nfc/1, to_nfd/1, to_nfkc/1, to_nfkd/1]).
 -export([concat/2]).
--export([case_compare/2, case_compare/3]).
+-export([compare/2, case_compare/2, case_compare/3]).
 
 
 -export([to_lower/2, to_upper/2, to_title/2]).
@@ -177,6 +177,12 @@ to_title(L, S) ->
 %compare(S1, S2) ->
 %.
 %
+
+-spec compare(i18n_string(), i18n_string()) -> 
+        'less' | 'greater' | 'equal'.
+
+compare(S1, S2) ->
+    ?TRY_ATOM(?IM:non_case_compare(S1, S2)).
 
 -spec case_compare(i18n_string(), i18n_string()) -> 
         'less' | 'greater' | 'equal'.

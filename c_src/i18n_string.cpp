@@ -261,14 +261,20 @@ ERL_NIF_TERM endian(ErlNifEnv* env, int argc,
     return ATOM_ENDIAN;
 }
 
+static inline ERL_NIF_TERM 
+compare_result_to_atom(int32_t res)
+{
+    return (!res)  ? ATOM_EQUAL :
+           (res>0) ? ATOM_GREATER : ATOM_LESS;
+}
 
 ERL_NIF_TERM case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, in2;
     char locale[LOCALE_LEN];
     UErrorCode status = U_ZERO_ERROR;
-    uint32_t options;
-    uint32_t res;
+    uint32_t options = U_COMPARE_IGNORE_CASE;
+    int32_t res;
 
     if (argc != 3)
         return enif_make_badarg(env);
@@ -280,11 +286,11 @@ ERL_NIF_TERM case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     }
 
     /* Is the locale tr? */
-    options = ((locale[0] == 't') && (locale[1] == 'r')) 
-                ? U_FOLD_CASE_EXCLUDE_SPECIAL_I 
-                : U_FOLD_CASE_DEFAULT;
+    if ((locale[0] == 't') && (locale[1] == 'r')) 
+        options |= U_FOLD_CASE_EXCLUDE_SPECIAL_I;
 
-    res = u_strCaseCompare(
+    /*res = u_strCaseCompare(*/
+    res = unorm_compare(
             (const UChar *) in.data,
             TO_ULEN(in.size),
             (const UChar *) in2.data,
@@ -293,12 +299,36 @@ ERL_NIF_TERM case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             &status);
     CHECK(env, status);
 
-    if (!res)
-        return ATOM_EQUAL;
-    else if (res > 0)
-        return ATOM_LESS;
-    else
-        return ATOM_GREATER;
+    return compare_result_to_atom(res);
+}
+
+ERL_NIF_TERM non_case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in, in2;
+    UErrorCode status = U_ZERO_ERROR;
+    int32_t res;
+
+    if (argc != 2)
+        return enif_make_badarg(env);
+
+    if (!(enif_inspect_binary(env, argv[0], &in)
+       && enif_inspect_binary(env, argv[1], &in2))) {
+        return enif_make_badarg(env);
+    }
+
+    /* Case-sensitive comparison in code unit order, and the input strings are
+     * quick-checked for FCD. */
+
+    res = unorm_compare(
+        (const UChar *) in.data,
+        TO_ULEN(in.size),
+        (const UChar *) in2.data,
+        TO_ULEN(in2.size),
+        U_FOLD_CASE_DEFAULT,
+        &status);
+    CHECK(env, status);
+
+    return compare_result_to_atom(res);
 }
 
 

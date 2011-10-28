@@ -49,6 +49,7 @@ NIF_EXPORT(split_index)
 NIF_EXPORT(get_iterator)
 NIF_EXPORT(iterator_locales)
 NIF_EXPORT(case_compare)
+NIF_EXPORT(non_case_compare)
 
 
 int i18n_string_load(ErlNifEnv *, void **, 
