@@ -93,7 +93,7 @@ open_rules(Rules) ->
     ?TRY_RES(?IM:get_rule_collator(Rules)).
 
 %% @doc Get a rule-based collator with options.
-%% @see http://userguide.icu-project.org/collation/customization
+%%      [More information](http://userguide.icu-project.org/collation/customization)
 -spec open_rules(i18n_string(), [i18n_collation_option()]) -> i18n_collator().
 open_rules(Rules, Options) ->
     ?TRY_RES(?IM:get_rule_collator(Rules, lists:map(fun options/1, Options))).

@@ -49,6 +49,16 @@ simple_normalization_test() ->
     i18n_string:to_nfkd(S),
     ok.
 
+case_compare_test_() ->
+    F = fun i18n_string:case_compare/3,
+    [?_assertEqual('less',  F(tr, ?ISTR("I"),   ?ISTR("i")))
+    ,?_assertEqual('equal', F(tr, ?ISTR("L"),   ?ISTR("l")))
+    ,?_assertEqual('equal', F(root, ?ISTR("L"), ?ISTR("l")))
+    ,?_assertEqual('less',  F(root, ?ISTR("z"), ?ISTR("i")))
+    ,?_assertEqual('equal', F(root, ?ISTR("word"), ?ISTR("word")))
+    ].
+
+
 prop_from_char_test_() ->
 	{"1 char conversation prop testing.",
 		{timeout, 60,

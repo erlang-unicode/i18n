@@ -261,6 +261,47 @@ ERL_NIF_TERM endian(ErlNifEnv* env, int argc,
     return ATOM_ENDIAN;
 }
 
+
+ERL_NIF_TERM case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifBinary in, in2;
+    char locale[LOCALE_LEN];
+    UErrorCode status = U_ZERO_ERROR;
+    uint32_t options;
+    uint32_t res;
+
+    if (argc != 3)
+        return enif_make_badarg(env);
+
+    if (!(enif_get_atom(env, argv[0], locale, LOCALE_LEN, ERL_NIF_LATIN1)
+       && enif_inspect_binary(env, argv[1], &in)
+       && enif_inspect_binary(env, argv[2], &in2))) {
+        return enif_make_badarg(env);
+    }
+
+    /* Is the locale tr? */
+    options = ((locale[0] == 't') && (locale[1] == 'r')) 
+                ? U_FOLD_CASE_EXCLUDE_SPECIAL_I 
+                : U_FOLD_CASE_DEFAULT;
+
+    res = u_strCaseCompare(
+            (const UChar *) in.data,
+            TO_ULEN(in.size),
+            (const UChar *) in2.data,
+            TO_ULEN(in2.size),
+            options,
+            &status);
+    CHECK(env, status);
+
+    if (!res)
+        return ATOM_EQUAL;
+    else if (res > 0)
+        return ATOM_LESS;
+    else
+        return ATOM_GREATER;
+}
+
+
 static ERL_NIF_TERM do_norm(ErlNifEnv* env, const ErlNifBinary& in, 
     const Normalizer2* norm)
 {

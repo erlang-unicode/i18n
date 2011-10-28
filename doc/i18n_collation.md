@@ -78,7 +78,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 ##Function Index##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#available_locales-0">available_locales/0</a></td><td></td></tr><tr><td valign="top"><a href="#compare-3">compare/3</a></td><td></td></tr><tr><td valign="top"><a href="#map_sort-2">map_sort/2</a></td><td>Sort a list.</td></tr><tr><td valign="top"><a href="#open-0">open/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td></td></tr><tr><td valign="top"><a href="#sort-2">sort/2</a></td><td></td></tr><tr><td valign="top"><a href="#sort_key-2">sort_key/2</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#available_locales-0">available_locales/0</a></td><td></td></tr><tr><td valign="top"><a href="#compare-3">compare/3</a></td><td></td></tr><tr><td valign="top"><a href="#map_sort-2">map_sort/2</a></td><td>Sort a list.</td></tr><tr><td valign="top"><a href="#open-0">open/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td></td></tr><tr><td valign="top"><a href="#open_rules-1">open_rules/1</a></td><td>Get a rules-based collator.</td></tr><tr><td valign="top"><a href="#open_rules-2">open_rules/2</a></td><td>Get a rule-based collator with options.</td></tr><tr><td valign="top"><a href="#sort-2">sort/2</a></td><td></td></tr><tr><td valign="top"><a href="#sort_key-2">sort_key/2</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -158,7 +158,34 @@ F produces a sort keys.<a name="open-0"></a>
 <br></br>
 
 
-<a name="sort-2"></a>
+<a name="open_rules-1"></a>
+
+###open_rules/1##
+
+
+
+
+<pre>open_rules(Rules::[i18n_string()](#type-i18n_string)) -&gt; [i18n_collator()](#type-i18n_collator)</pre>
+<br></br>
+
+
+
+
+Get a rules-based collator.<a name="open_rules-2"></a>
+
+###open_rules/2##
+
+
+
+
+<pre>open_rules(Rules::[i18n_string()](#type-i18n_string), Options::[[i18n_collation_option()](#type-i18n_collation_option)]) -&gt; [i18n_collator()](#type-i18n_collator)</pre>
+<br></br>
+
+
+
+
+Get a rule-based collator with options.
+[More information](http://userguide.icu-project.org/collation/customization)<a name="sort-2"></a>
 
 ###sort/2##
 

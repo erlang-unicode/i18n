@@ -41,6 +41,7 @@
 
 -export([to_lower/2, to_upper/2, to_title/2]).
 -export([get_iterator/2, len/2, split/2, split_index/2]).
+-export([case_compare/3]).
 
 
 -export([get_collator/1, get_collator/2, get_rule_collator/1,
@@ -145,6 +146,10 @@ to_title(_Locale, _String) ->
 
 get_iterator(_Locale, _Type) -> 
     ?I18N_NIF_NOT_LOADED.
+
+case_compare(_Locale, _String1, _String2) ->
+    ?I18N_NIF_NOT_LOADED.
+
 
 %%
 %% Normalization

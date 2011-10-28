@@ -345,6 +345,7 @@ static ErlNifFunc nif_funcs[] =
     {"to_nfd",       1, to_nfd},
     {"to_nfkc",      1, to_nfkc},
     {"to_nfkd",      1, to_nfkd},
+    {"case_compare", 3, case_compare},
 
     {"iterator_locales",    0, iterator_locales},
 #endif

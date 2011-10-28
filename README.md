@@ -204,7 +204,7 @@ Rule-based collation
 
 ```erlang
 R1 = i18n_collation:open().
-R2 = i18n_collation:open_rules(i18n:from("& g <<< ca")).                                             
+R2 = i18n_collation:open_rules(i18n:from("& g <<< ca")). 
 F = fun(R, L) -> 
     lists:map(fun i18n:to/1, 
         i18n_collation:sort(R,
@@ -214,6 +214,8 @@ L = ["ca", "h", "f", "cà"].
 {[<<"ca">>,<<"cÃ ">>,<<"f">>,<<"h">>],
  [<<"cÃ ">>,<<"f">>,<<"ca">>,<<"h">>]}
 ```
+
+where:
 
 ```erlang
 io:format("~ts", [<<"cÃ ">>]).

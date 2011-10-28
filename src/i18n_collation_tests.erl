@@ -34,6 +34,20 @@
 simple_open_test() ->
     i18n_collation:open().
     
+compare_rules_test_() ->
+    R = i18n_collation:open_rules(?ISTR("& g < ca")),
+    F = fun(S1, S2) ->
+        i18n_collation:compare(R, ?ISTR(S1), ?ISTR(S2))
+        end,
+
+    {"b<cb<d<g<ca",
+        [?_assertEqual(F("ca", "g"), 'greater')
+        ,?_assertEqual(F("cb", "g"), 'less')
+        ,?_assertEqual(F("ca", "cb"), 'greater')
+        ,?_assertEqual(F("ca", "d"), 'greater')
+        ,?_assertEqual(F("ca", "b"), 'greater')
+        ]}.
+    
 for_all_locales_open_test_() ->
     ?_assert(
         lists:all(fun erlang:is_binary/1, 

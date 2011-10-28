@@ -41,6 +41,7 @@
 -export([from_utf8/1, to_utf8/1]).
 -export([to_nfc/1, to_nfd/1, to_nfkc/1, to_nfkd/1]).
 -export([concat/2]).
+-export([case_compare/2, case_compare/3]).
 
 
 -export([to_lower/2, to_upper/2, to_title/2]).
@@ -164,5 +165,32 @@ to_title(S) ->
 -spec to_title(i18n_locale_id() | i18n_iterator(), i18n_string()) -> i18n_string().
 to_title(L, S) ->
     ?TRY_STR(?IM:to_title(L, S)).
+
+
+%%
+%% Comparation
+%%
+
+%equal(S1, S2) ->
+%.
+%
+%compare(S1, S2) ->
+%.
+%
+
+-spec case_compare(i18n_string(), i18n_string()) -> 
+        'less' | 'greater' | 'equal'.
+
+case_compare(S1, S2) ->
+    L = i18n_locale:get_locale(),
+    case_compare(L, S1, S2).
+
+
+-spec case_compare(i18n_locale_id(), i18n_string(), i18n_string()) -> 
+        'less' | 'greater' | 'equal'.
+
+case_compare(L, S1, S2) ->
+    ?TRY_ATOM(?IM:case_compare(L, S1, S2)).
+
 
 
