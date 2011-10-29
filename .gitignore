@@ -1,5 +1,5 @@
 ebin
-deps/*
+plugins/*/ebin
 *.swp
 *.dump
 *.trace  
