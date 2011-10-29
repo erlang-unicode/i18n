@@ -31,7 +31,7 @@
 /* This parameter is for debug only */
 #define I18N_INFO       0
 
-#define I18N_STRING     1
+#define I18N_STRING     0
 #define I18N_COLLATION  1
 #define I18N_SEARCH    	1
 #define I18N_MESSAGE   	1

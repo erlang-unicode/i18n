@@ -2,7 +2,7 @@
 PREFIX:=../
 DEST:=$(PREFIX)$(PROJECT)
 
-REBAR=./rebar 
+REBAR=./rebar -v 
 #-include setenv.mk
 
 
