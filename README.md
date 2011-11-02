@@ -103,7 +103,9 @@ The nif module is one, because same resources are used in different modules
 (for example, an `iterator` resource can be used in `string` and `collation` modules).
 
 Strings are represented as binaries in `UTF-16` form (two bytes per
-codepaint). It can be `UTF-16be` (big endian) or `UTF-16le` (little endian). If you use nodes with different endianess, you must convert strings from one form to another.
+codepaint). It can be `UTF-16be` (big endian) or `UTF-16le` (little endian). 
+If you use nodes with different endianess, you must convert strings from 
+one form to another.
 
 There are two macroses in `i18n/include/i18n.hrl`:
 
@@ -220,13 +222,30 @@ cà
 ```
 
 
+Length of the string
+--------------------
+
+With `word` iterator, puctuation and space characters are counted as "words"
+(see partitions for more information).
+
+```erlang
+GI = i18n_iterator:open(grapheme),
+WI = i18n_iterator:open(word),
+WOI = i18n_iterator:open(word_only).
+
+1> i18n_string:len(GI, i18n:from("Длина длинной строки.")).
+21
+
+(i18n@delta)14> i18n_string:len(WOI, i18n:from("Count of the words.")). 
+4
+
+(i18n@delta)15> i18n_string:len(WO, i18n:from("Count of the words.")).
+8
+```
 
 
-
-
-
-Extract words
--------------
+Extraction of the words
+-----------------------
 
 ```erlang
 1> lists:map(fun i18n:to/1,
@@ -234,6 +253,56 @@ Extract words
         i18n:from("This string contains 5 words."))).
 [<<"This">>,<<"string">>,<<"contains">>,<<"5">>,<<"words">>]
 ```
+
+
+
+Partitions of the string
+------------------------
+
+```erlang
+1> lists:map(fun i18n:to/1,
+    i18n_string:split(i18n_iterator:open(word), 
+        i18n:from("This string contains 5 words."))).
+[<<"This">>,<<" ">>,<<"string">>,<<" ">>,<<"contains">>,
+ <<" ">>,<<"5">>,<<" ">>,<<"words">>,<<".">>]
+
+2> Out = lists:map(fun i18n:to/1,
+    i18n_string:split(i18n_iterator:open(grapheme), 
+        i18n:from("Erlang är ett generellt programspråk som från början (år
+1987) utvecklades på forskningsavdelningen hos telebolaget Ericsson vid
+utvärderingen av olika programspråk för implementation av styrsystemen i
+telefonväxlar."))).
+
+3> io:format("~w", [Out]). 
+[<<69>>,<<114>>,<<108>>,<<97>>,<<110>>,<<103>>,<<32>>,<<195,164>>,<<114>>,
+ <<32>>,<<101>>,<<116>>,<<116>>,<<32>>,<<103>>,<<101>>,<<110>>,<<101>>,...].
+```
+
+
+
+Message format
+--------------
+
+Code:
+
+```erlang
+M = i18n_message:open(i18n:from("Hello, {name}. Now {now, time, full}.")),
+R = i18n_message:format(M, [
+        {'name', i18n:from("Username")},
+        {'now',  i18n_date:now()}
+    ]),
+io:format("~n~ts~n", [i18n_string:to_utf8(R)]).
+```
+
+Out:
+
+```
+Hello, Username. Now 17:32:11 GMT+04:00.
+```
+
+If you want to use ICU messages with gettext, then see
+[l10n](https://github.com/freeakk/l10n/).
+
 
 
 Modules
