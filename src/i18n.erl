@@ -1,13 +1,16 @@
 %% @doc i18n.
-%% @private
 
 -module(i18n).
+-include_lib("i18n.hrl").
 -export([start/0, stop/0]).
 
 % Short names for the console
 -export([from/1, to/1, re/1, write/1]).
 % Helpers for the console
 -export([repeat/2]).
+
+-export([icu_version/0, data_version/0]).
+
 
 %% @spec start() -> ok
 %% @doc Start the ux server.
@@ -32,3 +35,9 @@ do_repeat(C, F) when C>0 ->
 	do_repeat(C - 1, F);
 do_repeat(0, _F) ->
 	ok.
+
+icu_version() ->
+    ?TRY_ATOM(?IM:icu_version()).
+
+data_version() ->
+    ?TRY_ATOM(?IM:data_version()).

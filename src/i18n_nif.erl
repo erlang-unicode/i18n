@@ -34,6 +34,7 @@
 
 % NIFs
 -export([i18n_info/0]).
+-export([icu_version/0, data_version/0]).
 
 -export([from_utf8/1, to_utf8/1]).
 -export([endian/0]).
@@ -111,6 +112,12 @@ init() ->
 
 
 i18n_info() ->
+      ?I18N_NIF_NOT_LOADED.
+
+icu_version() ->
+      ?I18N_NIF_NOT_LOADED.
+
+data_version() ->
       ?I18N_NIF_NOT_LOADED.
 
 %%
