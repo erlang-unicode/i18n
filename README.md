@@ -244,8 +244,8 @@ WOI = i18n_iterator:open(word_only).
 ```
 
 
-Extraction of the words
------------------------
+Extracting  words
+-----------------
 
 ```erlang
 1> lists:map(fun i18n:to/1,
