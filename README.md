@@ -146,7 +146,7 @@ Processing of long strings or first resource allocations can stop other
 erlang processes, which are scheduled in the same thread. Dirty schedulers 
 can fix this problem, so I am waiting __R15__.
 
-Functions can throw `badarg' or exceptions:
+Functions can throw `badarg` or exceptions:
 
 ```erlang
 {i18n_error, Code :: atom(), tuple()}
