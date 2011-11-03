@@ -34,6 +34,7 @@
 #include "i18n_date.h"
 #include "i18n_trans.h"
 #include "unicode/uversion.h"
+#include "unicode/uchar.h"
 
 
 ERL_NIF_TERM res_error_term;
@@ -47,7 +48,7 @@ ERL_NIF_TERM ATOM_COUNT;
 ERL_NIF_TERM ATOM_RESOURCE;
 ERL_NIF_TERM ATOM_SEARCH;
 
-ERL_NIF_TERM ATOM_ICU_VERSION, ATOM_DATA_VERSION;
+ERL_NIF_TERM ATOM_ICU_VERSION, ATOM_UNICODE_VERSION;
 
 
 
@@ -129,7 +130,7 @@ int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/,
 #endif
 
     ATOM_ICU_VERSION = enif_make_atom(env, U_ICU_VERSION);
-//    ATOM_DATA_VERSION = enif_make_atom(env, U_ICU_DATA_VERSION);
+    ATOM_UNICODE_VERSION = enif_make_atom(env, U_UNICODE_VERSION);
 
     res_error_term = make_error(env, "resource_error");
 
@@ -240,13 +241,13 @@ static ERL_NIF_TERM icu_version(ErlNifEnv* env, int argc,
     return ATOM_ICU_VERSION;
 }
 
-static ERL_NIF_TERM data_version(ErlNifEnv* env, int argc, 
+static ERL_NIF_TERM unicode_version(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM /*argv*/[])
 {
     if (argc != 0)
         return enif_make_badarg(env);
 
-    return ATOM_DATA_VERSION;
+    return ATOM_UNICODE_VERSION;
 }
 
 
@@ -352,7 +353,7 @@ static ErlNifFunc nif_funcs[] =
 {
     {"i18n_info",    0, i18n_info},
     {"icu_version",  0, icu_version},
-    {"data_version", 0, data_version},
+    {"unicode_version", 0, unicode_version},
 
 #if I18N_STRING
     {"to_utf8",      1, to_utf8},

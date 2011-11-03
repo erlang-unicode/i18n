@@ -34,7 +34,7 @@
 
 % NIFs
 -export([i18n_info/0]).
--export([icu_version/0, data_version/0]).
+-export([icu_version/0, unicode_version/0]).
 
 -export([from_utf8/1, to_utf8/1]).
 -export([endian/0]).
@@ -64,7 +64,6 @@
 -export([date_set/3, date_add/3, date_roll/3, date_clear/3]).
 -export([date_get_fields/3, date_get_field/3]).
 -export([open_calendar/1, open_calendar/2, open_calendar/3]).
--export([date_is_weekend/2]).
 -export([date_get/4, date_get/7]).
 
 -export([calendar_locales/0]).
@@ -117,7 +116,7 @@ i18n_info() ->
 icu_version() ->
       ?I18N_NIF_NOT_LOADED.
 
-data_version() ->
+unicode_version() ->
       ?I18N_NIF_NOT_LOADED.
 
 %%
@@ -324,9 +323,6 @@ date_roll(_Cal, _Date, _List_of_Fields_and_Offset) ->
     ?I18N_NIF_NOT_LOADED.
 
 date_clear(_Cal, _Date, _List_of_Fields) ->
-    ?I18N_NIF_NOT_LOADED.
-
-date_is_weekend(_Cal, _Date) ->
     ?I18N_NIF_NOT_LOADED.
 
 date_get(_Cal, _Year, _Month, _Day, _Hour, _Minute, _Second) ->

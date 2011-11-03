@@ -33,7 +33,6 @@
 -export([roll/1, roll/2, roll/3]).
 -export([clear/2, clear/3]).
 
--export([is_weekend/0, is_weekend/1, is_weekend/2]).
 
 -type resource() :: <<>>.   
 -type i18n_calendar() :: resource().   
@@ -261,39 +260,3 @@ clear(Date, Fields)
 clear(Cal, Date, Fields) ->
 	?TRY_NUM(?IM:date_clear(Cal, Date, Fields)).
 
-
-
-
-
-
-%% @doc Returns the atom `true' if there is weekend now. 
-%%      Function is locale-sensitive: the calendar will be selected 
-%%      according this process locale.
--spec is_weekend() -> boolean().
-
-is_weekend() ->
-    Cal = i18n_calendar:open(),
-    Date = now(),
-	is_weekend(Cal, Date).
-    
-
-%% @doc Check if the date is weekend. If Arg1 is the calendar, then the date is
-%%      `now()'.
--spec is_weekend(i18n_calendar() | i18n_date()) -> boolean().
-
-is_weekend(Date)
-    when is_number(Date) ->
-    Cal = i18n_calendar:open(),
-	is_weekend(Cal, Date);
-is_weekend(Cal)
-    when is_binary(Cal) ->
-    Date = now(),
-	is_weekend(Cal, Date).
-
-
-%% @doc Returns the atom `true' if the given date is in the weekend in this 
-%%      calendar system.
--spec is_weekend(i18n_calendar(), i18n_date()) -> boolean().
-
-is_weekend(Cal, Date) ->
-	?TRY_ATOM(?IM:date_is_weekend(Cal, Date)).

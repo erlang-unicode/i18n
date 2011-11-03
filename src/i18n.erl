@@ -9,7 +9,7 @@
 % Helpers for the console
 -export([repeat/2]).
 
--export([icu_version/0, data_version/0]).
+-export([icu_version/0, unicode_version/0]).
 
 
 %% @spec start() -> ok
@@ -39,5 +39,5 @@ do_repeat(0, _F) ->
 icu_version() ->
     ?TRY_ATOM(?IM:icu_version()).
 
-data_version() ->
-    ?TRY_ATOM(?IM:data_version()).
+unicode_version() ->
+    ?TRY_ATOM(?IM:unicode_version()).

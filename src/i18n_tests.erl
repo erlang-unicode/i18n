@@ -30,8 +30,10 @@
 -include_lib("eunit/include/eunit.hrl").
     
 version_test() ->
-    io:format(user, "ICU version ~w~n", [i18n:icu_version()]),
-    io:format(user, "Data version ~w~n", [i18n:data_version()]),
+    io:format(user, "ICU version ~w~n"
+                    "Unicode version ~w~n", 
+        [i18n:icu_version()
+        ,i18n:unicode_version()]),
     ok.
 
 -endif.
