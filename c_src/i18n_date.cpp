@@ -483,30 +483,6 @@ ERL_NIF_TERM date_now(ErlNifEnv* env, int argc,
     return enif_make_double(env, (double) ucal_getNow());
 }
 
-ERL_NIF_TERM date_is_weekend(ErlNifEnv* env, int argc, 
-    const ERL_NIF_TERM argv[])
-{
-    UErrorCode status = U_ZERO_ERROR;
-    UCalendar* cal;
-    cloner* ptr;
-    double date;
-    UBool flag;
-
-    if(!((argc == 2)
-      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
-      && enif_get_double(env, argv[1], &date))) {
-        return enif_make_badarg(env);
-    }
-
-    cal = (UCalendar*) cloner_get(ptr);
-    CHECK_RES(env, cal);
-
-    flag = ucal_isWeekend(cal, (UDate) date, &status);
-    CHECK(env, status);
-
-    return bool_to_term(flag);
-}
-
 
 ERL_NIF_TERM date_get3(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])

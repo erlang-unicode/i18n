@@ -69,7 +69,6 @@ extern "C" {
 
 #if I18N_STRING
 #include "unicode/ubrk.h"
-#include "unicode/unorm2.h"
 #include "unicode/unorm.h"
 #endif
 

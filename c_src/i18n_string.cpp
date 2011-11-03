@@ -34,10 +34,6 @@
 
 static ErlNifResourceType* iterator_type = 0;
 
-static const Normalizer2* nfc_normalizer = 0;
-static const Normalizer2* nfd_normalizer = 0;
-static const Normalizer2* nfkc_normalizer = 0;
-static const Normalizer2* nfkd_normalizer = 0;
 
 
 
@@ -332,16 +328,59 @@ ERL_NIF_TERM non_case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
 }
 
 
-static ERL_NIF_TERM do_norm(ErlNifEnv* env, const ErlNifBinary& in, 
-    const Normalizer2* norm)
+static inline void 
+do_norm( 
+    ErlNifBinary  in,
+    ErlNifBinary& out, 
+    int32_t& ulen,
+    UNormalizationMode mode,
+    UErrorCode& status) 
 {
-    UnicodeString out_str;
-    UErrorCode status = U_ZERO_ERROR;
+    status = U_ZERO_ERROR;
+    if (!enif_alloc_binary(FROM_ULEN(ulen), &out)) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return;
+    }
 
-    out_str = norm->normalize(binary_to_string(in), status);
-    CHECK(env, status);
+    unorm_normalize(
+        (const UChar *) in.data,
+        TO_ULEN(in.size),
+        mode,
+        0,
+        (UChar *) out.data,
+        ulen,
+        &status);
 
-    return string_to_term(env, out_str);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        /* enlarge buffer if it was too small */
+        enif_release_binary(&out);
+        return;
+    }
+
+    if (FROM_ULEN(ulen) != out.size) {
+        /* shrink binary if it was too large */
+        enif_realloc_binary(&out, FROM_ULEN(ulen));
+    }
+
+}
+
+ERL_NIF_TERM norm(ErlNifEnv* env, ErlNifBinary in, 
+    UNormalizationMode mode)
+{
+    int32_t ulen;
+    ErlNifBinary out;
+    UErrorCode status;
+
+    ulen = TO_ULEN(in.size);
+    do_norm(in, out, ulen, mode, status);
+    if (status == U_BUFFER_OVERFLOW_ERROR) {
+        do_norm(in, out, ulen, mode, status);
+    }
+    CHECK_DEST(env, status, 
+        enif_release_binary(&out);
+    );
+    return enif_make_binary(env, &out);
+
 }
 
 /**
@@ -358,7 +397,7 @@ ERL_NIF_TERM to_nfc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[0], &in)) 
         return enif_make_badarg(env);
 
-    return do_norm(env, in, nfc_normalizer);
+    return norm(env, in, UNORM_NFC);
 }
 
 ERL_NIF_TERM to_nfd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -371,7 +410,7 @@ ERL_NIF_TERM to_nfd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[0], &in)) 
         return enif_make_badarg(env);
 
-    return do_norm(env, in, nfd_normalizer);
+    return norm(env, in, UNORM_NFD);
 }
 
 ERL_NIF_TERM to_nfkc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -384,7 +423,7 @@ ERL_NIF_TERM to_nfkc(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[0], &in)) 
         return enif_make_badarg(env);
 
-    return do_norm(env, in, nfkc_normalizer);
+    return norm(env, in, UNORM_NFKC);
 }
 
 ERL_NIF_TERM to_nfkd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -397,7 +436,7 @@ ERL_NIF_TERM to_nfkd(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (!enif_inspect_binary(env, argv[0], &in)) 
         return enif_make_badarg(env);
 
-    return do_norm(env, in, nfkd_normalizer);
+    return norm(env, in, UNORM_NFKD);
 }
 
 
@@ -824,7 +863,6 @@ ERL_NIF_TERM iterator_locales(ErlNifEnv* env, int argc, const
 int i18n_string_load(ErlNifEnv *env, void ** /*priv_data*/, 
     ERL_NIF_TERM /*load_info*/)
 {
-    UErrorCode status = U_ZERO_ERROR;
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
         ERL_NIF_RT_TAKEOVER);
 
@@ -832,31 +870,6 @@ int i18n_string_load(ErlNifEnv *env, void ** /*priv_data*/,
         iterator_dtor, flags, NULL); 
 
     if (iterator_type == NULL) return 1;
-
-    /* get normalizers */
-    nfc_normalizer = Normalizer2::getInstance(NULL,
-        "nfc",
-        UNORM2_COMPOSE,
-        status);
-    if(U_FAILURE(status)) return 2;
-
-    nfd_normalizer = Normalizer2::getInstance(NULL,
-        "nfc",
-        UNORM2_DECOMPOSE,
-        status);
-    if(U_FAILURE(status)) return 2;
-
-    nfkc_normalizer = Normalizer2::getInstance(NULL,
-        "nfkc",
-        UNORM2_COMPOSE,
-        status);
-    if(U_FAILURE(status)) return 2;
-
-    nfkd_normalizer = Normalizer2::getInstance(NULL,
-        "nfkc",
-        UNORM2_DECOMPOSE,
-        status);
-    if(U_FAILURE(status)) return 2;
 
     return 0;
 }

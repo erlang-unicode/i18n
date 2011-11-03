@@ -33,7 +33,7 @@
 #include "i18n_locale.h"
 #include "i18n_date.h"
 #include "i18n_trans.h"
-#include "unicode/uvernum.h"
+#include "unicode/uversion.h"
 
 
 ERL_NIF_TERM res_error_term;
@@ -129,7 +129,7 @@ int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/,
 #endif
 
     ATOM_ICU_VERSION = enif_make_atom(env, U_ICU_VERSION);
-    ATOM_DATA_VERSION = enif_make_atom(env, U_ICU_DATA_VERSION);
+//    ATOM_DATA_VERSION = enif_make_atom(env, U_ICU_DATA_VERSION);
 
     res_error_term = make_error(env, "resource_error");
 
@@ -447,7 +447,6 @@ static ErlNifFunc nif_funcs[] =
     {"date_add",         3, date_add},
     {"date_roll",        3, date_roll},
     {"date_clear",       3, date_clear},
-    {"date_is_weekend",  2, date_is_weekend},
     {"date_get",         4, date_get3},
     {"date_get",         7, date_get6},
     {"date_get_field",   3, date_get_field},

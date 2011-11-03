@@ -34,7 +34,6 @@
     NIF_EXPORT(date_add)
     NIF_EXPORT(date_roll)
     NIF_EXPORT(date_clear)
-    NIF_EXPORT(date_is_weekend)
     NIF_EXPORT(date_get3)
     NIF_EXPORT(date_get6)
     NIF_EXPORT(date_get_field)

@@ -23,12 +23,14 @@ Erlang NIF [erl_nif API](http://www.erlang.org/doc/man/erl_nif.html).
 Installation
 ============
 
-__i18n__ is based on [ICU 4.4 or newer](http://icu-project.org/), which you 
+__i18n__ is based on [ICU 4.2 or newer](http://icu-project.org/), which you 
 need to have installed:
 
 `port install icu` with MacPorts on OSX;
 
-`apt-get install libicu44 libicu-dev` on Ubuntu.
+`apt-get install libicu42 libicu-dev` on Ubuntu 10.10;
+
+`apt-get install libicu44 libicu-dev` on Ubuntu 11.10.
 
 Also you need to have gcc for compilation :).
 
