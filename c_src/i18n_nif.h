@@ -39,6 +39,7 @@
 #define I18N_LOCALE   	1
 #define I18N_DATE   	1
 #define I18N_TRANS  	1
+#define I18N_TEST   	1
 
 /* 2^16, since we're using a 2-byte length header */
 #define BUF_SIZE        65536 

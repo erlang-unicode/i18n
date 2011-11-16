@@ -209,11 +209,9 @@ ERL_NIF_TERM generate_available(ErlNifEnv* env, avail_fun fun,
 
 
 
-static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int argc, 
+static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
-    if (argc != 0)
-        return enif_make_badarg(env);
 
 #if I18N_INFO
     ERL_NIF_TERM head, tail;
@@ -232,24 +230,53 @@ static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int argc,
 
 
 
-static ERL_NIF_TERM icu_version(ErlNifEnv* env, int argc, 
+static ERL_NIF_TERM icu_version(ErlNifEnv* /*env*/, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
-    if (argc != 0)
-        return enif_make_badarg(env);
-
     return ATOM_ICU_VERSION;
 }
 
-static ERL_NIF_TERM unicode_version(ErlNifEnv* env, int argc, 
+static ERL_NIF_TERM unicode_version(ErlNifEnv* /*env*/, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
-    if (argc != 0)
-        return enif_make_badarg(env);
-
     return ATOM_UNICODE_VERSION;
 }
 
+
+#if I18N_TEST
+static ERL_NIF_TERM test_error(ErlNifEnv* env, int /*argc*/, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    CHECK(env, U_PARSE_ERROR);
+
+    return ATOM_TRUE;
+}
+
+static ERL_NIF_TERM test_list_element_error(ErlNifEnv* env, int /*argc*/, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    ERL_NIF_TERM list;
+
+    list = enif_make_list(env, 0);
+    return list_element_error(env, list, 1);
+}
+
+static ERL_NIF_TERM test_parse_error(ErlNifEnv* env, int /*argc*/, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    UParseError e;
+    e.line = 0;
+    e.offset = 0;
+
+    return parse_error(env, U_PARSE_ERROR, &e);
+}
+
+static ERL_NIF_TERM test_make_error(ErlNifEnv* env, int /*argc*/, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    return make_error(env, "it_is_a_test_error");
+}
+#endif
 
 
 
@@ -354,6 +381,14 @@ static ErlNifFunc nif_funcs[] =
     {"i18n_info",    0, i18n_info},
     {"icu_version",  0, icu_version},
     {"unicode_version", 0, unicode_version},
+
+#if I18N_TEST
+    /* Tests */
+    {"test_error",              0, test_error},
+    {"test_parse_error",        0, test_parse_error},
+    {"test_list_element_error", 0, test_list_element_error},
+    {"test_make_error",         0, test_make_error},
+#endif
 
 #if I18N_STRING
     {"to_utf8",      1, to_utf8},

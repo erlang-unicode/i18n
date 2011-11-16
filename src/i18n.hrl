@@ -1,13 +1,13 @@
 -define(I18N_NIF_NOT_LOADED, erlang:nif_error(nif_not_loaded)).
 -define(I18N_NIF_PATH(X), begin code:priv_dir('i18n')++"/"++X end).
 -define(IM, i18n_nif).
--define(TRY_STR(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> throw(Y) end end).
--define(TRY_LIST(X), begin Y = (X), try true=is_list(Y),    Y catch error:{badmatch, _V} -> throw(Y) end end).
--define(TRY_RES(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> throw(Y) end end).
--define(TRY_BIN(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> throw(Y) end end).
--define(TRY_ATOM(X), begin Y = (X), try true=is_atom(Y),    Y catch error:{badmatch, _V} -> throw(Y) end end).
--define(TRY_OK(X),   begin Y = (X), try ok=Y,               Y catch error:{badmatch, _V} -> throw(Y) end end).
--define(TRY_INT(X),  begin Y = (X), try true=is_integer(Y), Y catch error:{badmatch, _V} -> throw(Y) end end).
--define(TRY_NUM(X),  begin Y = (X), try true=is_number(Y),  Y catch error:{badmatch, _V} -> throw(Y) end end).
+-define(TRY_STR(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_LIST(X), begin Y = (X), try true=is_list(Y),    Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_RES(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_BIN(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_ATOM(X), begin Y = (X), try true=is_atom(Y),    Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_OK(X),   begin Y = (X), try ok=Y,               Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_INT(X),  begin Y = (X), try true=is_integer(Y), Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_NUM(X),  begin Y = (X), try true=is_number(Y),  Y catch error:{badmatch, _V} -> error(Y) end end).
 -define(TRY_STR_OR_ATOM(X),  begin Y = (X), try true=is_binary(Y) orelse is_atom(Y), 
-				Y catch error:{badmatch, _V} -> {error, E} = Y, throw(E) end end).
+				Y catch error:{badmatch, _V} -> throw(Y) end end).

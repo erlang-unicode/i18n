@@ -158,12 +158,12 @@ For example:
 
 ```erlang
 (i18n@delta)1> i18n_regex:open(i18n:from("[[]")).
-** exception throw: {i18n_error,{'U_REGEX_MISSING_CLOSE_BRACKET',{line,1},
+** exception error: {i18n_error,{'U_REGEX_MISSING_CLOSE_BRACKET',{line,1},
                                                                  {offset,3}}}
 
 
 (i18n@delta)2>  i18n_message:open(i18n:from("{rr")).
-** exception throw: {i18n_error,{'U_UNMATCHED_BRACES',{line,0},{offset,3}}}
+** exception error: {i18n_error,{'U_UNMATCHED_BRACES',{line,0},{offset,3}}}
      in function  i18n_message:open/2
 ```
 
