@@ -306,6 +306,17 @@ If you want to use ICU messages with gettext, then see
 [l10n](https://github.com/freeakk/l10n/).
 
 
+Using Unicode strings in source code
+------------------------------------
+
+Because a list can be both a list of bytes (used in source files) and a list 
+of code paints (used by default), I suggest use the next form of writing
+Unicode strings in your code:
+
+```erlang
+?ISTR(<<"Строка Unicode">>).
+```
+
 
 Modules
 -------

@@ -73,10 +73,10 @@
 
 -export([get_transliterator/2]).
 
--ifdef(TEST).
+%% Export them even when TEST is not defined because module can be compiled
+%% with support of this functions.
 -export([test_error/0, test_parse_error/0, test_list_element_error/0,
     test_make_error/0]).
--endif.
 
 get_timestamp_from_filename(Name) ->
     try
@@ -357,7 +357,6 @@ trans(_Transliterator, _String) ->
 %% Testing
 %%
 
--ifdef(TEST).
 test_error() ->
     ?I18N_NIF_NOT_LOADED.
 
@@ -369,5 +368,4 @@ test_list_element_error() ->
 
 test_make_error() ->
     ?I18N_NIF_NOT_LOADED.
--endif.
 
