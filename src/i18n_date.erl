@@ -27,6 +27,7 @@
 -include("i18n.hrl").
 -export([now/0]).
 -export([add/1, add/2, add/3]).
+-export([difference/3, difference/4]).
 -export([set/1, set/2, set/3]). 
 -export([get/1, get/2, get/3]). 
 -export([new/3, new/4, new/6, new/7]).
@@ -206,6 +207,29 @@ get(Cal, Date, Fields)
 get(Cal, Date, Field) 
     when is_atom(Field) ->
 	?TRY_NUM(?IM:date_get_field(Cal, Date, Field)).
+
+
+
+
+
+
+
+difference(FromDate, ToDate, Fields) ->
+    Cal = i18n_calendar:open(),
+    difference(Cal, FromDate, ToDate, Fields).
+
+
+-spec difference(i18n_calendar(), i18n_date(), i18n_date(), 
+    [i18n_date_field()] | i18n_date_field()) -> 
+        [{i18n_date_field(), integer()}] | integer().
+
+difference(Cal, FromDate, ToDate, Field) 
+    when is_atom(Field) ->
+	?TRY_NUM(?IM:date_diff_field(Cal, FromDate, ToDate, Field));
+
+difference(Cal, FromDate, ToDate, Fields) 
+    when is_list(Fields) ->
+	?TRY_NUM(?IM:date_diff_fields(Cal, FromDate, ToDate, Fields)).
 
 
 
