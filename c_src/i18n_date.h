@@ -38,6 +38,8 @@
     NIF_EXPORT(date_get6)
     NIF_EXPORT(date_get_field)
     NIF_EXPORT(date_get_fields)
+    NIF_EXPORT(date_diff_field)
+    NIF_EXPORT(date_diff_fields)
     NIF_EXPORT(calendar_locales)
 
 int i18n_date_load(ErlNifEnv *, void **, ERL_NIF_TERM);

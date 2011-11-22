@@ -371,14 +371,15 @@ ERL_NIF_TERM date_clear(ErlNifEnv* env, int argc,
         return list_element_error(env, argv[2], i);
 }
 
+
 static ERL_NIF_TERM do_date_get_field(ErlNifEnv* env, UCalendar* cal,
     const ERL_NIF_TERM field_atom, UErrorCode& status)
 {
-    char    value[ATOM_LEN];
-    int     parsed_value, amount;
+    char value[ATOM_LEN];
+    int parsed_value, amount;
     UCalendarDateFields field;
 
-    if (!enif_get_atom(env, field_atom, (char*) value, ATOM_LEN, 
+    if (!enif_get_atom(env, field_atom, (char*) value, ATOM_LEN,
             ERL_NIF_LATIN1)) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return 0;
@@ -401,6 +402,8 @@ static ERL_NIF_TERM do_date_get_field(ErlNifEnv* env, UCalendar* cal,
 
     return enif_make_int(env, amount);
 }
+
+
 
 ERL_NIF_TERM date_get_field(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
@@ -561,6 +564,254 @@ ERL_NIF_TERM calendar_locales(ErlNifEnv* env, int argc,
             ucal_countAvailable());
 }
 
+
+// This function from ICU 4.2
+static int32_t 
+dateFieldDifference(UCalendar* cal, 
+    UDate targetMs, 
+    UCalendarDateFields field, 
+    UErrorCode& status) {
+    UDate startMs, ms;
+
+    if (U_FAILURE(status)) return 0;
+    int32_t min = 0;
+
+    startMs = ucal_getMillis(cal, &status);
+    if (U_FAILURE(status)) return 0;
+
+    // Always add from the start millis.  This accomodates
+    // operations like adding years from February 29, 2000 up to
+    // February 29, 2004.  If 1, 1, 1, 1 is added to the year
+    // field, the DOM gets pinned to 28 and stays there, giving an
+    // incorrect DOM difference of 1.  We have to add 1, reset, 2,
+    // reset, 3, reset, 4.
+    if (startMs < targetMs) {
+        int32_t max = 1;
+        // Find a value that is too large
+        while (U_SUCCESS(status)) {
+            ucal_setMillis(cal, startMs, &status);
+            ucal_add(cal, field, max, &status);
+            ms = ucal_getMillis(cal, &status);
+
+            if (ms == targetMs) {
+                return max;
+            } else if (ms > targetMs) {
+                break;
+            } else {
+                min = max;
+                max <<= 1;
+                if (max < 0) {
+                    // Field difference too large to fit into int32_t
+                    status = U_ILLEGAL_ARGUMENT_ERROR;
+                }
+            }
+        }
+        // Do a binary search
+        while ((max - min) > 1 && U_SUCCESS(status)) {
+            int32_t t = (min + max) / 2;
+            ucal_setMillis(cal, startMs, &status);
+            ucal_add(cal, field, t, &status);
+            ms = ucal_getMillis(cal, &status);
+
+            if (ms == targetMs) {
+                return t;
+            } else if (ms > targetMs) {
+                max = t;
+            } else {
+                min = t;
+            }
+        }
+    } else if (startMs > targetMs) {
+        int32_t max = -1;
+        // Find a value that is too small
+        while (U_SUCCESS(status)) {
+            ucal_setMillis(cal, startMs, &status);
+            ucal_add(cal, field, max, &status);
+            ms = ucal_getMillis(cal, &status);
+
+            if (ms == targetMs) {
+                return max;
+            } else if (ms < targetMs) {
+                break;
+            } else {
+                min = max;
+                max <<= 1;
+                if (max == 0) {
+                    // Field difference too large to fit into int32_t
+                    status = U_ILLEGAL_ARGUMENT_ERROR;
+                }
+            }
+        }
+        // Do a binary search
+        while ((min - max) > 1 && U_SUCCESS(status)) {
+            int32_t t = (min + max) / 2;
+            ucal_setMillis(cal, startMs, &status);
+            ucal_add(cal, field, t, &status);
+            ms = ucal_getMillis(cal, &status);
+
+            if (ms == targetMs) {
+                return t;
+            } else if (ms < targetMs) {
+                max = t;
+            } else {
+                min = t;
+            }
+        }
+    }
+    // Set calendar to end point
+    ucal_setMillis(cal, startMs, &status);
+    ucal_add(cal, field, min, &status);
+
+    /* Test for buffer overflows */
+    if(U_FAILURE(status)) {
+        return 0;
+    }
+    return min;
+}
+
+ERL_NIF_TERM date_diff_field(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double startMs, targetMs;
+
+    char    value[ATOM_LEN];
+    int     parsed_value, amount;
+    UCalendarDateFields field;
+
+
+    if(!((argc == 4)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &startMs)
+      && enif_get_double(env, argv[2], &targetMs)
+      && enif_get_atom(env, argv[3], (char*) value, ATOM_LEN, 
+            ERL_NIF_LATIN1))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) startMs, &status);
+    CHECK(env, status);
+
+
+
+    parsed_value = parseCalendarDateField(value);
+    if (parsed_value == -1) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        CHECK(env, status);
+    }
+
+    field = (UCalendarDateFields) parsed_value;
+
+    amount = (int) dateFieldDifference(cal, 
+        targetMs, 
+        field, 
+        status);
+    CHECK(env, status);
+
+    return enif_make_int(env, amount);
+}
+
+
+
+ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM argv[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UCalendar* cal;
+    cloner* ptr;
+    double startMs, targetMs;
+
+    ERL_NIF_TERM head, tail, out;
+    unsigned int count;
+
+    char    value[ATOM_LEN];
+    int     parsed_value;
+    UCalendarDateFields field;
+
+    struct {
+        int enable;
+        ERL_NIF_TERM atom;
+        int32_t amount;
+    } fields[UCAL_FIELD_COUNT];
+
+
+    if(!((argc == 4)
+      && enif_get_resource(env, argv[0], calendar_type, (void**) &ptr)  
+      && enif_get_double(env, argv[1], &startMs)
+      && enif_get_double(env, argv[2], &targetMs)
+      && enif_get_list_length(env, argv[3], &count))) {
+        return enif_make_badarg(env);
+    }
+
+    cal = (UCalendar*) cloner_get(ptr);
+    CHECK_RES(env, cal);
+
+    ucal_setMillis(cal, (UDate) startMs, &status);
+    CHECK(env, status);
+
+    for (int i = 0; i < UCAL_FIELD_COUNT; i++)
+        fields[i].enable = 0;
+
+    tail = argv[3];
+    while (enif_get_list_cell(env, tail, &head, &tail)) {
+
+        /* Set an attribute start */
+
+        if (!enif_get_atom(env, head, (char*) value, ATOM_LEN, 
+            ERL_NIF_LATIN1)) {
+            status = U_ILLEGAL_ARGUMENT_ERROR;
+            CHECK(env, status);
+        }
+
+        parsed_value = parseCalendarDateField(value);
+        if (parsed_value == -1) {
+            status = U_ILLEGAL_ARGUMENT_ERROR;
+            CHECK(env, status);
+        }
+
+        field = (UCalendarDateFields) parsed_value;
+        fields[field].enable = 1;
+        fields[field].atom = head;
+
+        /* Set an attribute end */
+
+    }
+
+    for (int i = 0; i < UCAL_FIELD_COUNT; i++) {
+        if (fields[i].enable)
+        {
+            field = (UCalendarDateFields) i;
+            fields[i].amount = (int) dateFieldDifference(cal, 
+                targetMs, 
+                field, 
+                status);
+
+            CHECK(env, status);
+        }
+    }
+
+    out = enif_make_list(env, 0);
+    for (int i = UCAL_FIELD_COUNT; i; ) {
+        i--;
+        if (fields[i].enable)
+            out = enif_make_list_cell(env, 
+                    enif_make_tuple2(env, fields[i].atom,
+                        enif_make_int(env, fields[i].amount)
+                    ),
+                    out);
+
+    }
+
+    return out;
+}
+
+
+
 int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/, 
     ERL_NIF_TERM /*load_info*/)
 {
@@ -572,5 +823,4 @@ int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/,
     if (calendar_type == NULL) return 6;
     return 0;
 }
-
 #endif

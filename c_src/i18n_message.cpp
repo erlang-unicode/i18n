@@ -231,6 +231,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         if (enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
             && (len == 2)) { 
             /* [..., {Id, Arg}, ...] */
+            /* Inspect first element of the tuple (extract the name) */
 
             if (enif_inspect_binary(env, tuple[0], &name)) {
                 /* typeof(Id) == unicode_string */

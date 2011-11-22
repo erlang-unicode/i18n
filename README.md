@@ -285,7 +285,7 @@ telefonväxlar."))).
 Message format
 --------------
 
-Code:
+Simple message format:
 
 ```erlang
 M = i18n_message:open(i18n:from("Hello, {name}. Now {now, time, full}.")),
@@ -301,6 +301,36 @@ Out:
 ```
 Hello, Username. Now 17:32:11 GMT+04:00.
 ```
+
+
+Date format:
+
+```erlang
+MLong = i18n_message:open(i18n:from("{0,date,long}")).
+MShort = i18n_message:open(i18n:from("{0,date,short}")).
+Epoch = i18n_date:new(1970,1,1).
+NewDate = i18n_date:add(Epoch, [{day, 3}]).
+i18n:to(i18n_message:format(MLong, [NewDate])).
+i18n:to(i18n_message:format(MShort, [NewDate])).
+```
+
+Out:
+
+```erlang
+(i18n@delta)1> MLong = i18n_message:open(i18n:from("{0,date,long}")).
+<<>>
+(i18n@delta)2> MShort = i18n_message:open(i18n:from("{0,date,short}")).
+<<>>
+(i18n@delta)3> Epoch = i18n_date:new(1970,1,1).
+39487338.0
+(i18n@delta)4> NewDate = i18n_date:add(Epoch, [{day, 3}]).
+298687338.0
+(i18n@delta)5> i18n:to(i18n_message:format(MLong, [NewDate])).
+<<"1970 1 4">>
+(i18n@delta)6> i18n:to(i18n_message:format(MShort, [NewDate])).
+<<"1970-01-04">>
+```
+
 
 If you want to use ICU messages with gettext, then see
 [l10n](https://github.com/freeakk/l10n/).

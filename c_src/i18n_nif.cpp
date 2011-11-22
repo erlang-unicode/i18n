@@ -487,6 +487,8 @@ static ErlNifFunc nif_funcs[] =
     {"date_get",         7, date_get6},
     {"date_get_field",   3, date_get_field},
     {"date_get_fields",  3, date_get_fields},
+    {"date_diff_field",  4, date_diff_field},
+    {"date_diff_fields", 4, date_diff_fields},
 
     {"calendar_locales",    0, calendar_locales},
 #endif
