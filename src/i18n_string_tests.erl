@@ -67,6 +67,13 @@ compare_test_() ->
     ,?_assertEqual('equal',   F(?ISTR("word"), ?ISTR("word")))
     ].
 
+len_test_() ->
+    F = fun i18n_string:len/1,
+    [?_assertEqual(F(?ISTR("I")), 1)
+    ,?_assertEqual(F(?ISTR("Test")), 4)
+    ,?_assertEqual(F(?ISTR("Another test")), 12)
+    ].
+
 
 prop_from_char_test_() ->
 	{"1 char conversation prop testing.",
@@ -88,10 +95,17 @@ prop_case_test_() ->
     	{timeout, 60,
     		fun() -> triq:check(prop_case()) end}}.
 
-prop_len_test_() ->
-    {"len prop testing.",
+
+prop_byte_len_test_() ->
+    {"len prop testing (byte_size).",
     	{timeout, 60,
     		fun() -> triq:check(prop_len()) end}}.
+
+prop_iterator_len_test_() ->
+    {"len prop testing with a grapheme iterator.",
+    	{timeout, 60,
+    		fun() -> triq:check(prop_len2()) end}}.
+
 
 prop_get_iterator_parallel_test_() ->
     {"Cloner for the iterator type prop testing.",
@@ -127,14 +141,23 @@ prop_case() ->
     	i18n_string:to_title(I, S) =:= i18n_string:to_title(I, i18n_string:to_upper(S))
 		end,
    	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
+
     
 prop_len() ->
+	F = fun(Xs) ->
+		S = i18n_string:from_utf8(Xs),
+		is_integer(i18n_string:len(S))
+		end,
+   	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
+
+prop_len2() ->
 	I = i18n_iterator:open('grapheme'),
 	F = fun(Xs) ->
 		S = i18n_string:from_utf8(Xs),
 		is_integer(i18n_string:len(I, S))
 		end,
    	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
+
     
 prop_get_iterator_parallel() ->
 	I = i18n_iterator:open('grapheme'),

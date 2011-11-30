@@ -108,7 +108,7 @@ concat(B1, B2) ->
 
 %% @doc Count of code paints.
 -spec len(i18n_string()) -> non_neg_integer().
-len(S) when is_integer(S) -> 
+len(S) when is_binary(S) -> 
     byte_size(S) div 2.
 
 %% @doc Count the length og the string with help of an iterator.
