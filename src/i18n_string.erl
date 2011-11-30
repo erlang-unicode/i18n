@@ -106,7 +106,8 @@ concat(B1, B2) ->
     <<B1/binary, B2/binary>>.
 
 
-%% @doc Count of code paints.
+%% @doc Count of code elements. Code elements are neither code points nor
+%%      graphemes. 
 -spec len(i18n_string()) -> non_neg_integer().
 len(S) when is_binary(S) -> 
     byte_size(S) div 2.

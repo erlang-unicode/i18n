@@ -39,7 +39,7 @@ Also you need to have gcc for compilation :).
 Enviroment Variables
 ====================
 
-You can configure the compilation process with enviroment variables.
+You can configure the compilation process with environment variables.
 This application uses rebar for building, it also uses 
 [this patch](https://github.com/basho/rebar/pull/129) for checking env vars.
 
@@ -60,7 +60,7 @@ Run in the terminal:
 Motivation
 ==========
 
-There are many operation which are locale-dependible. Each locale has its
+There are many operation which are locale-dependable. Each locale has its
 own rules for working with dates, with collation or even with the case
 transform. All these rules must be stored in the global memory store.
 
@@ -69,17 +69,17 @@ copy of data for each Erlang process. There is no the global store (maybe
 ETS, but it is not pure Erlang).
 
 Also, there is no the common string format for Erlang. There are lists and
-binaries. A string as a list are is actually a list of Unicode codepaints. 
+binaries. A string as a list are is actually a list of Unicode code points. 
 A binary string is a binary representation of the string (often it is in
 UTF-8 encoding).
 
-Lists are very helpful, when we work with codepaints. But they are slow.
+Lists are very helpful, when we work with code points. But they are slow.
 Binaries are useful, when we store or transmit information.
 
 One of the most powerful library for working with Unicode is ICU. We will
 use icu4c. It is version of ICU for C and C++ languages. Reasons why we use
-it are: it is fast, it has optimizied global data store, it is well tested
-and it works into the multithread enviroment very well.
+it are: it is fast, it has fast global data store, it is well tested
+and it works into the multithread environment very well.
 
 
 
@@ -87,25 +87,25 @@ Design
 ======
 
 
-Almost all locale-dependible modules of ICU uses resources. It can be an
+Almost all locale-dependable modules of ICU uses resources. It can be an
 iterator, a collator, a parser, a transliterator and so on. The creation of
 the resource is take some time, but its using is fast. So, if you have
-locale-dependible process or gen\_server, create resources and store them
+locale-dependable process or gen\_server, create resources and store them
 (one resource of same type for one longtime process).
 
 We use ICU in the multithread enviroment, so all resources are cloned for
-each os thread by this library. When garbage collector deallocates the
+each OS's thread by this library. When garbage collector deallocates the
 resource, all its copies will also deallocated. `cloner.c` does this work.
 
 Any resource is immutable: you cannot change its internal state from Erlang
-code. If you load new version of the library, old resouces will be here. But
-you cannot send a resouce to another node. 
+code. If you load new version of the library, old resources will be here. 
+But you cannot send a resource to another node. 
 
-The nif module is one, because same resources are used in different modules
+The NIF module is one, because same resources are used in different modules
 (for example, an `iterator` resource can be used in `string` and `collation` modules).
 
 Strings are represented as binaries in `UTF-16` form (two bytes per
-codepaint). It can be `UTF-16be` (big endian) or `UTF-16le` (little endian). 
+code point). It can be `UTF-16be` (big endian) or `UTF-16le` (little endian). 
 If you use nodes with different endianess, you must convert strings from 
 one form to another.
 
@@ -227,7 +227,7 @@ cà
 Length of the string
 --------------------
 
-With `word` iterator, puctuation and space characters are counted as "words"
+With `word` iterator, punctuation and space characters are counted as "words"
 (see partitions for more information).
 
 ```erlang
@@ -340,7 +340,7 @@ Using Unicode strings in source code
 ------------------------------------
 
 Because a list can be both a list of bytes (used in source files) and a list 
-of code paints (used by default), I suggest use the next form of writing
+of code points (used by default), I suggest use the next form of writing
 Unicode strings in your code:
 
 ```erlang
