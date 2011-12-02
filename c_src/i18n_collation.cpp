@@ -345,9 +345,7 @@ ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc,
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         do_sort_key(in, out, len, col, status);
     }
-    CHECK_DEST(env, status, 
-        enif_release_binary(&out);
-    );
+    CHECK(env, status);
     return enif_make_binary(env, &out);
 }
 

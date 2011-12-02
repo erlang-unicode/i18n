@@ -151,8 +151,7 @@ inline void do_from_utf8(
         (int32_t) in.size,       /* len of src */
         &status);                /* error code */
 
-    if (status == U_BUFFER_OVERFLOW_ERROR) {
-        /* enlarge buffer if it was too small */
+    if (U_FAILURE(status)) {
         enif_release_binary(&out);
         return;
     }
@@ -184,9 +183,7 @@ ERL_NIF_TERM from_utf8(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         do_from_utf8(in, out, ulen, status);
     }
-    CHECK_DEST(env, status, 
-        enif_release_binary(&out);
-    );
+    CHECK(env, status);
     return enif_make_binary(env, &out);
 }
 
@@ -212,8 +209,7 @@ inline void do_to_utf8(
         TO_ULEN(in.size),       /* len of src */
         &status);
 
-    if (status == U_BUFFER_OVERFLOW_ERROR) {
-        /* enlarge buffer if it was too small */
+    if (U_FAILURE(status)) {
         enif_release_binary(&out);
         return;
     }
@@ -243,9 +239,7 @@ ERL_NIF_TERM to_utf8(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         do_to_utf8(in, out, len, status);
     }
-    CHECK_DEST(env, status, 
-        enif_release_binary(&out);
-    );
+    CHECK(env, status);
     return enif_make_binary(env, &out);
 }
 
@@ -342,7 +336,8 @@ do_norm(
         return;
     }
 
-    unorm_normalize(
+    /* set a new ulen */
+    ulen = unorm_normalize(
         (const UChar *) in.data,
         TO_ULEN(in.size),
         mode,
@@ -351,8 +346,8 @@ do_norm(
         ulen,
         &status);
 
-    if (status == U_BUFFER_OVERFLOW_ERROR) {
-        /* enlarge buffer if it was too small */
+    if (U_FAILURE(status)) {
+        /* release the memory in one place */
         enif_release_binary(&out);
         return;
     }
@@ -376,11 +371,8 @@ ERL_NIF_TERM norm(ErlNifEnv* env, ErlNifBinary in,
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         do_norm(in, out, ulen, mode, status);
     }
-    CHECK_DEST(env, status, 
-        enif_release_binary(&out);
-    );
+    CHECK(env, status);
     return enif_make_binary(env, &out);
-
 }
 
 /**
@@ -474,8 +466,7 @@ inline void do_case(
             locale, 
             &status);
 
-    if (status == U_BUFFER_OVERFLOW_ERROR) {
-        /* enlarge buffer if it was too small */
+    if (U_FAILURE(status)) {
         enif_release_binary(&out);
         return;
     }
@@ -507,9 +498,7 @@ ERL_NIF_TERM to_upper(ErlNifEnv* env, int argc,
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         do_case(in, out, ulen, u_strToUpper, (char*) locale, status);
     }
-    CHECK_DEST(env, status, 
-        enif_release_binary(&out);
-    );
+    CHECK(env, status);
     return enif_make_binary(env, &out);
 }
 ERL_NIF_TERM to_lower(ErlNifEnv* env, int argc, 
@@ -533,9 +522,7 @@ ERL_NIF_TERM to_lower(ErlNifEnv* env, int argc,
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         do_case(in, out, ulen, u_strToUpper, (char*) locale, status);
     }
-    CHECK_DEST(env, status, 
-        enif_release_binary(&out);
-    );
+    CHECK(env, status);
     return enif_make_binary(env, &out);
 }
 
@@ -617,9 +604,7 @@ ERL_NIF_TERM to_title(ErlNifEnv* env, int argc,
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         do_to_title(in, out, ulen, iter, locptr, status);
     }
-    CHECK_DEST(env, status, 
-        enif_release_binary(&out);
-    );
+    CHECK(env, status);
     return enif_make_binary(env, &out);
 
 }

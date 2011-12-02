@@ -132,10 +132,6 @@ ERL_NIF_TERM get_transliterator(ErlNifEnv* env, int argc,
         enif_release_resource(res);
         return enif_make_badarg(env);
     }
-    CHECK_DEST(env, status,
-        enif_release_resource(res);
-    );
-
 
     out = enif_make_resource(env, res);
     enif_release_resource(res);
