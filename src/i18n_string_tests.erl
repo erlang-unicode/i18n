@@ -34,8 +34,13 @@ from_test_() ->
     B = i18n_string:from(<<"F">>),
     L = i18n_string:from("F"),
     A = i18n_string:from('F'),
+    % Atom A can be processed by parse_transform. Then some code will be 
+    % not covered by tests.
+    AA = i18n_string:from(f_atom()),
     
-    [?_assertEqual(B, L), ?_assertEqual(B, A)].
+    [?_assertEqual(B, L), ?_assertEqual(B, A), ?_assertEqual(AA, A)].
+
+f_atom() -> 'F'.
     
 from_utf8_test() ->
     i18n_string:from_utf8(<<"F">>),
@@ -49,7 +54,7 @@ simple_normalization_test() ->
     i18n_string:to_nfkd(S),
     ok.
 
-case_compare_test_() ->
+case_compare2_test_() ->
     F = fun i18n_string:case_compare/3,
     [?_assertEqual('greater', F(tr, ?ISTR("I"),   ?ISTR("i")))
     ,?_assertEqual('equal',   F(tr, ?ISTR("L"),   ?ISTR("l")))
@@ -57,6 +62,14 @@ case_compare_test_() ->
     ,?_assertEqual('greater', F(root, ?ISTR("z"), ?ISTR("i")))
     ,?_assertEqual('less',    F(root, ?ISTR("i"), ?ISTR("z")))
     ,?_assertEqual('equal',   F(root, ?ISTR("word"), ?ISTR("word")))
+    ].
+
+case_compare_test_() ->
+    F = fun i18n_string:case_compare/2,
+    [?_assertEqual('equal',   F(?ISTR("L"), ?ISTR("l")))
+    ,?_assertEqual('greater', F(?ISTR("z"), ?ISTR("i")))
+    ,?_assertEqual('less',    F(?ISTR("i"), ?ISTR("z")))
+    ,?_assertEqual('equal',   F(?ISTR("word"), ?ISTR("word")))
     ].
 
 compare_test_() ->
