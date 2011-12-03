@@ -26,6 +26,8 @@ Installation
 __i18n__ is based on [ICU 4.2 or newer](http://icu-project.org/), which you 
 need to have installed:
 
+`brew install icu4c` with Homebrew on OSX;
+
 `port install icu` with MacPorts on OSX;
 
 `apt-get install libicu42 libicu-dev` on Ubuntu 10.10;
