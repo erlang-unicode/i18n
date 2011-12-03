@@ -46,6 +46,15 @@ replace_fun() ->
     	i18n_regex:replace(Re, Do, S)
     end.
 
+replace_all_fun() ->
+	Pattern = ?ISTR("regular expression\\w*"),
+	Do = ?ISTR("regex"),
+	Re = i18n_regex:open(Pattern),
+
+    fun(S) ->
+    	i18n_regex:replace_all(Re, Do, S)
+    end.
+
 split_url_test_() ->
     F = split_url_fun(),
 
@@ -54,11 +63,62 @@ split_url_test_() ->
     ].
 	
 
-replace_all_test_() ->
+replace_test_() ->
     F = replace_fun(),
 
     [?_assertEqual(F(?ISTR("Coding on this language for fun.")),
             ?ISTR("Coding on this Erlang for fun."))
     ].
+
+replace_all_test_() ->
+    F = replace_all_fun(),
+
+    [?_assertEqual(F(?ISTR("regular expressions are fun. "
+            "This is a regular expression.")),
+            ?ISTR("regex are fun. This is a regex."))
+    ].
+
+test_fun() ->
+	Pattern = ?ISTR(".*cake.*"),
+	Re = i18n_regex:open(Pattern),
+
+    fun(S) ->
+    	i18n_regex:test(Re, S)
+    end.
+
+test_test_() ->
+    F = test_fun(),
+    [?_assert(F(?ISTR("It is a cake.")))
+    ,?_assert(not F(?ISTR("It is a lie.")))].
+
+match_fun() ->
+	Pattern = ?ISTR("(\\w)(\\w+)"),
+	Re = i18n_regex:open(Pattern),
+
+    fun(S) ->
+    	i18n_regex:match(Re, S)
+    end.
+
+match_test_() ->
+    F = match_fun(),
+    [?_assertEqual(F(?ISTR("The cake is a lie.")),
+        [?ISTR("The"), ?ISTR("T"), ?ISTR("he")])].
+
+match_all_fun() ->
+	Pattern = ?ISTR("\\w+"),
+	Re = i18n_regex:open(Pattern),
+
+    fun(S) ->
+    	i18n_regex:match_all(Re, S)
+    end.
+
+match_all_test_() ->
+    F = match_all_fun(),
+    [?_assertEqual(F(?ISTR("The cake is a lie.")),
+        [[?ISTR("The")]
+        ,[?ISTR("cake")]
+        ,[?ISTR("is")]   
+        ,[?ISTR("a")]    
+        ,[?ISTR("lie")]])].
     
 -endif.

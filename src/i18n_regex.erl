@@ -70,4 +70,4 @@ match(Re, S) ->
 %% @doc Return all matches as a list of lists.
 -spec match_all(i18n_regex(), i18n_string()) -> [[i18n_string()]].
 match_all(Re, S) ->
-    ?TRY_LIST(?IM:regex_match_all(Re, S)).
+    lists:reverse(?TRY_LIST(?IM:regex_match_all(Re, S))).

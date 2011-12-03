@@ -300,6 +300,8 @@ inline static ERL_NIF_TERM do_regex_match(ErlNifEnv* env,
     return tail;
 }
 
+/* Returns a reversed variant. */
+
 ERL_NIF_TERM regex_match_all(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
 {
