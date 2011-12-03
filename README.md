@@ -124,7 +124,7 @@ transform it back to `UTF-8`. You can do it in two ways:
 % Bad example
 
 Len   = i18n_string:len(?ISTR(Utf8Str)),
-Up    = ?ITS(i18n_string:to_upper(?ISTR(Up))),
+Up    = ?ITS(i18n_string:to_upper(?ISTR(Utf8Str))),
 UpLen = i18n_string:len(?ISTR(Up)).
 ```
 
