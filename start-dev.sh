@@ -7,6 +7,7 @@ make
 exec erl -pa $PWD/ebin edit $PWD/deps/*/ebin \
     -boot start_sasl \
     -sname i18n \
+    -s i18n
 #   -s i18n_nif init \
 #   -s reloader
 

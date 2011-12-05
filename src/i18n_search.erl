@@ -67,7 +67,7 @@ match_all(Searcher, String) ->
 -spec test(i18n_searcher(), i18n_string()) -> boolean().
 
 test(Searcher, String) ->
-    ?TRY_ATOM(?IM:search_index(Searcher, String)).
+    ?TRY_ATOM(?IM:search_test(Searcher, String)).
 
 
 -spec match(i18n_searcher(), i18n_string()) -> i18n_string() | 'false'.
