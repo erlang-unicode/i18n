@@ -32,7 +32,34 @@
 
     
 simple_open_test() ->
-    i18n_collation:open().
+    i18n_collation:open(),
+    i18n_collation:open([{'alternate', 'shifted'}]),
+    i18n_collation:open([{'alternate', 'non_ignorable'}]),
+
+    i18n_collation:open(['shifted']),
+    i18n_collation:open(['non_ignorable']),
+
+    i18n_collation:open(['lower_first']),
+    i18n_collation:open(['upper_first']),
+
+    i18n_collation:open([{'case_first', 'lower_first'}]),
+    i18n_collation:open([{'case_first', 'upper_first'}]),
+
+    lists:foreach(fun(X) ->
+            i18n_collation:open([X]),
+            i18n_collation:open([{X, 'on'}]),
+            i18n_collation:open([{X, 'off'}]),
+            ok
+            end, ['numeric', 'hiragana', 'normalization', 'french_accents']),
+
+    ok.
+
+
+
+rules_test_() ->
+    i18n_collation:open_rules(?ISTR("& g < ca")),
+    R2 = i18n_collation:open_rules(?ISTR("& g < ca"), [primary]),
+    [?_assert(is_binary(i18n_collation:sort_key(R2, ?ISTR("test"))))].
     
 compare_rules_test_() ->
     R = i18n_collation:open_rules(?ISTR("& g < ca")),

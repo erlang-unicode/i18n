@@ -33,6 +33,7 @@
 -export([new/3, new/4, new/6, new/7]).
 -export([roll/1, roll/2, roll/3]).
 -export([clear/2, clear/3]).
+-export([compare/3, compare/4]).
 
 
 -type resource() :: <<>>.   
@@ -283,4 +284,24 @@ clear(Date, Fields)
 
 clear(Cal, Date, Fields) ->
 	?TRY_NUM(?IM:date_clear(Cal, Date, Fields)).
+
+-spec compare(i18n_date_field(), i18n_date(), i18n_date()) -> 
+        boolean().
+
+compare(Field, D1, D2) ->
+    Cal = i18n_calendar:open(),
+    compare(Cal, Field, D1, D2).
+
+-spec compare(i18n_calendar(), i18n_date_field(), i18n_date(), i18n_date()) -> 
+        boolean().
+
+%% @doc If D1 and D2 are too close, then they are equal with the precision of Field.
+compare(Cal, Field, D1, D2) 
+    when D1 > D2 ->
+    compare(Cal, Field, D2, D1);
+compare(Cal, Field, D1, D2) ->
+    % D1 =< D2.
+    % Check (D1 + 1 > D2) condition.
+    i18n_date:add(Cal, D1, [{Field, 1}]) > D2.
+    
 
