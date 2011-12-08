@@ -53,6 +53,8 @@ difference_test_() ->
     ,?_assertEqual(F(i18n_date:new(2000,12,31),
                       i18n_date:new(0,1,1), [day, year]), 
                    [{year,-2000},{day,-365}])
+
+    % Error: to long value
     ,?_assertEqual(F(i18n_date:new(0,1,1),
                       i18n_date:new(2000,12,31), [day, year]), 
                    [{year,2000},{day,365}])
