@@ -230,7 +230,7 @@ difference(Cal, FromDate, ToDate, Field)
 
 difference(Cal, FromDate, ToDate, Fields) 
     when is_list(Fields) ->
-	?TRY_NUM(?IM:date_diff_fields(Cal, FromDate, ToDate, Fields)).
+	?TRY_LIST(?IM:date_diff_fields(Cal, FromDate, ToDate, Fields)).
 
 
 

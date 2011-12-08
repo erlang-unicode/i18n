@@ -43,4 +43,19 @@ compare_test_() ->
             ?M:new(1990, 12, 19)))
     ].
 
+difference_test_() ->
+    F = fun ?M:difference/3,
+    Now = ?M:now(),
+
+    [?_assertEqual(F(Now, Now, day), 0)
+    ,?_assertEqual(F(Now, Now, [day]), [{day, 0}])
+    ,?_assertEqual(F(Now, Now, [day, year]), [{year, 0}, {day, 0}])
+    ,?_assertEqual(F(i18n_date:new(2000,12,31),
+                      i18n_date:new(0,1,1), [day, year]), 
+                   [{year,-2000},{day,-365}])
+    ,?_assertEqual(F(i18n_date:new(0,1,1),
+                      i18n_date:new(2000,12,31), [day, year]), 
+                   [{year,2000},{day,365}])
+    ].
+
 -endif.

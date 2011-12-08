@@ -179,8 +179,8 @@ inline static void append_atom(char * atom, UnicodeString& s)
     } 
 }
 
-/* Return 1 if the elem was found. */
-static int search_in_enum(
+/* Return TRUE if the elem was found. */
+static UBool search_in_enum(
     StringEnumeration& en,
     const UnicodeString& str,
     unsigned int& index,
@@ -190,19 +190,19 @@ static int search_in_enum(
     index = 0;
 
     en.reset(status);
-    if (U_FAILURE(status))
-        return 0;
+//  if (U_FAILURE(status))
+//      return FALSE;
 
     while ((s = en.snext(status)) != NULL) {
-    if (U_FAILURE(status))
-        return 0;
+//      if (U_FAILURE(status))
+//          return FALSE;
 
         if ((s->compare(str)) == 0)
-            return 1;
+            return TRUE;
 
         index++;
     }
-    return 0;
+    return FALSE;
 }
 
 unsigned int butoui(ErlNifBinary& bu, UErrorCode& status)
@@ -341,7 +341,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                         goto bad_elem;
                 
                     /* Read the element name from the array. */
-                    int is_found;
+                    UBool is_found;
                     is_found = search_in_enum(
                         * name_enum,
                         names[i],
@@ -379,7 +379,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                         goto bad_elem;
                 
                     /* Read the element name from the array. */
-                    int is_found;
+                    UBool is_found;
                     is_found = search_in_enum(
                         * name_enum,
                         names[i],
@@ -387,7 +387,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                         status);
                     if (U_FAILURE(status))
                         goto handle_error;
-                    
+
                     if (!is_found)
                         goto bad_elem;
                 }
@@ -405,13 +405,12 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             argt = out;
             /* Use the position of the element as a name. */
             append_uint((unsigned int) i, names[i]);
-            pos = i;
+            pos = (unsigned int) i;
         }
 
         /* Out of range. */
-        if (((int) pos)>mcount)
+        if (((int) pos)>=mcount)
             goto bad_elem;
-
 
         /* out is a head.
            len is an arity.

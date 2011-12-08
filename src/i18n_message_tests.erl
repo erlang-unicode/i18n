@@ -113,4 +113,24 @@ prop_message_date() ->
     F = get_checker_format(S),
     ?FORALL({Xs}, {real()}, F(Xs)).
 
+message_order_test_() ->
+    OF = fun i18n_message:open/1,
+    FF = fun i18n_message:format/2,
+    Date = i18n_date:new(2011,12,8),
+    MNums = OF(?ISTR("{0,date} {1,number}")),
+    MNames = OF(?ISTR("{d,date} {n,number}")),
+    Res1 = ?ISTR("2011 12 8 3.3"),
+
+    [?_assertEqual(Res1, FF(MNums, [Date, 3.3]))
+    ,?_assertEqual(Res1, FF(MNums, [{0, Date}, {1, 3.3}]))
+    ,?_assertEqual(Res1, FF(MNums, [{'0', Date}, {'1', 3.3}]))
+    ,?_assertEqual(Res1, FF(MNums, 
+                        [{?ISTR("0"), Date}, {?ISTR("1"), 3.3}]))
+    ,?_assertEqual(Res1, FF(MNums, [{'1', 3.3}, {'0', Date}]))
+
+    ,?_assertEqual(Res1, FF(MNames, [{d, Date}, {n, 3.3}]))
+    ,?_assertEqual(Res1, FF(MNames, [{n, 3.3}, {d, Date}]))
+    ,?_assertEqual(Res1, FF(MNames, [{?ISTR("n"), 3.3}, {?ISTR("d"), Date}]))
+    ].
+
 -endif.
