@@ -40,11 +40,21 @@ class MessageFormatAdapter {
 public:
     static const Formattable::Type* getArgTypeList(const MessageFormat& m,
                                                    int32_t& count);
+
+    static StringEnumeration* getFormatNames(MessageFormat& m,
+            UErrorCode& status);
 };
+
 const Formattable::Type*
 MessageFormatAdapter::getArgTypeList(const MessageFormat& m,
                                      int32_t& count) {
     return m.getArgTypeList(count);
+}
+
+StringEnumeration*
+MessageFormatAdapter::getFormatNames(MessageFormat& m,
+            UErrorCode& status) {
+    return m.getFormatNames(status);
 }
 U_NAMESPACE_END
 
@@ -169,22 +179,98 @@ inline static void append_atom(char * atom, UnicodeString& s)
     } 
 }
 
+/* Return 1 if the elem was found. */
+static int search_in_enum(
+    StringEnumeration& en,
+    const UnicodeString& str,
+    unsigned int& index,
+    UErrorCode& status) {
+
+    const UnicodeString* s;
+    index = 0;
+
+    en.reset(status);
+    if (U_FAILURE(status))
+        return 0;
+
+    while ((s = en.snext(status)) != NULL) {
+    if (U_FAILURE(status))
+        return 0;
+
+        if ((s->compare(str)) == 0)
+            return 1;
+
+        index++;
+    }
+    return 0;
+}
+
+unsigned int butoui(ErlNifBinary& bu, UErrorCode& status)
+{
+    unsigned int i = 0;
+    int32_t len = TO_ULEN(bu.size);
+    
+    UChar* pos = (UChar*) (bu.data);
+    UChar ch;
+
+    while (len) {
+        ch = *pos;
+        if ((ch<'0') || (ch>'9')) {
+            /* not number */
+            status = U_INTERNAL_PROGRAM_ERROR;
+            return i;
+        }
+        i *= 10;
+        i += ch-'0';
+        
+
+        len--;
+        pos++;
+    }
+    return i;
+}
+
+unsigned int stoui(char* pos, UErrorCode& status)
+{
+    unsigned int i = 0;
+    
+    char ch;
+
+    while (* pos) {
+        ch = *pos;
+        if ((ch<'0') || (ch>'9')) {
+            /* not number */
+            status = U_INTERNAL_PROGRAM_ERROR;
+            return i;
+        }
+        i *= 10;
+        i += ch-'0';
+        
+        pos++;
+    }
+    return i;
+}
+
 ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in, name;
     ERL_NIF_TERM out, list, argt;
     int32_t len, mcount; 
     cloner* ptr;
-    unsigned int count, i;
+    unsigned int count, i, pos;
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString appendTo;
     const MessageFormat* fmt;
     const Formattable::Type* types;
+    StringEnumeration* name_enum;
+    
 
     ERL_NIF_TERM* tuple;
     double tDouble;
     int tInt;
     ErlNifSInt64 tInt64;
+
+    
 
     if ((argc != 2) && (argc != 3))
         return enif_make_badarg(env);
@@ -199,6 +285,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
 
     if (argc == 3) {
+        /* Pass the start of the string as the third argument */
         if (enif_inspect_binary(env, argv[2], &in)) {
             appendTo.append((UChar*) in.data, 
                 TO_ULEN(in.size));
@@ -222,10 +309,17 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
      * If we use c++ API we cannot get requered type.
      * So we will use c++ API for c implementation (private API). */
     types = MessageFormatAdapter::getArgTypeList(*fmt, mcount);
+    name_enum = MessageFormatAdapter::getFormatNames((MessageFormat&) *fmt, status);
+    if (U_FAILURE(status)) {
+        name_enum = NULL;
+        status = U_ZERO_ERROR;
+    }
 
-    if (mcount < (int32_t) count) 
-        return enif_make_badarg(env); /* too few elements in the list */
 
+//  if (mcount < (int32_t) count) 
+//      return enif_make_badarg(env); /* too few elements in the list */
+
+    /* We have the list of the elements. */
     while (enif_get_list_cell(env, list, &out, &list)) {
 
         if (enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
@@ -237,11 +331,34 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                 /* typeof(Id) == unicode_string */
                 names[i].append((UChar*) name.data, 
                     (int32_t) TO_ULEN(name.size));
+
+                pos = butoui(name, status);
+                if (U_FAILURE(status)) {
+                    status = U_ZERO_ERROR;
+
+                    /* Names are not available. */
+                    if (name_enum == NULL)
+                        goto bad_elem;
+                
+                    /* Read the element name from the array. */
+                    int is_found;
+                    is_found = search_in_enum(
+                        * name_enum,
+                        names[i],
+                        pos,
+                        status);
+                    if (U_FAILURE(status))
+                        goto handle_error;
+                    
+                    if (!is_found)
+                        goto bad_elem;
+                }
             } else 
 
             if (enif_get_int(env, tuple[0], &tInt)) {
                 /* typeof(Id) == integer */
                 append_uint(tInt, names[i]);
+                pos = (unsigned int) tInt;
             } else 
 
             if (enif_is_atom(env, tuple[0])) {
@@ -252,23 +369,54 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                     goto bad_elem;
                 
                 append_atom((char *) atom, names[i]);
+
+                pos = stoui((char *) atom, status);
+                if (U_FAILURE(status)) {
+                    status = U_ZERO_ERROR;
+
+                    /* Names are not available. */
+                    if (name_enum == NULL)
+                        goto bad_elem;
+                
+                    /* Read the element name from the array. */
+                    int is_found;
+                    is_found = search_in_enum(
+                        * name_enum,
+                        names[i],
+                        pos,
+                        status);
+                    if (U_FAILURE(status))
+                        goto handle_error;
+                    
+                    if (!is_found)
+                        goto bad_elem;
+                }
                     
             } else 
                 goto bad_elem;
 
-                
+            /* The value of the element is the second element of the tuple */
             argt = tuple[1];
         } else {
+            /* It is not a tuple. */
+
             /* [..., Arg, ...] */
+            /* There is no a tuple, there is only an element. */
             argt = out;
+            /* Use the position of the element as a name. */
             append_uint((unsigned int) i, names[i]);
+            pos = i;
         }
 
+        /* Out of range. */
+        if (((int) pos)>mcount)
+            goto bad_elem;
 
-        /* out is a head
-           len is arity
-           reuse name variable as an argument */
-        switch (types[i]) {
+
+        /* out is a head.
+           len is an arity.
+           Reuse the name variable as an argument. */
+        switch (types[pos]) {
             
             case Formattable::kDate:
  
@@ -339,6 +487,12 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         delete[] args;
         delete[] names;
         return list_element_error(env, argv[1], i);
+
+    handle_error:
+        /* Memory deallocation */
+        delete[] args;
+        delete[] names;
+        ERROR(env, status);
 }
 
 
