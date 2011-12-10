@@ -95,6 +95,7 @@ extern "C" {
 
 #if I18N_DATE
 #include "unicode/ucal.h"
+#include "unicode/calendar.h"
 #endif
 
 #if I18N_TRANS

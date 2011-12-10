@@ -61,7 +61,10 @@ U_NAMESPACE_END
 U_NAMESPACE_USE
 
 
-
+typedef struct {
+    MessageFormat* format;
+    StringEnumeration* name_enum;
+} IMessage;
 
 
 static ErlNifResourceType* message_type = 0;
@@ -77,29 +80,67 @@ static void message_dtor(ErlNifEnv* /*env*/, void* obj)
 
 
 /* Called from cloner for each thread. */
-static void message_close(char* obj) 
+static void message_close(char* ptr) 
 { 
-    if (obj != NULL)
-        umsg_close((UMessageFormat*) obj);
+    if (ptr != NULL) {
+        IMessage* data = (IMessage*) ptr;
+
+        if (data->format != NULL)
+            delete data->format;
+
+        if (data->name_enum != NULL)
+            delete data->name_enum;
+
+        enif_free((void*) ptr);
+    }
 }
 
-static char* message_clone(char* obj) 
+static char* message_clone(char* ptr) 
 {
+    if (ptr == NULL) 
+        return NULL;
+
+    IMessage* from;
+    IMessage* to;
+
+    to = (IMessage*) enif_alloc(sizeof(IMessage));
+    if (to == NULL)
+        return NULL;
+
+    from = (IMessage*) ptr;
+
+    if (from->format != NULL)
+        to->format = (MessageFormat*) from->format->clone();
+
+    if (from->name_enum != NULL)
+        to->name_enum = from->name_enum->clone();
+
+    return (char*) to;
+}
+
+static int message_open(MessageFormat * msg, cloner* c)
+{
+    IMessage* to;
     UErrorCode status = U_ZERO_ERROR;
 
-    obj = (char*) umsg_clone(
-        (UMessageFormat*) obj,
-        &status 
-    );
-    if(U_FAILURE(status)) { 
+    to = (IMessage*) enif_alloc(sizeof(IMessage));
+    if (to == NULL)
         return NULL;
-    } 
-    return obj;
-}
 
-static int message_open(UMessageFormat * obj, cloner* c)
-{
-    return cloner_open((char *) obj, c, &message_clone, &message_close);
+    /*
+     * Name enum is only for named format.
+     * If the error was returned, then it is not named format.
+     */
+    to->name_enum = 
+        MessageFormatAdapter::getFormatNames(*msg, status);
+
+    if (U_FAILURE(status)) {
+        to->name_enum = NULL;
+    }
+    
+    to->format = msg;
+
+    return cloner_open((char *) to, c, &message_clone, &message_close);
 } 
 
 
@@ -150,7 +191,7 @@ ERL_NIF_TERM open_format(ErlNifEnv* env, int argc,
 
 
     res = (cloner*) enif_alloc_resource(message_type, sizeof(cloner));
-    if (message_open(msg, res)) {
+    if (message_open((MessageFormat*) msg, res)) {
         enif_release_resource(res);
         return enif_make_badarg(env);
     }
@@ -217,7 +258,7 @@ unsigned int butoui(ErlNifBinary& bu, UErrorCode& status)
         ch = *pos;
         if ((ch<'0') || (ch>'9')) {
             /* not number */
-            status = U_INTERNAL_PROGRAM_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
             return i;
         }
         i *= 10;
@@ -240,7 +281,7 @@ unsigned int stoui(char* pos, UErrorCode& status)
         ch = *pos;
         if ((ch<'0') || (ch>'9')) {
             /* not number */
-            status = U_INTERNAL_PROGRAM_ERROR;
+            status = U_ILLEGAL_ARGUMENT_ERROR;
             return i;
         }
         i *= 10;
@@ -251,24 +292,143 @@ unsigned int stoui(char* pos, UErrorCode& status)
     return i;
 }
 
+/* Returns TRUE if success */
+static UBool
+parseNameId(ErlNifEnv* env, const ERL_NIF_TERM term, 
+    UnicodeString& name)
+{
+    ErlNifBinary bin;
+
+    /* [..., {Id, Arg}, ...] */
+    /* Inspect first element of the tuple (extract the name) */
+
+    if (enif_inspect_binary(env, term, &bin)) {
+        /* typeof(Id) == unicode_string */
+        name.append((UChar*) bin.data, 
+            (int32_t) TO_ULEN(bin.size));
+    } else 
+
+    if (enif_is_atom(env, term)) {
+        /* typeof(Id) == atom */
+        char atom[ATOM_LEN];
+        if (!enif_get_atom(env, term, (char*) atom, ATOM_LEN,
+            ERL_NIF_LATIN1))
+            return FALSE;
+        
+        append_atom((char *) atom, name);
+    } else 
+        return FALSE;
+
+    return TRUE;
+}
+
+/* Returns the parsed value */
+static unsigned int
+parseNumId(ErlNifEnv* env, const ERL_NIF_TERM term, 
+    UErrorCode& status)
+{
+    int tInt;
+
+    /* Inspect first element of the tuple (extract the name) */
+    if (enif_get_int(env, term, &tInt)) {
+        /* typeof(Id) == integer */
+        return (unsigned int) tInt;
+    } else 
+
+    if (enif_is_binary(env, term)) {
+        ErlNifBinary bin;
+        if (enif_inspect_binary(env, term, &bin)) 
+            /* typeof(Id) == unicode_string */
+            return butoui(bin, status);
+    } else 
+
+    if (enif_is_atom(env, term)) {
+        /* typeof(Id) == atom */
+        char atom[ATOM_LEN];
+        if (enif_get_atom(env, term, (char*) atom, ATOM_LEN,
+            ERL_NIF_LATIN1))
+            return stoui((char *) atom, status);
+    }  
+
+   status = U_ILLEGAL_ARGUMENT_ERROR;
+    return 0;
+}
+
+/* Returns TRUE if success */
+static UBool
+fillValue(ErlNifEnv* env, Formattable::Type type, 
+    const ERL_NIF_TERM from, Formattable& to)
+{
+    double tDouble;
+    int tInt;
+    ErlNifSInt64 tInt64;
+    ErlNifBinary bin;
+
+    switch (type) {
+    
+    case Formattable::kDate:
+
+        if (!enif_get_double(env, from, &tDouble)) 
+            return FALSE;
+
+        to.setDate((UDate) tDouble);
+        break;
+    
+    case Formattable::kDouble:
+
+        if (!enif_get_double(env, from, &tDouble)) 
+            return FALSE;
+
+        to.setDouble(tDouble);
+        break;
+    
+    case Formattable::kLong:
+
+        if (!enif_get_int(env, from, &tInt))
+            return FALSE;
+
+        to.setLong((int32_t) tInt);
+        break;
+
+    case Formattable::kInt64:
+
+        if (!enif_get_int64(env, from, &tInt64)) 
+            return FALSE;
+
+        to.setInt64((int64_t) tInt64);
+        break;
+        
+    case Formattable::kString:
+
+        if (!enif_inspect_binary(env, from, &bin)) 
+            return FALSE;
+
+        to.setString(
+            * new UnicodeString(
+                (const UChar*) bin.data, 
+                (int32_t) TO_ULEN(bin.size)));
+        break;
+
+    default:
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
 ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
-    ErlNifBinary in, name;
-    ERL_NIF_TERM out, list, argt;
+    ErlNifBinary in;
+    ERL_NIF_TERM out, list;
     int32_t len, mcount; 
     cloner* ptr;
     unsigned int count, i, pos;
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString appendTo;
-    const MessageFormat* fmt;
-    const Formattable::Type* types;
-    StringEnumeration* name_enum;
+    IMessage* obj;
     
-
     ERL_NIF_TERM* tuple;
-    double tDouble;
-    int tInt;
-    ErlNifSInt64 tInt64;
 
     
 
@@ -280,8 +440,8 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
     }
 
-    fmt = (const MessageFormat*) cloner_get(ptr);
-    CHECK_RES(env, fmt);
+    obj = (IMessage*) cloner_get(ptr);
+    CHECK_RES(env, obj);
 
 
     if (argc == 3) {
@@ -299,8 +459,9 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
      * zero causes problems on some platforms (e.g. Win32).
      */
     Formattable* args = new Formattable[count ? count : 1];
-    UnicodeString* names = new UnicodeString[count ? count : 1];
+    UnicodeString* names = NULL;
 
+    /* i is the number of the element of the list. */
     i = 0;
     list = argv[1];
 
@@ -308,166 +469,68 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
      * If we use c API we cannot check args.
      * If we use c++ API we cannot get requered type.
      * So we will use c++ API for c implementation (private API). */
-    types = MessageFormatAdapter::getArgTypeList(*fmt, mcount);
-    name_enum = MessageFormatAdapter::getFormatNames((MessageFormat&) *fmt, status);
-    if (U_FAILURE(status)) {
-        name_enum = NULL;
-        status = U_ZERO_ERROR;
-    }
+    const Formattable::Type* 
+        types = MessageFormatAdapter::getArgTypeList(
+            *(obj->format), mcount);
 
-
-//  if (mcount < (int32_t) count) 
-//      return enif_make_badarg(env); /* too few elements in the list */
-
-    /* We have the list of the elements. */
-    while (enif_get_list_cell(env, list, &out, &list)) {
-
-        if (enif_get_tuple(env, out, &len, (const ERL_NIF_TERM**) &tuple)
-            && (len == 2)) { 
-            /* [..., {Id, Arg}, ...] */
-            /* Inspect first element of the tuple (extract the name) */
-
-            if (enif_inspect_binary(env, tuple[0], &name)) {
-                /* typeof(Id) == unicode_string */
-                names[i].append((UChar*) name.data, 
-                    (int32_t) TO_ULEN(name.size));
-
-                pos = butoui(name, status);
-                if (U_FAILURE(status)) {
-                    status = U_ZERO_ERROR;
-
-                    /* Names are not available. */
-                    if (name_enum == NULL)
-                        goto bad_elem;
-                
-                    /* Read the element name from the array. */
-                    UBool is_found;
-                    is_found = search_in_enum(
-                        * name_enum,
-                        names[i],
-                        pos,
-                        status);
-                    if (U_FAILURE(status))
-                        goto handle_error;
-                    
-                    if (!is_found)
-                        goto bad_elem;
-                }
-            } else 
-
-            if (enif_get_int(env, tuple[0], &tInt)) {
-                /* typeof(Id) == integer */
-                append_uint(tInt, names[i]);
-                pos = (unsigned int) tInt;
-            } else 
-
-            if (enif_is_atom(env, tuple[0])) {
-                /* typeof(Id) == atom */
-                char atom[ATOM_LEN];
-                if (!enif_get_atom(env, tuple[0], (char*) atom, ATOM_LEN,
-                    ERL_NIF_LATIN1))
-                    goto bad_elem;
-                
-                append_atom((char *) atom, names[i]);
-
-                pos = stoui((char *) atom, status);
-                if (U_FAILURE(status)) {
-                    status = U_ZERO_ERROR;
-
-                    /* Names are not available. */
-                    if (name_enum == NULL)
-                        goto bad_elem;
-                
-                    /* Read the element name from the array. */
-                    UBool is_found;
-                    is_found = search_in_enum(
-                        * name_enum,
-                        names[i],
-                        pos,
-                        status);
-                    if (U_FAILURE(status))
-                        goto handle_error;
-
-                    if (!is_found)
-                        goto bad_elem;
-                }
-                    
-            } else 
-                goto bad_elem;
-
-            /* The value of the element is the second element of the tuple */
-            argt = tuple[1];
-        } else {
-            /* It is not a tuple. */
-
-            /* [..., Arg, ...] */
-            /* There is no a tuple, there is only an element. */
-            argt = out;
-            /* Use the position of the element as a name. */
-            append_uint((unsigned int) i, names[i]);
-            pos = (unsigned int) i;
-        }
-
-        /* Out of range. */
-        if (((int) pos)>=mcount)
-            goto bad_elem;
-
-        /* out is a head.
-           len is an arity.
-           Reuse the name variable as an argument. */
-        switch (types[pos]) {
-            
-            case Formattable::kDate:
- 
-                if (!enif_get_double(env, argt, &tDouble)) 
-                    goto bad_elem;
-
-                args[i].setDate((UDate) tDouble);
-                break;
-            
-            case Formattable::kDouble:
- 
-                if (!enif_get_double(env, argt, &tDouble)) 
-                    goto bad_elem;
-
-                args[i].setDouble(tDouble);
-                break;
-            
-            case Formattable::kLong:
- 
-                if (!enif_get_int(env, argt, &tInt))
-                    goto bad_elem;
-
-                args[i].setLong((int32_t) tInt);
-                break;
- 
-            case Formattable::kInt64:
-
-                if (!enif_get_int64(env, argt, &tInt64)) 
-                    goto bad_elem;
-
-                args[i].setInt64((int64_t) tInt64);
-                break;
-                
-            case Formattable::kString:
-
-                if (!enif_inspect_binary(env, argt, &name)) 
-                    goto bad_elem;
-
-                args[i].setString(
-                    * new UnicodeString(
-                        (const UChar*) name.data, 
-                        (int32_t) TO_ULEN(name.size)));
-                break;
- 
-           default:
-                goto bad_elem;
-        }
-        
-        i++;
-    }
     
-    fmt->format(
+    if (obj->name_enum == NULL) {
+        /* Numeric format */
+        while (enif_get_list_cell(env, list, &out, &list)) {
+            if (enif_get_tuple(env, out, &len, 
+                    (const ERL_NIF_TERM**) &tuple)
+                    && (len == 2)) {
+                pos = parseNumId(env, tuple[0], status);
+
+                if (U_FAILURE(status) || (((int) pos)>=mcount))
+                    goto bad_elem;
+
+                /* Set formatttable. */
+                if (!fillValue(env, types[pos], tuple[1], args[pos]))
+                    goto bad_elem;
+                
+            } else {
+                /* Set formatttable. */
+                if (!fillValue(env, types[i], out, args[i]))
+                    goto bad_elem;
+            }
+        
+            i++;
+        }
+    } else { 
+        /* Name format */
+        names = new UnicodeString[count ? count : 1];
+
+        while (enif_get_list_cell(env, list, &out, &list)) {
+            if (!(enif_get_tuple(env, out, &len, 
+                    (const ERL_NIF_TERM**) &tuple)
+                    && (len == 2))) 
+                goto bad_elem;
+
+            if (!parseNameId(env, tuple[0], names[i]))
+                goto bad_elem;
+                
+            /* Read the element name from the array. 
+             * Set pos. */
+            UBool is_found;
+            is_found = search_in_enum(
+                * (obj->name_enum),
+                names[i],
+                pos,
+                status);
+            if (U_FAILURE(status))
+                goto handle_error;
+
+            /* Set formatttable. */
+            if (!fillValue(env, types[pos], tuple[1], args[i]))
+                goto bad_elem;
+        
+            i++;
+        }
+    }
+
+    
+    obj->format->format(
         (const UnicodeString *) names,
         (const Formattable *) args,
         (int32_t) count,

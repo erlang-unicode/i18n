@@ -1,11 +1,13 @@
 %% @doc i18n.
 
 -module(i18n).
--include_lib("i18n.hrl").
+-include("i18n.hrl").
+-include_lib("i18n/include/i18n.hrl").
 -export([start/0, stop/0]).
+-export([print/1, print_date/1, print_number/1]).
 
 % Short names for the console
--export([from/1, to/1, re/1, write/1]).
+-export([from/1, to/1, re/1]).
 % Helpers for the console
 -export([repeat/2]).
 
@@ -25,7 +27,7 @@ stop() ->
 from(X) -> i18n_string:from(X).
 to(X) -> i18n_string:to_utf8(X).
 re(X) -> i18n_regex:open(X).
-write(X) -> io:format("~ts", [to(X)]).
+
 repeat(C, F) when C >= 0, is_function(F) ->
 	do_repeat(C, F).
 
@@ -41,3 +43,20 @@ icu_version() ->
 
 unicode_version() ->
     ?TRY_ATOM(?IM:unicode_version()).
+
+%%
+%% Print Helpers
+%%
+
+print(IStr) ->
+    io:format("~ts", [to(IStr)]).
+
+print_date(Date) ->
+    M = i18n_message:open(?ISTR("{0,date}")),
+    i18n:print(i18n_message:format(M, [Date])).
+
+print_number(Num) ->
+    M = i18n_message:open(?ISTR("{0,number}")),
+    i18n:print(i18n_message:format(M, [float(Num)])).
+
+

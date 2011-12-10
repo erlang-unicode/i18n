@@ -36,6 +36,11 @@
 
 #if I18N_DATE
 
+
+
+
+
+
 static ErlNifResourceType* calendar_type = 0;
 
 
@@ -70,10 +75,6 @@ static int calendar_open(UCalendar * obj, cloner* c)
 {
     return cloner_open((char *) obj, c, &calendar_clone, &calendar_close);
 } 
-
-
-
-
 
 
 
@@ -486,7 +487,7 @@ ERL_NIF_TERM date_now(ErlNifEnv* env, int argc,
     return enif_make_double(env, (double) ucal_getNow());
 }
 
-
+/* i18n_date:new/3 */
 ERL_NIF_TERM date_get3(ErlNifEnv* env, int argc, 
     const ERL_NIF_TERM argv[])
 {
@@ -602,7 +603,7 @@ dateFieldDifference(UCalendar* cal,
                 max <<= 1;
                 if (max < 0) {
                     // Field difference too large to fit into int32_t
-                    status = U_ILLEGAL_ARGUMENT_ERROR;
+                    status = U_UNSUPPORTED_ERROR;
                 }
             }
         }
@@ -638,7 +639,8 @@ dateFieldDifference(UCalendar* cal,
                 max <<= 1;
                 if (max == 0) {
                     // Field difference too large to fit into int32_t
-                    status = U_ILLEGAL_ARGUMENT_ERROR;
+                    status = U_UNSUPPORTED_ERROR;
+        status = U_ILLEGAL_ARGUMENT_ERROR;
                 }
             }
         }
@@ -708,7 +710,7 @@ ERL_NIF_TERM date_diff_field(ErlNifEnv* env, int argc,
     field = (UCalendarDateFields) parsed_value;
 
     amount = (int) dateFieldDifference(cal, 
-        targetMs, 
+        (UDate) targetMs, 
         field, 
         status);
     CHECK(env, status);
@@ -764,14 +766,12 @@ ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc,
 
         if (!enif_get_atom(env, head, (char*) value, ATOM_LEN, 
             ERL_NIF_LATIN1)) {
-            status = U_ILLEGAL_ARGUMENT_ERROR;
-            CHECK(env, status);
+            return enif_make_badarg(env);
         }
 
         parsed_value = parseCalendarDateField(value);
         if (parsed_value == -1) {
-            status = U_ILLEGAL_ARGUMENT_ERROR;
-            CHECK(env, status);
+            return enif_make_badarg(env);
         }
 
         field = (UCalendarDateFields) parsed_value;
@@ -787,7 +787,7 @@ ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc,
         {
             field = (UCalendarDateFields) i;
             fields[i].amount = (int) dateFieldDifference(cal, 
-                targetMs, 
+                (UDate) targetMs, 
                 field, 
                 status);
 

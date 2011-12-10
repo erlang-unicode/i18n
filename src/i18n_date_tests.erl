@@ -50,14 +50,49 @@ difference_test_() ->
     [?_assertEqual(F(Now, Now, day), 0)
     ,?_assertEqual(F(Now, Now, [day]), [{day, 0}])
     ,?_assertEqual(F(Now, Now, [day, year]), [{year, 0}, {day, 0}])
+    ,?_assertEqual(F(i18n_date:new(0,12,31),
+                      i18n_date:new(0,1,1), day), -365)
     ,?_assertEqual(F(i18n_date:new(2000,12,31),
                       i18n_date:new(0,1,1), [day, year]), 
                    [{year,-2000},{day,-365}])
 
     % Error: to long value
+    % ICU has bad support of negative years.
+    ,?_assertEqual(F(i18n_date:new(2000,1,1),
+                      i18n_date:new(2000,12,31), [day]), 
+                   [{day,365}])
+    ,?_assertEqual(F(i18n_date:new(0,1,1),
+                      i18n_date:new(2000,12,31), [year]), 
+                   [{year,2000}])
+    ,?_assertEqual(F(i18n_date:new(0,1,1),
+                      i18n_date:new(2000,12,31), year), 2000)
+    ,?_assertEqual(F(i18n_date:new(1999,1,1),
+                      i18n_date:new(2000,1,1), [year]), 
+                   [{year,1}])
+    ,?_assertEqual(F(i18n_date:new(1999,1,1),
+                      i18n_date:new(2000,1,1), [year,day]), 
+                   [{year,1},{day,0}])
+    ,?_assertEqual(F(i18n_date:new(0,1,1),
+                      i18n_date:new(2000,12,31), [day_of_year, year]), 
+                   [{year,2000},{day_of_year,365}])
     ,?_assertEqual(F(i18n_date:new(0,1,1),
                       i18n_date:new(2000,12,31), [day, year]), 
                    [{year,2000},{day,365}])
+    ].
+
+add_test_() ->
+    F = fun ?M:add/2,
+    Now = ?M:now(),
+    Zero = ?M:new(0,1,1),
+    Y2k = ?M:new(2000,1,1),
+
+    [?_assert(is_float(F(Now, [{day,0}])))
+    ,?_assert(is_float(F(Now, [{day,10}, {year,1}])))
+    ,?_assert(is_float(F(Now, [{day,1000}])))
+    ,?_assert(F(Now, [{day, 1}])>Now)
+    ,?_assert(F(Now, [{day,-1}])<Now)
+    ,?_assert(F(Zero, [{year,1999}])<Y2k)
+    ,?_assert(F(Zero, [{year,2012}])>Y2k)
     ].
 
 -endif.

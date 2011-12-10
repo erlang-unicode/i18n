@@ -127,6 +127,7 @@ message_order_test_() ->
     ,?_assertEqual(Res1, FF(MNums, 
                         [{?ISTR("0"), Date}, {?ISTR("1"), 3.3}]))
     ,?_assertEqual(Res1, FF(MNums, [{'1', 3.3}, {'0', Date}]))
+    ,?_assertEqual(Res1, FF(MNums, [{?ISTR("1"), 3.3}, {?ISTR("0"), Date}]))
 
     ,?_assertEqual(Res1, FF(MNames, [{d, Date}, {n, 3.3}]))
     ,?_assertEqual(Res1, FF(MNames, [{n, 3.3}, {d, Date}]))
