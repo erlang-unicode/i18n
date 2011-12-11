@@ -42,6 +42,9 @@
 
 
 static ErlNifResourceType* calendar_type = 0;
+static int field_to_pos[UCAL_FIELD_COUNT];
+static int pos_to_field[UCAL_FIELD_COUNT];
+static int POS_MAX;
 
 
 /* Called from erl_nif. */
@@ -149,23 +152,31 @@ static int parseCalendarDateField(const char * type)
 {
     return (!strcmp((char*) "era",           type)) ? UCAL_ERA :
            (!strcmp((char*) "year",          type)) ? UCAL_YEAR :
+           (!strcmp((char*) "extended_year", type)) ? UCAL_EXTENDED_YEAR :
+           (!strcmp((char*) "year_woy",      type)) ? UCAL_YEAR_WOY :
            (!strcmp((char*) "month",         type)) ? UCAL_MONTH :
            (!strcmp((char*) "week_of_year",  type)) ? UCAL_WEEK_OF_YEAR :
            (!strcmp((char*) "week_of_month", type)) ? UCAL_WEEK_OF_MONTH :
            (!strcmp((char*) "date",          type)) ? UCAL_DATE :
            (!strcmp((char*) "day",           type)) ? UCAL_DATE :
+           (!strcmp((char*) "julian_day",    type)) ? UCAL_JULIAN_DAY :
            (!strcmp((char*) "day_of_year",   type)) ? UCAL_DAY_OF_YEAR :
            (!strcmp((char*) "day_of_week",   type)) ? UCAL_DAY_OF_WEEK :
+           (!strcmp((char*) "dow_local",     type)) ? UCAL_DOW_LOCAL :
+           (!strcmp((char*) "day_of_week_in_month", type))  
+                ? UCAL_DAY_OF_WEEK_IN_MONTH :
            (!strcmp((char*) "am_pm",         type)) ? UCAL_AM_PM :
            (!strcmp((char*) "hour",          type)) ? UCAL_HOUR :
            (!strcmp((char*) "hour_of_day",   type)) ? UCAL_HOUR_OF_DAY :
            (!strcmp((char*) "minute",        type)) ? UCAL_MINUTE :
            (!strcmp((char*) "second",        type)) ? UCAL_SECOND :
            (!strcmp((char*) "millisecond",   type)) ? UCAL_MILLISECOND :
+           (!strcmp((char*) "milliseconds_in_day", type)) 
+                ? UCAL_MILLISECONDS_IN_DAY :
            (!strcmp((char*) "zone_offset",   type)) ? UCAL_ZONE_OFFSET :
            (!strcmp((char*) "dst_offset",    type)) ? UCAL_DST_OFFSET :
-           (!strcmp((char*) "day_of_week_in_month", type))  
-                ? UCAL_DAY_OF_WEEK_IN_MONTH :
+           (!strcmp((char*) "is_leap_month", type)) 
+                ? UCAL_IS_LEAP_MONTH :
             -1;
 }
 
@@ -566,7 +577,7 @@ ERL_NIF_TERM calendar_locales(ErlNifEnv* env, int argc,
 }
 
 
-// This function from ICU 4.2
+/* This function is from ICU 4.2. */
 static int32_t 
 dateFieldDifference(UCalendar* cal, 
     UDate targetMs, 
@@ -580,15 +591,17 @@ dateFieldDifference(UCalendar* cal,
     startMs = ucal_getMillis(cal, &status);
     if (U_FAILURE(status)) return 0;
 
-    // Always add from the start millis.  This accomodates
-    // operations like adding years from February 29, 2000 up to
-    // February 29, 2004.  If 1, 1, 1, 1 is added to the year
-    // field, the DOM gets pinned to 28 and stays there, giving an
-    // incorrect DOM difference of 1.  We have to add 1, reset, 2,
-    // reset, 3, reset, 4.
+    /*
+       Always add from the start millis.  This accomodates
+       operations like adding years from February 29, 2000 up to
+       February 29, 2004.  If 1, 1, 1, 1 is added to the year
+       field, the DOM gets pinned to 28 and stays there, giving an
+       incorrect DOM difference of 1.  We have to add 1, reset, 2,
+       reset, 3, reset, 4.
+    */
     if (startMs < targetMs) {
         int32_t max = 1;
-        // Find a value that is too large
+        /* Find a value that is too large */
         while (U_SUCCESS(status)) {
             ucal_setMillis(cal, startMs, &status);
             ucal_add(cal, field, max, &status);
@@ -602,12 +615,13 @@ dateFieldDifference(UCalendar* cal,
                 min = max;
                 max <<= 1;
                 if (max < 0) {
-                    // Field difference too large to fit into int32_t
+                    /* Field difference too large to fit into int32_t */
                     status = U_UNSUPPORTED_ERROR;
                 }
             }
         }
-        // Do a binary search
+
+        /* Do a binary search */
         while ((max - min) > 1 && U_SUCCESS(status)) {
             int32_t t = (min + max) / 2;
             ucal_setMillis(cal, startMs, &status);
@@ -622,9 +636,14 @@ dateFieldDifference(UCalendar* cal,
                 min = t;
             }
         }
+
+        /* It is an bad type for this algorithm. */
+        if (ms < startMs)
+            status = U_UNSUPPORTED_ERROR;
+
     } else if (startMs > targetMs) {
         int32_t max = -1;
-        // Find a value that is too small
+        /* Find a value that is too small */
         while (U_SUCCESS(status)) {
             ucal_setMillis(cal, startMs, &status);
             ucal_add(cal, field, max, &status);
@@ -638,13 +657,13 @@ dateFieldDifference(UCalendar* cal,
                 min = max;
                 max <<= 1;
                 if (max == 0) {
-                    // Field difference too large to fit into int32_t
+                    /* Field difference too large to fit into int32_t */
                     status = U_UNSUPPORTED_ERROR;
-        status = U_ILLEGAL_ARGUMENT_ERROR;
                 }
             }
         }
-        // Do a binary search
+
+        /* Do a binary search */
         while ((min - max) > 1 && U_SUCCESS(status)) {
             int32_t t = (min + max) / 2;
             ucal_setMillis(cal, startMs, &status);
@@ -659,8 +678,18 @@ dateFieldDifference(UCalendar* cal,
                 min = t;
             }
         }
+
+        /*
+           It is an bad type for this algorithm.
+           For example, 
+           i18n_date:difference(i18n_date:new(-2000,1,1),
+              i18n_date:new(2000,1,1),year).
+        */
+
+        if (U_SUCCESS(status) && (ms > startMs))
+            status = U_UNSUPPORTED_ERROR;
     }
-    // Set calendar to end point
+    /* Set calendar to end point */
     ucal_setMillis(cal, startMs, &status);
     ucal_add(cal, field, min, &status);
 
@@ -732,13 +761,17 @@ ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc,
     unsigned int count;
 
     char    value[ATOM_LEN];
-    int     parsed_value;
+    int     parsed_value, pos;
     UCalendarDateFields field;
 
     struct {
         int enable;
         ERL_NIF_TERM atom;
         int32_t amount;
+    /* 
+    //} fields[POS_MAX];
+       Allocate more memory, but we will use only POS_MAX elems.
+    */
     } fields[UCAL_FIELD_COUNT];
 
 
@@ -775,17 +808,25 @@ ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc,
         }
 
         field = (UCalendarDateFields) parsed_value;
-        fields[field].enable = 1;
-        fields[field].atom = head;
+        /* Define the position in the sorted array */
+        pos = field_to_pos[field];
+
+        /* Unsupported type */
+        if (pos == -1)
+            return enif_make_badarg(env);
+            
+        fields[pos].enable = 1;
+        fields[pos].atom = head;
 
         /* Set an attribute end */
 
     }
 
-    for (int i = 0; i < UCAL_FIELD_COUNT; i++) {
+    for (int i = 0; i < POS_MAX; i++) {
         if (fields[i].enable)
         {
-            field = (UCalendarDateFields) i;
+            /* Retrive the 'real' type */
+            field = (UCalendarDateFields) pos_to_field[i];
             fields[i].amount = (int) dateFieldDifference(cal, 
                 (UDate) targetMs, 
                 field, 
@@ -796,7 +837,7 @@ ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc,
     }
 
     out = enif_make_list(env, 0);
-    for (int i = UCAL_FIELD_COUNT; i; ) {
+    for (int i = POS_MAX; i; ) {
         i--;
         if (fields[i].enable)
             out = enif_make_list_cell(env, 
@@ -821,6 +862,107 @@ int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/,
     calendar_type = enif_open_resource_type(env, NULL, "calendar_type",
         calendar_dtor, flags, NULL); 
     if (calendar_type == NULL) return 6;
+
+    int i = 0;
+    int f;
+    for (; i < UCAL_FIELD_COUNT; i++)
+        field_to_pos[i] = -1;
+
+    /* SELECT * FROM types ORDER BY duration DESC, max_count DESC; */
+
+    i = 0;
+    f = UCAL_ERA; 
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    /* Use UCAL_EXTENDED_YEAR instead of UCAL_YEAR */
+    f = UCAL_EXTENDED_YEAR;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+
+    f = UCAL_YEAR;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_MONTH;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_WEEK_OF_MONTH;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+
+    f = UCAL_WEEK_OF_YEAR;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_DAY_OF_WEEK;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_DAY_OF_MONTH;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_DAY_OF_YEAR;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_AM_PM;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_HOUR_OF_DAY;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_HOUR;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_MINUTE;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_SECOND;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_MILLISECONDS_IN_DAY;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+
+    f = UCAL_MILLISECOND;
+    pos_to_field[i] = f;
+    field_to_pos[f] = i;
+    i++;
+    
+    POS_MAX = i;
+
+
+//  [UCAL_DAY_OF_WEEK_IN_MONTH] = i++;
+
+
+
+
+
+
+
+
     return 0;
 }
 #endif
