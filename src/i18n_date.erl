@@ -203,7 +203,8 @@ get(Cal, Fields)
 
 get(Cal, Date, Fields) 
     when is_list(Fields) ->
-	?TRY_LIST(?IM:date_get_fields(Cal, Date, Fields));
+	lists:reverse(
+        ?TRY_LIST(?IM:date_get_fields(Cal, Date, Fields)));
 
 get(Cal, Date, Field) 
     when is_atom(Field) ->

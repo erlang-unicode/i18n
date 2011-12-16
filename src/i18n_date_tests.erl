@@ -30,7 +30,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("triq/include/triq.hrl").
 
-test() ->
+simple_add_test() ->
     ?M:add([{day, 1}]).
 
 compare_test_() ->
@@ -116,5 +116,53 @@ do_add_common(F) ->
     ,?_assert(is_float(F([{day,1000}])))
     ,?_assert(F([{day, 1}])>Now)
     ,?_assert(F([{day,-1}])<Now)].
+
+clear_test_() ->
+    F = fun ?M:clear/2,
+    Date = ?M:new(2000, 12, 5,   09, 45, 15),
+
+    lists:map(fun(Field) ->
+        ?_assertEqual(?M:get(F(Date, [Field]), Field), 0)
+    end, [minute, second]).
+
+new_test_() ->
+    Cal = i18n_calendar:open(),
+    Date1 = ?M:new(Cal, 2000, 12, 5,   09, 45, 15),
+    Date2 = ?M:new(Cal, 2000, 12, 5),
+    [?_assertEqual(?M:get(Cal, Date1, year), ?M:get(Cal, Date2, year))
+    ,?_assertEqual(?M:get(Cal, Date1, month), ?M:get(Cal, Date2, month))
+    ,?_assertEqual(?M:get(Cal, Date1, day), ?M:get(Cal, Date2, day))
+    ].
+
+get3_list_test() ->
+    Cal = i18n_calendar:open(),
+    Date1 = ?M:new(Cal, 2000, 12, 5,   09, 45, 15),
+
+    F = fun ?M:get/3,
+    [{hour, 9}, {minute, 45}, {second, 15}] 
+        = F(Cal, Date1, [hour, minute, second]).
+
+get2_list_test_() ->
+    Cal = i18n_calendar:open(),
+
+    F = fun ?M:get/2,
+    [{hour, H}, {minute, M}, {second, S}] 
+        = F(Cal, [hour, minute, second]),
+
+    [?_assert(is_integer(H))
+    ,?_assert(is_integer(M))
+    ,?_assert(is_integer(S))
+    ].
+
+get1_list_test_() ->
+
+    F = fun ?M:get/1,
+    [{hour, H}, {minute, M}, {second, S}] 
+        = F([hour, minute, second]),
+
+    [?_assert(is_integer(H))
+    ,?_assert(is_integer(M))
+    ,?_assert(is_integer(S))
+    ].
 
 -endif.

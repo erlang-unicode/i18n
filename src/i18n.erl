@@ -4,7 +4,7 @@
 -include("i18n.hrl").
 -include_lib("i18n/include/i18n.hrl").
 -export([start/0, stop/0]).
--export([print/1, print_date/1, print_number/1]).
+-export([print/1, print_date/1, print_time/1, print_number/1]).
 
 % Short names for the console
 -export([from/1, to/1, re/1]).
@@ -53,6 +53,10 @@ print(IStr) ->
 
 print_date(Date) ->
     M = i18n_message:open(?ISTR("{0,date}")),
+    i18n:print(i18n_message:format(M, [Date])).
+
+print_time(Date) ->
+    M = i18n_message:open(?ISTR("{0,time}")),
     i18n:print(i18n_message:format(M, [Date])).
 
 print_number(Num) ->
