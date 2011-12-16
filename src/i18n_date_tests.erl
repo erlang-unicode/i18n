@@ -85,19 +85,36 @@ difference_test_() ->
                    [{extended_year,2000},{day,365}])
     ].
 
-add_test_() ->
+add_date_test_() ->
+    F = fun ?M:add/1,
+    {"Uses only fields.",
+        do_add_common(F)}.
+
+add2_date_test_() ->
     F = fun ?M:add/2,
     Now = ?M:now(),
     Zero = ?M:new(0,1,1),
     Y2k = ?M:new(2000,1,1),
+    FF = fun(Fields) -> F(Now, Fields) end,
+    
+    {"First argument is a date.",
+        [?_assert(F(Zero, [{extended_year,1999}])<Y2k)
+        ,?_assert(F(Zero, [{extended_year,2012}])>Y2k)
+        ] ++ do_add_common(FF)}.
 
-    [?_assert(is_float(F(Now, [{day,0}])))
-    ,?_assert(is_float(F(Now, [{day,10}, {year,1}])))
-    ,?_assert(is_float(F(Now, [{day,1000}])))
-    ,?_assert(F(Now, [{day, 1}])>Now)
-    ,?_assert(F(Now, [{day,-1}])<Now)
-    ,?_assert(F(Zero, [{extended_year,1999}])<Y2k)
-    ,?_assert(F(Zero, [{extended_year,2012}])>Y2k)
-    ].
+add2_calendar_test_() ->
+    F = fun ?M:add/2,
+    Cal = i18n_calendar:open(),
+    {"First argument is a calendar.",
+        [?_assert(F(Cal, [{day, 10}])>F(Cal, [{day, -10}]))]}.
+
+do_add_common(F) ->
+    Now = ?M:now(),
+
+    [?_assert(is_float(F([{day,0}])))
+    ,?_assert(is_float(F([{day,10}, {year,1}])))
+    ,?_assert(is_float(F([{day,1000}])))
+    ,?_assert(F([{day, 1}])>Now)
+    ,?_assert(F([{day,-1}])<Now)].
 
 -endif.

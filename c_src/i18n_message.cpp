@@ -538,7 +538,8 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         status      
     );
     delete[] args;
-    delete[] names;
+    if (names != NULL)
+        delete[] names;
 
     CHECK(env, status);
 
@@ -547,13 +548,15 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     bad_elem:
         /* Memory deallocation */
         delete[] args;
-        delete[] names;
+        if (names != NULL)
+            delete[] names;
         return list_element_error(env, argv[1], i);
 
     handle_error:
         /* Memory deallocation */
         delete[] args;
-        delete[] names;
+        if (names != NULL)
+            delete[] names;
         ERROR(env, status);
 }
 
