@@ -67,7 +67,7 @@
 -export([open_calendar/1, open_calendar/2, open_calendar/3]).
 -export([date_get/4, date_get/7]).
 
--export([calendar_locales/0]).
+-export([calendar_locales/0, timezone_ids/0]).
 -export([iterator_locales/0]).
 -export([collator_locales/0]).
 -export([trans_ids/0, trans/2]).
@@ -297,6 +297,9 @@ collator_locales() ->
     ?I18N_NIF_NOT_LOADED.
 
 calendar_locales() ->
+    ?I18N_NIF_NOT_LOADED.
+
+timezone_ids() ->
     ?I18N_NIF_NOT_LOADED.
 
 trans_ids() ->

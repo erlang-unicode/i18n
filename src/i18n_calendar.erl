@@ -24,7 +24,7 @@
 -module(i18n_calendar).
 -include("i18n.hrl").
 -export([open/0, open/1, open/2, open/3]).
--export([available_locales/0]).
+-export([available_locales/0, available_timezones/0]).
 
 -type i18n_locale_id() :: atom(). 
 -type i18n_string() :: binary().   
@@ -65,4 +65,8 @@ open(Locale, TZ, Type) ->
 -spec available_locales() -> [i18n_locale_id()].
 available_locales() ->
 	?TRY_LIST(?IM:calendar_locales()).
+
+-spec available_timezones() -> [i18n_timezone()].
+available_timezones() ->
+	?TRY_LIST(?IM:timezone_ids()).
 

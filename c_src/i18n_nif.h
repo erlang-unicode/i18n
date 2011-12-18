@@ -96,6 +96,7 @@ extern "C" {
 #if I18N_DATE
 #include "unicode/ucal.h"
 #include "unicode/calendar.h"
+#include "unicode/timezone.h"
 #endif
 
 #if I18N_TRANS
@@ -159,6 +160,7 @@ inline ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status) {
 }
 
 ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en);
+ERL_NIF_TERM enum_to_term(ErlNifEnv* env, StringEnumeration* en);
 
 
 inline ERL_NIF_TERM string_to_term(ErlNifEnv* env, const UnicodeString& s) {

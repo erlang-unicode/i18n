@@ -165,4 +165,58 @@ get1_list_test_() ->
     ,?_assert(is_integer(S))
     ].
 
+roll3_test_() ->
+    Cal = i18n_calendar:open(),
+    Date = ?M:new(Cal, 2000, 12, 5,   09, 45, 15),
+    RolledDate1 = ?M:roll(Cal, Date, [{second, 55}]),
+    RolledDate2 = ?M:roll(Cal, Date, [{second, -55}]),
+
+    [?_assertEqual(?M:get(Cal, RolledDate1, [second, minute]), 
+        [{second, 10}, {minute, 45}])
+    ,?_assertEqual(?M:get(Cal, RolledDate1, second), 10)
+    ,?_assertEqual(?M:get(Cal, RolledDate1, minute), 45)
+
+    ,?_assertEqual(?M:get(Cal, RolledDate2, [second, minute]), 
+        [{second, 20}, {minute, 45}])
+    ,?_assertEqual(?M:get(Cal, RolledDate2, second), 20)
+    ,?_assertEqual(?M:get(Cal, RolledDate2, minute), 45)
+    ].
+
+roll_test_() ->
+    Cal = i18n_calendar:open(),
+    Date = ?M:new(Cal, 2000, 12, 5,   09, 45, 15),
+    RolledDate1 = ?M:roll(Date, [{second, 55}]),
+    _RolledDate2 = ?M:roll(Cal,  [{second, 55}]),
+    _RolledDate3 = ?M:roll([{second, 55}]),
+
+    [?_assertEqual(?M:get(Cal, RolledDate1, second), 10)
+    ,?_assertEqual(?M:get(Cal, RolledDate1, minute), 45)
+    ].
+
+set_test_() ->
+    Date = ?M:new(2000, 12, 5,   09, 45, 15),
+    NewDate = ?M:set(Date, [{minute, 30}]),
+
+    
+    Cal = i18n_calendar:open(),
+    HalfHour1 = ?M:set(Cal, [{minute, 30}]),
+    HalfHour2 = ?M:set([{minute, 30}]),
+    
+
+    [?_assertEqual(45, ?M:get(Date, minute))
+    ,?_assertEqual(30, ?M:get(NewDate, minute))
+
+
+    % Are not changed
+    ,?_assertEqual(2000, ?M:get(NewDate, year))
+    ,?_assertEqual(12, ?M:get(NewDate, month))
+    ,?_assertEqual(05, ?M:get(NewDate, day))
+    ,?_assertEqual(09, ?M:get(NewDate, hour))
+    ,?_assertEqual(15, ?M:get(NewDate, second))
+
+
+    ,?_assertEqual(30, ?M:get(HalfHour1, minute))
+    ,?_assertEqual(30, ?M:get(HalfHour2, minute))
+    ].
+
 -endif.
