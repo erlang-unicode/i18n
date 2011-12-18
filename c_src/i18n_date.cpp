@@ -45,6 +45,8 @@ static ErlNifResourceType* calendar_type = 0;
 static int field_to_pos[UCAL_FIELD_COUNT];
 static int pos_to_field[UCAL_FIELD_COUNT];
 static int POS_MAX;
+static ERL_NIF_TERM available_timezones;
+static ERL_NIF_TERM available_locales;
 
 
 /* Called from erl_nif. */
@@ -572,8 +574,7 @@ ERL_NIF_TERM calendar_locales(ErlNifEnv* env, int argc,
     if (argc != 0)
         return enif_make_badarg(env);
 
-    return generate_available(env, ucal_getAvailable, 
-            ucal_countAvailable());
+    return enif_make_copy(env, available_locales);
 }
 
 
@@ -958,6 +959,8 @@ int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/,
 
 
 
+    available_locales = generate_available(env, ucal_getAvailable, 
+            ucal_countAvailable());
 
 
 
