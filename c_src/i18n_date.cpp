@@ -851,6 +851,25 @@ ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc,
     return out;
 }
 
+ERL_NIF_TERM timezone_ids(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    ERL_NIF_TERM out;
+    StringEnumeration* en; 
+
+    if (argc != 0)
+        return enif_make_badarg(env);
+
+    en = TimeZone::createEnumeration();
+    if (en != NULL) {
+        out = enum_to_term(env, en);
+        delete en;
+
+        return out;
+    }
+    return enif_make_badarg(env);
+}
+
 
 
 int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/, 

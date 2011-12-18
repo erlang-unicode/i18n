@@ -174,6 +174,33 @@ ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en) {
 }
 
 
+ERL_NIF_TERM enum_to_term(ErlNifEnv* env, StringEnumeration* en) {
+    
+    ERL_NIF_TERM head, tail;
+    UErrorCode status = U_ZERO_ERROR;
+    const char* buf;
+    int32_t len;
+
+
+    en->reset(status);   
+    CHECK(env, status);
+
+    tail = enif_make_list(env, 0);
+
+    while (true) {
+        buf = en->next(&len, status);
+        CHECK(env, status);
+        if (buf == NULL) 
+            return tail;
+
+        if (len > 255) 
+            return make_error(env, "too_long_enum_element");
+
+        head = enif_make_atom(env, buf);
+        tail = enif_make_list_cell(env, head, tail);
+    }
+}
+
 
 
 
@@ -490,7 +517,8 @@ static ErlNifFunc nif_funcs[] =
     {"date_diff_field",  4, date_diff_field},
     {"date_diff_fields", 4, date_diff_fields},
 
-    {"calendar_locales",    0, calendar_locales},
+    {"calendar_locales", 0, calendar_locales},
+    {"timezone_ids",     0, timezone_ids},
 #endif
 
 

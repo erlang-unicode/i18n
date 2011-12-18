@@ -41,6 +41,7 @@
     NIF_EXPORT(date_diff_field)
     NIF_EXPORT(date_diff_fields)
     NIF_EXPORT(calendar_locales)
+    NIF_EXPORT(timezone_ids)
 
 int i18n_date_load(ErlNifEnv *, void **, ERL_NIF_TERM);
 
