@@ -31,6 +31,9 @@
 #if I18N_TRANS
 static ErlNifResourceType* trans_type = 0;
 
+static ErlNifEnv * global_trans_env;
+static ERL_NIF_TERM available_ids;
+
 
 
 /* Called from erl_nif. */
@@ -75,23 +78,28 @@ static int parseDir(const char * type)
 }
 
 
-ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, 
-    const ERL_NIF_TERM /*argv*/[])
+static ERL_NIF_TERM 
+get_trans_ids(ErlNifEnv* env, UErrorCode& status)
 {
     ERL_NIF_TERM out;
-    UEnumeration* en; 
-    UErrorCode status = U_ZERO_ERROR;
+    UEnumeration* en;
 
-    if (argc != 0)
-        return enif_make_badarg(env);
-
-    en = utrans_openIDs(&status);   
+    en = utrans_openIDs(&status);
     CHECK(env, status);
 
     out = enum_to_term(env, en);
     uenum_close(en);
 
     return out;
+}
+
+ERL_NIF_TERM trans_ids(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    if (argc != 0)
+        return enif_make_badarg(env);
+
+    return enif_make_copy(env, available_ids);
 }
 
 
@@ -170,12 +178,28 @@ ERL_NIF_TERM trans(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 int i18n_trans_load(ErlNifEnv *env, void ** /*priv_data*/, 
     ERL_NIF_TERM /*load_info*/)
 {
+    UErrorCode status = U_ZERO_ERROR;
+
     ErlNifResourceFlags flags = (ErlNifResourceFlags)(ERL_NIF_RT_CREATE |
         ERL_NIF_RT_TAKEOVER);
 
     trans_type = enif_open_resource_type(env, NULL, "trans_type",
         trans_dtor, flags, NULL); 
+
+    global_trans_env = enif_alloc_env();
+
+    available_ids = get_trans_ids(env, status);
+    if (U_FAILURE(status))
+        return 1000;
+    available_ids = reverse_list(env, available_ids);
+    available_ids = enif_make_copy(global_trans_env, available_ids);
     
     return 0;
+}
+
+void i18n_trans_unload(ErlNifEnv* /*env*/, void* /*priv*/)
+{
+    enif_free_env(global_trans_env);
+    return;
 }
 #endif

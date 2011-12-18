@@ -34,5 +34,6 @@ NIF_EXPORT(get_transliterator)
 
 int i18n_trans_load(ErlNifEnv *, void **, 
     ERL_NIF_TERM);
+void i18n_trans_unload(ErlNifEnv*, void*);
 
 #endif

@@ -30,6 +30,9 @@
 #if I18N_COLLATION
 static UCollator* base_col;
 
+static ErlNifEnv * global_collation_env;
+static ERL_NIF_TERM available_locales;
+
 /* Export for i18n_search module */
 ErlNifResourceType* collator_type = 0;
 
@@ -396,7 +399,7 @@ ERL_NIF_TERM collator_locales(ErlNifEnv* env, int argc,
     if (argc != 0)
         return enif_make_badarg(env);
 
-    return generate_available(env, ucol_getAvailable, ucol_countAvailable());
+    return enif_make_copy(env, available_locales);
 }
 
 
@@ -421,6 +424,11 @@ int i18n_collation_load(ErlNifEnv *env, void ** /*priv_data*/,
     collator_type = enif_open_resource_type(env, NULL, "collator_type",
         collator_dtor, flags, NULL); 
     if (collator_type == NULL) return 4;
+
+    global_collation_env = enif_alloc_env();
+
+    available_locales = generate_available(global_collation_env, 
+        ucol_getAvailable, ucol_countAvailable());
     
     return 0;
 }
@@ -428,6 +436,7 @@ int i18n_collation_load(ErlNifEnv *env, void ** /*priv_data*/,
 void i18n_collation_unload(ErlNifEnv* /*env*/, void* /*priv*/)
 {
     ucol_close(base_col);
+    enif_free_env(global_collation_env);
     return;
 }
 

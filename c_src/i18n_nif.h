@@ -142,6 +142,7 @@ extern ERL_NIF_TERM ATOM_RESOURCE;
 extern ERL_NIF_TERM ATOM_SEARCH;
 
 
+ERL_NIF_TERM reverse_list(ErlNifEnv *env, ERL_NIF_TERM list);
 
 
 /* Define an interface for errors. */

@@ -45,9 +45,10 @@ static ErlNifResourceType* calendar_type = 0;
 static int field_to_pos[UCAL_FIELD_COUNT];
 static int pos_to_field[UCAL_FIELD_COUNT];
 static int POS_MAX;
-static ERL_NIF_TERM available_timezones;
-static ERL_NIF_TERM available_locales;
+
 static ErlNifEnv * global_date_env;
+static ERL_NIF_TERM available_locales;
+static ERL_NIF_TERM available_timezones;
 
 /* Called from erl_nif. */
 static void calendar_dtor(ErlNifEnv* /*env*/, void* obj) 
@@ -984,7 +985,9 @@ int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/,
     available_locales = generate_available(global_date_env, 
         ucal_getAvailable, ucal_countAvailable());
 
-    available_timezones = get_timezone_ids(global_date_env);
+    available_timezones = get_timezone_ids(env);
+    available_timezones = reverse_list(env, available_timezones);
+    available_timezones = enif_make_copy(global_date_env, available_timezones);
 
 
 

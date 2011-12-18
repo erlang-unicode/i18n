@@ -34,6 +34,8 @@
 
 static ErlNifResourceType* iterator_type = 0;
 
+static ErlNifEnv * global_string_env;
+static ERL_NIF_TERM available_locales;
 
 
 
@@ -841,7 +843,7 @@ ERL_NIF_TERM iterator_locales(ErlNifEnv* env, int argc, const
     if (argc != 0)
         return enif_make_badarg(env);
 
-    return generate_available(env, ubrk_getAvailable, ubrk_countAvailable());
+    return enif_make_copy(env, available_locales);
 }
 
 
@@ -856,7 +858,18 @@ int i18n_string_load(ErlNifEnv *env, void ** /*priv_data*/,
 
     if (iterator_type == NULL) return 1;
 
+    global_string_env = enif_alloc_env();
+
+    available_locales = generate_available(global_string_env, 
+        ubrk_getAvailable, ubrk_countAvailable());
+
     return 0;
+}
+
+void i18n_string_unload(ErlNifEnv* /*env*/, void* /*priv*/)
+{
+    enif_free_env(global_string_env);
+    return;
 }
 
 #endif

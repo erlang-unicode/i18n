@@ -54,4 +54,5 @@ NIF_EXPORT(non_case_compare)
 
 int i18n_string_load(ErlNifEnv *, void **, 
     ERL_NIF_TERM);
+void i18n_string_unload(ErlNifEnv*, void*);
 #endif

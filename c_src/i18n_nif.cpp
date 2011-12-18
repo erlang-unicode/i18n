@@ -52,6 +52,20 @@ ERL_NIF_TERM ATOM_ICU_VERSION, ATOM_UNICODE_VERSION;
 
 
 
+/**
+ * Reverse an Erlang list.
+ */
+ERL_NIF_TERM reverse_list(ErlNifEnv *env, ERL_NIF_TERM tail) {
+    ERL_NIF_TERM out = enif_make_list(env, 0);
+    ERL_NIF_TERM head;
+
+    while(enif_get_list_cell(env, tail, &head, &tail))
+        out = enif_make_list_cell(env, head, out);
+    
+    return out;
+}
+
+
 
 
 /* Define an interface for errors. */
@@ -200,6 +214,7 @@ ERL_NIF_TERM enum_to_term(ErlNifEnv* env, StringEnumeration* en) {
         tail = enif_make_list_cell(env, head, tail);
     }
 }
+
 
 
 
@@ -385,6 +400,10 @@ static int upgrade(ErlNifEnv* /*env*/, void** /*priv*/, void** /*old_priv*/,
 
 static void unload(ErlNifEnv* env, void* priv)
 {
+#if I18N_STRING
+    i18n_string_unload(env, priv);
+#endif
+
 #if I18N_COLLATION
     i18n_collation_unload(env, priv);
 #endif
@@ -392,6 +411,11 @@ static void unload(ErlNifEnv* env, void* priv)
 #if I18N_DATE
     i18n_date_unload(env, priv);
 #endif
+
+#if I18N_TRANS
+    i18n_trans_unload(env, priv);
+#endif
+
     return;
 }
 
