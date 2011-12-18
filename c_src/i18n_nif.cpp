@@ -388,6 +388,10 @@ static void unload(ErlNifEnv* env, void* priv)
 #if I18N_COLLATION
     i18n_collation_unload(env, priv);
 #endif
+
+#if I18N_DATE
+    i18n_date_unload(env, priv);
+#endif
     return;
 }
 

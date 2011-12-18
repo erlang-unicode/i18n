@@ -44,5 +44,6 @@
     NIF_EXPORT(timezone_ids)
 
 int i18n_date_load(ErlNifEnv *, void **, ERL_NIF_TERM);
+void i18n_date_unload(ErlNifEnv*, void*);
 
 #endif

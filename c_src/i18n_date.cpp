@@ -47,7 +47,7 @@ static int pos_to_field[UCAL_FIELD_COUNT];
 static int POS_MAX;
 static ERL_NIF_TERM available_timezones;
 static ERL_NIF_TERM available_locales;
-
+static ErlNifEnv * global_date_env;
 
 /* Called from erl_nif. */
 static void calendar_dtor(ErlNifEnv* /*env*/, void* obj) 
@@ -577,6 +577,28 @@ ERL_NIF_TERM calendar_locales(ErlNifEnv* env, int argc,
     return enif_make_copy(env, available_locales);
 }
 
+static ERL_NIF_TERM 
+get_timezone_ids(ErlNifEnv* env)
+{
+    ERL_NIF_TERM out;
+    StringEnumeration* en; 
+
+    en = TimeZone::createEnumeration();
+    out = enum_to_term(env, en);
+    delete en;
+
+    return out;
+}
+
+ERL_NIF_TERM timezone_ids(ErlNifEnv* env, int argc, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    if (argc != 0)
+        return enif_make_badarg(env);
+
+    return enif_make_copy(env, available_timezones);
+}
+
 
 /* This function is from ICU 4.2. */
 static int32_t 
@@ -852,26 +874,6 @@ ERL_NIF_TERM date_diff_fields(ErlNifEnv* env, int argc,
     return out;
 }
 
-ERL_NIF_TERM timezone_ids(ErlNifEnv* env, int argc, 
-    const ERL_NIF_TERM /*argv*/[])
-{
-    ERL_NIF_TERM out;
-    StringEnumeration* en; 
-
-    if (argc != 0)
-        return enif_make_badarg(env);
-
-    en = TimeZone::createEnumeration();
-    if (en != NULL) {
-        out = enum_to_term(env, en);
-        delete en;
-
-        return out;
-    }
-    return enif_make_badarg(env);
-}
-
-
 
 int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/, 
     ERL_NIF_TERM /*load_info*/)
@@ -978,13 +980,19 @@ int i18n_date_load(ErlNifEnv *env, void ** /*priv_data*/,
 
 
 
-    available_locales = generate_available(env, ucal_getAvailable, 
-            ucal_countAvailable());
+    global_date_env = enif_alloc_env();
+    available_locales = generate_available(global_date_env, 
+        ucal_getAvailable, ucal_countAvailable());
 
-
+    available_timezones = get_timezone_ids(global_date_env);
 
 
 
     return 0;
+}
+
+void i18n_date_unload(ErlNifEnv* /*env*/, void*)
+{
+    enif_free_env(global_date_env);
 }
 #endif

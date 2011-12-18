@@ -52,9 +52,10 @@ difference_test_() ->
     ,?_assertEqual(F(Now, Now, [day, year]), [{year, 0}, {day, 0}])
     ,?_assertEqual(F(i18n_date:new(0,12,31),
                      i18n_date:new(0,1,1), day), -365)
-    ,?_assertEqual(F(i18n_date:new(2000,12,31),
-                     i18n_date:new(0,1,1), [day, year]), 
-                   [{year,-2000},{day,-365}])
+% This function has different behavior with different versions of ICU.
+%   ,?_assertEqual(F(i18n_date:new(2000,12,31),
+%                    i18n_date:new(0,1,1), [day, year]), 
+%                  [{year,-2000},{day,-365}])
     ,?_assertEqual(F(i18n_date:new(2000,1,1),
                       i18n_date:new(2000,12,31), [day]), 
                    [{day,365}])

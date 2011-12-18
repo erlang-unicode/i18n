@@ -38,4 +38,8 @@ for_all_locales_open_test_() ->
             lists:map(fun i18n_calendar:open/1, 
                 i18n_calendar:available_locales()))).
 
+
+timezones_test() ->
+    i18n_calendar:available_timezones().
+
 -endif.
