@@ -273,7 +273,7 @@ ERL_NIF_TERM regex_test(ErlNifEnv* env, int argc,
     delete rm;
     CHECK(env, status);
 
-    return bool_to_term(res);
+    return bool_to_term(env, res);
 }
 
 

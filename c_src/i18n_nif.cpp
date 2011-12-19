@@ -37,6 +37,8 @@
 #include "unicode/uchar.h"
 
 
+static ErlNifEnv * global_atom_env;
+
 ERL_NIF_TERM res_error_term;
 
 ERL_NIF_TERM ATOM_TRUE, ATOM_FALSE;
@@ -121,34 +123,42 @@ ERL_NIF_TERM list_element_error(ErlNifEnv* env,
 /**
  * Alloc atoms
  */
-int i18n_atom_load(ErlNifEnv *env, void ** /*priv_data*/, 
+int i18n_atom_load(ErlNifEnv* /*env*/, void ** /*priv_data*/, 
     ERL_NIF_TERM /*load_info*/)
 {
-    ATOM_TRUE     = enif_make_atom(env, "true");
-    ATOM_FALSE    = enif_make_atom(env, "false");
+    global_atom_env = enif_alloc_env();
 
-    ATOM_EQUAL    = enif_make_atom(env, "equal");
-    ATOM_GREATER  = enif_make_atom(env, "greater");
-    ATOM_LESS     = enif_make_atom(env, "less");
+    ATOM_TRUE     = enif_make_atom(global_atom_env, "true");
+    ATOM_FALSE    = enif_make_atom(global_atom_env, "false");
 
-    ATOM_OK       = enif_make_atom(env, "ok");
+    ATOM_EQUAL    = enif_make_atom(global_atom_env, "equal");
+    ATOM_GREATER  = enif_make_atom(global_atom_env, "greater");
+    ATOM_LESS     = enif_make_atom(global_atom_env, "less");
 
-    ATOM_COUNT    = enif_make_atom(env, "count");
-    ATOM_RESOURCE = enif_make_atom(env, "resource");
-    ATOM_SEARCH   = enif_make_atom(env, "search");
+    ATOM_OK       = enif_make_atom(global_atom_env, "ok");
+
+    ATOM_COUNT    = enif_make_atom(global_atom_env, "count");
+    ATOM_RESOURCE = enif_make_atom(global_atom_env, "resource");
+    ATOM_SEARCH   = enif_make_atom(global_atom_env, "search");
 
 #if U_IS_BIG_ENDIAN
-    ATOM_ENDIAN = enif_make_atom(env, "big");
+    ATOM_ENDIAN = enif_make_atom(global_atom_env, "big");
 #else
-    ATOM_ENDIAN = enif_make_atom(env, "little");
+    ATOM_ENDIAN = enif_make_atom(global_atom_env, "little");
 #endif
 
-    ATOM_ICU_VERSION = enif_make_atom(env, U_ICU_VERSION);
-    ATOM_UNICODE_VERSION = enif_make_atom(env, U_UNICODE_VERSION);
+    ATOM_ICU_VERSION = enif_make_atom(global_atom_env, U_ICU_VERSION);
+    ATOM_UNICODE_VERSION = enif_make_atom(global_atom_env, U_UNICODE_VERSION);
 
-    res_error_term = make_error(env, "resource_error");
+    res_error_term = make_error(global_atom_env, "resource_error");
 
     return 0;
+}
+
+void i18n_atom_unload(ErlNifEnv* /*env*/, void* /*priv*/)
+{
+    enif_free_env(global_atom_env);
+    return;
 }
 
 
@@ -260,7 +270,8 @@ static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int /*argc*/,
     tail = enif_make_list(env, 0);
 
     #if I18N_SEARCH
-        head = enif_make_tuple2(env, ATOM_SEARCH, i18n_search_info(env));
+        head = enif_make_tuple2(env, return_atom(env, ATOM_SEARCH), 
+                i18n_search_info(env));
         tail = enif_make_list_cell(env, head, tail);
     #endif
 
@@ -272,16 +283,16 @@ static ERL_NIF_TERM i18n_info(ErlNifEnv* env, int /*argc*/,
 
 
 
-static ERL_NIF_TERM icu_version(ErlNifEnv* /*env*/, int /*argc*/, 
+static ERL_NIF_TERM icu_version(ErlNifEnv* env, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
-    return ATOM_ICU_VERSION;
+    return return_atom(env, ATOM_ICU_VERSION);
 }
 
-static ERL_NIF_TERM unicode_version(ErlNifEnv* /*env*/, int /*argc*/, 
+static ERL_NIF_TERM unicode_version(ErlNifEnv* env, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
-    return ATOM_UNICODE_VERSION;
+    return return_atom(env, ATOM_UNICODE_VERSION);
 }
 
 
@@ -291,7 +302,7 @@ static ERL_NIF_TERM test_error(ErlNifEnv* env, int /*argc*/,
 {
     CHECK(env, U_PARSE_ERROR);
 
-    return ATOM_TRUE;
+    return return_atom(env, ATOM_TRUE);
 }
 
 static ERL_NIF_TERM test_list_element_error(ErlNifEnv* env, int /*argc*/, 
@@ -415,6 +426,8 @@ static void unload(ErlNifEnv* env, void* priv)
 #if I18N_TRANS
     i18n_trans_unload(env, priv);
 #endif
+
+    i18n_atom_unload(env, priv);
 
     return;
 }

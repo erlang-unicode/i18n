@@ -250,14 +250,15 @@ ERL_NIF_TERM endian(ErlNifEnv* env, int argc,
     if (argc != 0)
         return enif_make_badarg(env);
 
-    return ATOM_ENDIAN;
+    return return_atom(env, ATOM_ENDIAN);
 }
 
 static inline ERL_NIF_TERM 
-compare_result_to_atom(int32_t res)
+compare_result_to_atom(ErlNifEnv* env, int32_t res)
 {
-    return (!res)  ? ATOM_EQUAL :
-           (res>0) ? ATOM_GREATER : ATOM_LESS;
+    return return_atom(env,
+            (!res)  ? ATOM_EQUAL :
+            (res>0) ? ATOM_GREATER : ATOM_LESS);
 }
 
 ERL_NIF_TERM case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -291,7 +292,7 @@ ERL_NIF_TERM case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             &status);
     CHECK(env, status);
 
-    return compare_result_to_atom(res);
+    return compare_result_to_atom(env, res);
 }
 
 ERL_NIF_TERM non_case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
@@ -320,7 +321,7 @@ ERL_NIF_TERM non_case_compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[
         &status);
     CHECK(env, status);
 
-    return compare_result_to_atom(res);
+    return compare_result_to_atom(env, res);
 }
 
 

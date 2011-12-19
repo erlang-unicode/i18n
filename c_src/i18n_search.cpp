@@ -420,7 +420,7 @@ ERL_NIF_TERM search_match(ErlNifEnv* env, int argc,
             (const char*) (text + pos), 
             len);
     } else {
-        res = ATOM_FALSE;
+        res = return_atom(env, ATOM_FALSE);
     }
 
     return res;
@@ -443,7 +443,7 @@ ERL_NIF_TERM search_test(ErlNifEnv* env, int argc,
     pos = (int) usearch_last(ss, &status);
     CHECK(env, status);
 
-    return bool_to_term(pos != USEARCH_DONE);
+    return bool_to_term(env, pos != USEARCH_DONE);
 }
 
 #if I18N_INFO
@@ -451,19 +451,19 @@ ERL_NIF_TERM i18n_search_info(ErlNifEnv *env)
 {
     return  enif_make_list1(env, 
                 enif_make_tuple2(env,
-                    ATOM_RESOURCE,
+                    return_atom(env, ATOM_RESOURCE),
                     enif_make_list2(env,
                         enif_make_tuple2(env,
                             enif_make_atom(env, (const char*) "isearch"),
                                 enif_make_list1(env, 
                                     enif_make_tuple2(env,
-                                        ATOM_COUNT,
+                                        return_atom(env, ATOM_COUNT),
                                         enif_make_int(env, isearch_count)))),
                         enif_make_tuple2(env,
                             enif_make_atom(env, (const char*) "isearch_common"),
                                 enif_make_list1(env, 
                                     enif_make_tuple2(env,
-                                        ATOM_COUNT,
+                                        return_atom(env, ATOM_COUNT),
                                         enif_make_int(env,
                                             isearch_common_count))))
             )));

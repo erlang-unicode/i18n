@@ -358,6 +358,7 @@ ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     UCollator* col;
     cloner* ptr;
     UCollationResult res;
+    ERL_NIF_TERM atom;
 
     if (argc != 3)
         return enif_make_badarg(env);
@@ -379,18 +380,22 @@ ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 
     switch (res) {
         case UCOL_EQUAL:
-            return ATOM_EQUAL;
+            atom = ATOM_EQUAL;
             break;
             
         case UCOL_GREATER: 
-            return ATOM_GREATER;
+            atom = ATOM_GREATER;
             break;
 
         case UCOL_LESS:
-            return ATOM_LESS;
+            atom = ATOM_LESS;
             break;
+
+        default:
+            ERROR(env, U_INTERNAL_PROGRAM_ERROR);
     }
-    ERROR(env, U_INTERNAL_PROGRAM_ERROR);
+
+    return return_atom(env, atom);
 }
 
 ERL_NIF_TERM collator_locales(ErlNifEnv* env, int argc, 

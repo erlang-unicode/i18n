@@ -207,8 +207,17 @@ inline ERL_NIF_TERM calendar_to_double(ErlNifEnv* env, const UCalendar* cal) {
 }
 #endif
 
-inline ERL_NIF_TERM bool_to_term(UBool value) {
-    return value ? ATOM_TRUE : ATOM_FALSE; 
+/**
+ * see http://erlang.org/pipermail/erlang-questions/2011-December/063246.html
+ */
+inline ERL_NIF_TERM 
+return_atom(ErlNifEnv* /*dest_env*/, ERL_NIF_TERM term)
+{
+    return term;
+}
+
+inline ERL_NIF_TERM bool_to_term(ErlNifEnv* env, UBool value) {
+    return return_atom(env, value ? ATOM_TRUE : ATOM_FALSE); 
 }
 
 
@@ -218,8 +227,6 @@ typedef const char* (*avail_fun)(int32_t);
 
 ERL_NIF_TERM generate_available(ErlNifEnv* env, avail_fun fun, 
     int32_t i);
-
-
 
 #define NIF_EXPORT(X) \
     ERL_NIF_TERM X(ErlNifEnv*, int, const ERL_NIF_TERM[]);
