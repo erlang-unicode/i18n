@@ -133,7 +133,7 @@ ERL_NIF_TERM open_calendar(ErlNifEnv* env, int argc,
     /* get a calendar type */
     cal = ucal_open(
         (const UChar *) tz.data,
-        (int32_t) tz.size,
+        (int32_t) TO_ULEN(tz.size),
         (const char *) locale,
         type,
         &status);

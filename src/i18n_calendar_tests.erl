@@ -29,14 +29,33 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("triq/include/triq.hrl").
+-define(M, i18n_calendar).
     
 
     
 for_all_locales_open_test_() ->
     ?_assert(
         lists:all(fun erlang:is_binary/1, 
-            lists:map(fun i18n_calendar:open/1, 
-                i18n_calendar:available_locales()))).
+            lists:map(fun ?M:open/1, 
+                ?M:available_locales()))).
+
+for_all_locales_and_timezones_open_test_() ->
+    % Limit the count of cases
+    TimeZones = lists:sublist(?M:available_timezones(), 5),
+    Locales   = lists:sublist(?M:available_locales(), 5),
+    GetListOfResourcesFn = 
+        fun() ->
+            lists:map(fun(L) ->
+                lists:map(fun(TZ) ->
+                    ?M:open(L, TZ)
+                    end, TimeZones)
+                end, Locales)
+        end,
+
+	{timeout, 60,
+        ?_assert(
+            lists:all(fun erlang:is_binary/1, 
+                    lists:flatten(GetListOfResourcesFn())))}.
 
 
 timezones_test() ->

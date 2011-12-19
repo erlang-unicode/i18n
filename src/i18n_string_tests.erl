@@ -29,6 +29,8 @@
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("triq/include/triq.hrl").
+
+-define(UBINARY, unicode_binary(20)).
     
 from_test_() ->
     B = i18n_string:from(<<"F">>),
@@ -132,11 +134,11 @@ prop_from_char() ->
    	    i18n_string:to_utf8(i18n_string:from([Xs])) =:= [Xs]).
 
 prop_from_utf8() ->
-   ?FORALL({Xs},{unicode_binary(100)},
+   ?FORALL({Xs},{?UBINARY},
    	    i18n_string:to_utf8(i18n_string:from_utf8(Xs)) =:= Xs).
 
 prop_concat() ->
-   ?FORALL({Xs, Ys},{unicode_binary(100), unicode_binary(100)},
+   ?FORALL({Xs, Ys},{?UBINARY, unicode_binary(100)},
    	    is_binary(i18n_string:concat(
                 i18n_string:from_utf8(Xs),
                 i18n_string:from_utf8(Ys)))).
@@ -153,7 +155,7 @@ prop_case() ->
     	andalso
     	i18n_string:to_title(I, S) =:= i18n_string:to_title(I, i18n_string:to_upper(S))
 		end,
-   	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
+   	?FORALL({Xs},{?UBINARY}, F(Xs)).
 
     
 prop_len() ->
@@ -161,7 +163,7 @@ prop_len() ->
 		S = i18n_string:from_utf8(Xs),
 		is_integer(i18n_string:len(S))
 		end,
-   	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
+   	?FORALL({Xs},{?UBINARY}, F(Xs)).
 
 prop_len2() ->
 	I = i18n_iterator:open('grapheme'),
@@ -169,7 +171,7 @@ prop_len2() ->
 		S = i18n_string:from_utf8(Xs),
 		is_integer(i18n_string:len(I, S))
 		end,
-   	?FORALL({Xs},{unicode_binary(100)}, F(Xs)).
+   	?FORALL({Xs},{?UBINARY}, F(Xs)).
 
     
 prop_get_iterator_parallel() ->
@@ -182,7 +184,7 @@ prop_get_iterator_parallel() ->
         spawn(fun() -> F2(Xs) end), 
         true 
         end,
-   	?FORALL({Xs},{unicode_binary(100)}, FF(F, Xs)).
+   	?FORALL({Xs},{?UBINARY}, FF(F, Xs)).
 
 normalization_test_() ->
     [?_assertEqual(i18n_string:to_nfc(i18n_string:to_nfd(<<199,0>>)),
