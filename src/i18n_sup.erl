@@ -49,9 +49,7 @@ start_link() ->
 
 init([]) ->
     % Provide a global dictionary for this node.
-    DefaultWorker = {i18n_locale_server,
-        {i18n_locale_server, start_link, []},
-        permanent, 10000, worker, [i18n_locale_server]},
+    DefaultWorker = ?CHILD(i18n_locale_server, worker),
 
     {ok, { {one_for_one, 5, 10}, [DefaultWorker]} }.
 

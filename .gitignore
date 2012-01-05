@@ -1,5 +1,5 @@
-ebin
-deps
+ebin/*
+deps/*
 *.swp
 *.dump
 *.trace  
