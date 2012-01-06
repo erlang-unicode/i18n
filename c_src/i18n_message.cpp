@@ -161,7 +161,7 @@ static void getFormat(
     // Clone types
     types = new Formattable::Type[count];
 
-    const Formattable::Type src_types;
+    const Formattable::Type* src_types;
     src_types = m.getArgTypeList(count);
 
     for (int i = 0; i<count; i++)
