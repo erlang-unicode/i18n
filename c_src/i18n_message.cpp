@@ -147,11 +147,26 @@ static void getFormat(
 
     /* Before 4.8 */
 #ifdef SKIP_MESSAGE_PATTERN
+    // Clone names
     StringEnumeration* en;
     en = m.getFormatNames(status);
-    names = enum_to_array(*en, count, status);
-    types = m.getArgTypeList(count);
+    if (named) {
+        names = enum_to_array(*en, count, status);
+    } else {
+        names = NULL;
+    }
     delete en;
+
+
+    // Clone types
+    types = new Formattable::Type[count];
+
+    const Formattable::Type src_types;
+    src_types = m.getArgTypeList(count);
+
+    for (int i = 0; i<count; i++)
+        types[i] = src_types[i];
+
     return;
 
 #else
@@ -162,6 +177,11 @@ static void getFormat(
     types = new Formattable::Type[count];
 
 
+    if (named) {
+        types = m.getArgTypeList(count);
+        names = NULL;
+        return;
+    }
     
 
     MessagePattern& p = m.msgPattern;
@@ -208,9 +228,9 @@ static void getFormat(
         delete[] names;
         names = NULL;
     }
+#endif
 }
 
-#endif
 };
 
 
