@@ -53,6 +53,10 @@
     search_index/2, search_match_all/2, search_test/2, search_match/2]).
 
 -export([open_format/2, format/2, format/3]).
+-export([internal_format_num_id_test/0
+        ,internal_format_name_id_test/0
+        ]).
+
 -export([open_regex/1, regex_replace/3, regex_replace_all/3, 
     regex_split/2, regex_test/2,
     regex_match/2, regex_match_all/2]).
@@ -243,6 +247,11 @@ format(_Mesage, _Parameters) ->
 format(_Mesage, _Parameters, _AppendTo) ->
     ?I18N_NIF_NOT_LOADED.
 
+internal_format_num_id_test() ->
+    ?I18N_NIF_NOT_LOADED.
+
+internal_format_name_id_test() ->
+    ?I18N_NIF_NOT_LOADED.
 
 
 
@@ -379,4 +388,3 @@ test_list_element_error() ->
 
 test_make_error() ->
     ?I18N_NIF_NOT_LOADED.
-

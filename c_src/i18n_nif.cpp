@@ -514,6 +514,9 @@ static ErlNifFunc nif_funcs[] =
     {"open_format", 2, open_format},
     {"format",      2, format},
     {"format",      3, format},
+
+    {"internal_format_num_id_test", 0, internal_format_num_id_test},
+    {"internal_format_name_id_test", 0, internal_format_name_id_test},
 #endif
 
 

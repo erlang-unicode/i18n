@@ -85,6 +85,7 @@ extern "C" {
 #if I18N_MESSAGE
 #include "unicode/umsg.h"
 #include "unicode/msgfmt.h"
+#include "unicode/messagepattern.h"
 #endif
 
 #include "unicode/utypes.h"

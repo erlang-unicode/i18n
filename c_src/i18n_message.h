@@ -32,6 +32,8 @@
 NIF_EXPORT(open_format)
 NIF_EXPORT(format)
 
+NIF_EXPORT(internal_format_num_id_test)
+NIF_EXPORT(internal_format_name_id_test)
 
 int i18n_message_load(ErlNifEnv *, void **, 
     ERL_NIF_TERM);

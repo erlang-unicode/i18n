@@ -29,41 +29,289 @@
 
 #if I18N_MESSAGE
 
+/* Non-localized realization */
+inline void append_uint(unsigned int n, UnicodeString& s)
+{
+    int tenth;
+
+    do {
+        tenth = n / 10;
+        s.append((UChar)(n - 10 * tenth + '0'));
+        n = tenth;
+    } while (n != 0);
+}
+
+inline static void append_atom(char * atom, UnicodeString& s)
+{
+    while (*atom) {
+        s.append((UChar) *atom);
+        atom++;
+    } 
+}
+
+
+
+
+#ifdef SKIP_MESSAGE_PATTERN
+/* Return TRUE if the elem was found. */
+static UnicodeString* enum_to_array(
+    StringEnumeration& en,
+    int32_t& count,
+    UErrorCode& status) {
+
+    int32_t index = 0;
+    count = en.count(status);
+
+    if (U_FAILURE(status))
+        return NULL;
+
+    if (count == 0)
+        return NULL;
+
+    UnicodeString* arr = new UnicodeString[count];
+    const UnicodeString* s;
+
+    en.reset(status);
+    if (U_FAILURE(status))
+        return FALSE;
+
+    while ((s = en.snext(status)) != NULL) {
+        if (U_FAILURE(status))
+            goto failure;
+
+        arr[index].append(*s);
+        index++;
+    }
+    if (index != count)
+        goto failure;
+
+    return arr;
+
+    failure:
+        delete[] arr;
+        return NULL;
+}
+#endif
+
+static UBool search_in_array(
+    UnicodeString* arr,
+    int32_t count,
+    const UnicodeString& str,
+    unsigned int& i,
+    UErrorCode& status) {
+
+    if ((arr == NULL) || (count <= 0) || U_FAILURE(status)) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return FALSE;
+    }
+
+    for (i = 0; i < (unsigned int) count; i++) 
+        if ((str.compare(arr[i])) == 0)
+            return TRUE;
+    
+
+    return FALSE;
+}
+
+
 
 U_NAMESPACE_BEGIN
+
 /**
  * This class isolates our access to private internal methods of
  * MessageFormat.  It is never instantiated; it exists only for C++
  * access management.
+ *
+ * After version 4.8 this class also has old version of `getFormatNames'.
  */
 class MessageFormatAdapter {
 public:
-    static const Formattable::Type* getArgTypeList(const MessageFormat& m,
-                                                   int32_t& count);
+static void getFormat(
+    MessageFormat& m, 
+    UnicodeString*& names,
+    Formattable::Type*& types,
+    int32_t& count, 
+    UErrorCode& status) {
 
-    static StringEnumeration* getFormatNames(MessageFormat& m,
-            UErrorCode& status);
+    count = m.getArgTypeCount();
+    if (count == 0) {
+        names = NULL; 
+        types = NULL;
+        return;
+    }
+    
+    UBool named = m.usesNamedArguments();
+    
+
+
+
+    /* Before 4.8 */
+#ifdef SKIP_MESSAGE_PATTERN
+    StringEnumeration* en;
+    en = m.getFormatNames(status);
+    names = enum_to_array(*en, count, status);
+    types = m.getArgTypeList(count);
+    delete en;
+    return;
+
+#else
+
+    /* In 4.8 */
+
+    names = new UnicodeString[count];
+    types = new Formattable::Type[count];
+
+
+    
+
+    MessagePattern& p = m.msgPattern;
+
+    // The last two "parts" can at most be ARG_LIMIT and MSG_LIMIT
+    // which we need not examine.
+    int32_t limit = p.countParts() - 2;
+
+    // We also need not look at the first two "parts"
+    // (at most MSG_START and ARG_START) in this loop.
+    // We determine the argTypeCount first so that we can allocateArgTypes
+    // so that the next loop can set argTypes[argNumber].
+    // (This is for the C API which needs the argTypes to read its va_arg list.)
+
+    int32_t num = 0;
+
+    for (int32_t i = 2; i < limit && U_SUCCESS(status); ++i) {
+        const MessagePattern::Part& part = p.getPart(i);
+
+        switch (part.getType()) {
+        case UMSGPAT_PART_TYPE_ARG_NAME:
+            names[num].append(p.getSubstring(part));
+            num++;
+            break;
+
+        case UMSGPAT_PART_TYPE_ARG_NUMBER:
+            // TODO: check negative values
+            unsigned int value;
+            value = (unsigned int) part.getValue(); 
+            append_uint(value, names[num]);
+            num++;
+            break;
+            
+        default:
+            ;
+        }
+    };
+
+    if (num != count) {
+        status = U_INTERNAL_PROGRAM_ERROR;
+    }
+
+    if (U_FAILURE(status)) {
+        delete[] names;
+        names = NULL;
+    }
+}
+
+#endif
 };
 
-const Formattable::Type*
-MessageFormatAdapter::getArgTypeList(const MessageFormat& m,
-                                     int32_t& count) {
-    return m.getArgTypeList(count);
-}
 
-StringEnumeration*
-MessageFormatAdapter::getFormatNames(MessageFormat& m,
-            UErrorCode& status) {
-    return m.getFormatNames(status);
-}
 U_NAMESPACE_END
 
 U_NAMESPACE_USE
 
 
+
+ERL_NIF_TERM internal_format_num_id_test(ErlNifEnv* env, int /*argc*/, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+    UErrorCode status = U_ZERO_ERROR;
+    UnicodeString* names;
+    Formattable::Type* types;
+    int32_t count;
+
+    MessageFormat diskForm(
+        "The disk \"{1}\" contains {0} file(s).", status );
+
+    if (U_FAILURE(status))
+        return enif_make_badarg(env);
+
+    MessageFormatAdapter::getFormat(
+        diskForm, 
+        names,
+        types,
+        count, 
+        status);
+
+    if (U_FAILURE(status))
+        return enif_make_badarg(env);
+
+    if (names != NULL)
+        return enif_make_badarg(env);
+
+    if (count != 2)
+        return enif_make_badarg(env);
+
+    return ATOM_TRUE;
+}
+
+ERL_NIF_TERM internal_format_name_id_test(ErlNifEnv* env, int /*argc*/, 
+    const ERL_NIF_TERM /*argv*/[])
+{
+
+    UErrorCode status = U_ZERO_ERROR;
+    UnicodeString* names;
+    Formattable::Type* types;
+    int32_t count;
+
+    MessageFormat diskForm(
+        "The disk \"{disk}\" contains {count} file(s).", status );
+
+    if (U_FAILURE(status))
+        return enif_make_badarg(env);
+
+    MessageFormatAdapter::getFormat(
+        diskForm, 
+        names,
+        types,
+        count, 
+        status);
+
+    if (U_FAILURE(status))
+        return enif_make_badarg(env);
+
+    if (names == NULL)
+        return enif_make_badarg(env);
+
+    if (count != 2)
+        return enif_make_badarg(env);
+
+
+    UBool is_found;    
+    unsigned int index;
+
+    UnicodeString goal = UnicodeString("disk");
+    is_found = search_in_array(names, count, goal, index, status);
+    if (U_FAILURE(status) || (is_found == FALSE) || (index != 0))
+        return enif_make_badarg(env);
+
+    goal = UnicodeString("count");
+    is_found = search_in_array(names, count, goal, index, status);
+    if (U_FAILURE(status) || (is_found == FALSE) || (index != 1))
+        return enif_make_badarg(env);
+
+    goal = UnicodeString("bomb");
+    is_found = search_in_array(names, count, goal, index, status);
+    if (U_FAILURE(status) || (is_found == TRUE))
+        return enif_make_badarg(env);
+
+
+    return ATOM_TRUE;
+}
+
 typedef struct {
-    MessageFormat* format;
-    StringEnumeration* name_enum;
+    struct cloner_store cloner;
+    UnicodeString* names;
+    Formattable::Type* types;
+    int32_t count;
 } IMessage;
 
 
@@ -73,8 +321,11 @@ static ErlNifResourceType* message_type = 0;
 /* Called from erl_nif. */
 static void message_dtor(ErlNifEnv* /*env*/, void* obj) 
 {
-    /* Free memory */
-    cloner_destroy((cloner*) obj); 
+    IMessage* res = (IMessage*) obj;
+    if (res->names != NULL)
+        delete[] res->names;
+
+    cloner_destroy(&(res->cloner)); 
 }
 
 
@@ -82,17 +333,7 @@ static void message_dtor(ErlNifEnv* /*env*/, void* obj)
 /* Called from cloner for each thread. */
 static void message_close(char* ptr) 
 { 
-    if (ptr != NULL) {
-        IMessage* data = (IMessage*) ptr;
-
-        if (data->format != NULL)
-            delete data->format;
-
-        if (data->name_enum != NULL)
-            delete data->name_enum;
-
-        enif_free((void*) ptr);
-    }
+    delete (MessageFormat*) ptr;
 }
 
 static char* message_clone(char* ptr) 
@@ -100,47 +341,30 @@ static char* message_clone(char* ptr)
     if (ptr == NULL) 
         return NULL;
 
-    IMessage* from;
-    IMessage* to;
-
-    to = (IMessage*) enif_alloc(sizeof(IMessage));
-    if (to == NULL)
-        return NULL;
-
-    from = (IMessage*) ptr;
-
-    if (from->format != NULL)
-        to->format = (MessageFormat*) from->format->clone();
-
-    if (from->name_enum != NULL)
-        to->name_enum = from->name_enum->clone();
-
+    MessageFormat* from = (MessageFormat*) ptr;
+    Format* to = from->clone();
     return (char*) to;
 }
 
-static int message_open(MessageFormat * msg, cloner* c)
+
+
+static int message_open(MessageFormat * msg, IMessage* res)
 {
-    IMessage* to;
     UErrorCode status = U_ZERO_ERROR;
-
-    to = (IMessage*) enif_alloc(sizeof(IMessage));
-    if (to == NULL)
-        return NULL;
-
-    /*
-     * Name enum is only for named format.
-     * If the error was returned, then it is not named format.
-     */
-    to->name_enum = 
-        MessageFormatAdapter::getFormatNames(*msg, status);
-
+    MessageFormatAdapter::getFormat(
+        *msg, 
+        res->names,
+        res->types,
+        res->count, 
+        status);
+      
     if (U_FAILURE(status)) {
-        to->name_enum = NULL;
+        return 1;
     }
-    
-    to->format = msg;
 
-    return cloner_open((char *) to, c, &message_clone, &message_close);
+    //TODO: check status
+    return cloner_open((char *) msg, &(res->cloner), 
+            &message_clone, &message_close);
 } 
 
 
@@ -168,7 +392,7 @@ ERL_NIF_TERM open_format(ErlNifEnv* env, int argc,
     UErrorCode status = U_ZERO_ERROR;
     UParseError pe;
     UMessageFormat* msg;
-    cloner* res;
+    IMessage* res;
 
     if (argc != 2)
         return enif_make_badarg(env);
@@ -190,7 +414,8 @@ ERL_NIF_TERM open_format(ErlNifEnv* env, int argc,
     }
 
 
-    res = (cloner*) enif_alloc_resource(message_type, sizeof(cloner));
+    res = (IMessage*) enif_alloc_resource(message_type, 
+            sizeof(IMessage));
     if (message_open((MessageFormat*) msg, res)) {
         enif_release_resource(res);
         return enif_make_badarg(env);
@@ -199,51 +424,6 @@ ERL_NIF_TERM open_format(ErlNifEnv* env, int argc,
     enif_release_resource(res);
     /* resource now only owned by "Erlang" */
     return out;
-}
-/* Non-localized realization */
-inline void append_uint(unsigned int n, UnicodeString& s)
-{
-    int tenth;
-
-    do {
-        tenth = n / 10;
-        s.append((UChar)(n - 10 * tenth + '0'));
-        n = tenth;
-    } while (n != 0);
-}
-
-inline static void append_atom(char * atom, UnicodeString& s)
-{
-    while (*atom) {
-        s.append((UChar) *atom);
-        atom++;
-    } 
-}
-
-/* Return TRUE if the elem was found. */
-static UBool search_in_enum(
-    StringEnumeration& en,
-    const UnicodeString& str,
-    unsigned int& index,
-    UErrorCode& status) {
-
-    const UnicodeString* s;
-    index = 0;
-
-    en.reset(status);
-//  if (U_FAILURE(status))
-//      return FALSE;
-
-    while ((s = en.snext(status)) != NULL) {
-//      if (U_FAILURE(status))
-//          return FALSE;
-
-        if ((s->compare(str)) == 0)
-            return TRUE;
-
-        index++;
-    }
-    return FALSE;
 }
 
 unsigned int butoui(ErlNifBinary& bu, UErrorCode& status)
@@ -421,12 +601,12 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
 {
     ErlNifBinary in;
     ERL_NIF_TERM out, list;
-    int32_t len, mcount; 
-    cloner* ptr;
+    int32_t len; 
     unsigned int count, i, pos;
     UErrorCode status = U_ZERO_ERROR;
     UnicodeString appendTo;
     IMessage* obj;
+    MessageFormat* msg;
     
     ERL_NIF_TERM* tuple;
 
@@ -436,12 +616,12 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         return enif_make_badarg(env);
 
     if(!(enif_get_list_length(env, argv[1], &count)
-      && enif_get_resource(env, argv[0], message_type, (void**) &ptr))) {
+      && enif_get_resource(env, argv[0], message_type, (void**) &obj))) {
         return enif_make_badarg(env);
     }
 
-    obj = (IMessage*) cloner_get(ptr);
-    CHECK_RES(env, obj);
+    msg = (MessageFormat*) cloner_get(&(obj->cloner));
+    CHECK_RES(env, msg);
 
 
     if (argc == 3) {
@@ -462,19 +642,11 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     UnicodeString* names = NULL;
 
     /* i is the number of the element of the list. */
-    i = 0;
+    i = 4;
     list = argv[1];
 
-    /* TODO: dirty, but stable
-     * If we use c API we cannot check args.
-     * If we use c++ API we cannot get requered type.
-     * So we will use c++ API for c implementation (private API). */
-    const Formattable::Type* 
-        types = MessageFormatAdapter::getArgTypeList(
-            *(obj->format), mcount);
 
-    
-    if (obj->name_enum == NULL) {
+    if (obj->names == NULL) {
         /* Numeric format */
         while (enif_get_list_cell(env, list, &out, &list)) {
             if (enif_get_tuple(env, out, &len, 
@@ -482,16 +654,16 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                     && (len == 2)) {
                 pos = parseNumId(env, tuple[0], status);
 
-                if (U_FAILURE(status) || (((int) pos)>=mcount))
+                if (U_FAILURE(status) || (((int) pos)>=obj->count))
                     goto bad_elem;
 
                 /* Set formatttable. */
-                if (!fillValue(env, types[pos], tuple[1], args[pos]))
+                if (!fillValue(env, obj->types[pos], tuple[1], args[pos]))
                     goto bad_elem;
                 
             } else {
                 /* Set formatttable. */
-                if (!fillValue(env, types[i], out, args[i]))
+                if (!fillValue(env, obj->types[i], out, args[i]))
                     goto bad_elem;
             }
         
@@ -513,16 +685,21 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
             /* Read the element name from the array. 
              * Set pos. */
             UBool is_found;
-            is_found = search_in_enum(
-                * (obj->name_enum),
+            is_found = search_in_array(
+                obj->names,
+                obj->count,
                 names[i],
                 pos,
                 status);
-            if (U_FAILURE(status))
+            if (U_FAILURE(status) || (is_found == FALSE))
                 goto handle_error;
 
+            if (pos >= (unsigned int) obj->count) 
+                goto handle_error;
+
+
             /* Set formatttable. */
-            if (!fillValue(env, types[pos], tuple[1], args[i]))
+            if (!fillValue(env, obj->types[pos], tuple[1], args[i]))
                 goto bad_elem;
         
             i++;
@@ -530,7 +707,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     }
 
     
-    obj->format->format(
+    msg->format(
         (const UnicodeString *) names,
         (const Formattable *) args,
         (int32_t) count,
