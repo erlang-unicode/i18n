@@ -60,8 +60,12 @@ static UnicodeString* enum_to_array(
     UErrorCode& status) {
 
     int32_t index = 0;
-    count = en.count(status);
 
+    en.reset(status);
+    if (U_FAILURE(status))
+        return NULL;
+
+    count = en.count(status);
     if (U_FAILURE(status))
         return NULL;
 
@@ -71,9 +75,6 @@ static UnicodeString* enum_to_array(
     UnicodeString* arr = new UnicodeString[count];
     const UnicodeString* s;
 
-    en.reset(status);
-    if (U_FAILURE(status))
-        return FALSE;
 
     while ((s = en.snext(status)) != NULL) {
         if (U_FAILURE(status))
@@ -133,12 +134,12 @@ static void getFormat(
     int32_t& count, 
     UErrorCode& status) {
 
+    names = NULL; 
+    types = NULL;
+
     count = m.getArgTypeCount();
-    if (count == 0) {
-        names = NULL; 
-        types = NULL;
+    if (count == 0) 
         return;
-    }
     
     UBool named = m.usesNamedArguments();
     
@@ -148,14 +149,24 @@ static void getFormat(
     /* Before 4.8 */
 #ifdef SKIP_MESSAGE_PATTERN
     // Clone names
-    StringEnumeration* en;
-    en = m.getFormatNames(status);
+
     if (named) {
+        StringEnumeration* en;
+        en = m.getFormatNames(status);
+
+        if (U_FAILURE(status))
+            return;
+
         names = enum_to_array(*en, count, status);
+        delete en;
+
+        if (U_FAILURE(status)) {
+            names = NULL;
+            return;
+        }
     } else {
         names = NULL;
     }
-    delete en;
 
 
     // Clone types
@@ -268,6 +279,12 @@ ERL_NIF_TERM internal_format_num_id_test(ErlNifEnv* env, int /*argc*/,
         return enif_make_badarg(env);
 
     if (count != 2)
+        return enif_make_badarg(env);
+
+    if (types[0] != Formattable::kString)
+        return enif_make_badarg(env);
+
+    if (types[1] != Formattable::kString)
         return enif_make_badarg(env);
 
     return ATOM_TRUE;
@@ -662,7 +679,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
     UnicodeString* names = NULL;
 
     /* i is the number of the element of the list. */
-    i = 4;
+    i = 0;
     list = argv[1];
 
 
@@ -674,7 +691,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                     && (len == 2)) {
                 pos = parseNumId(env, tuple[0], status);
 
-                if (U_FAILURE(status) || (((int) pos)>=obj->count))
+                if (U_FAILURE(status) || (((int) pos) >= (obj->count)))
                     goto bad_elem;
 
                 /* Set formatttable. */
@@ -711,6 +728,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
                 names[i],
                 pos,
                 status);
+
             if (U_FAILURE(status) || (is_found == FALSE))
                 goto handle_error;
 
