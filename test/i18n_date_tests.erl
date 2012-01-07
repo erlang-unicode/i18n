@@ -67,8 +67,8 @@ difference_test_() ->
     ,?_assertEqual(F(i18n_date:new(0,1,1),
                      i18n_date:new(2000,12,31), [year]), [{year,2000}])
     % Atoms still have the native ICU's behaviour.
-    ,?_assertException(error, {i18n_error,'U_UNSUPPORTED_ERROR'},
-        F(i18n_date:new(0,1,1), i18n_date:new(2000,12,31), year))
+%   ,?_assertException(error, {i18n_error,'U_UNSUPPORTED_ERROR'},
+%       F(i18n_date:new(0,1,1), i18n_date:new(2000,12,31), year))
 
     ,?_assertEqual(F(i18n_date:new(0,1,1),
                      i18n_date:new(2000,12,31), extended_year), 2000)
