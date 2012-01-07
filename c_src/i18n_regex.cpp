@@ -101,7 +101,7 @@ ERL_NIF_TERM open_regex(ErlNifEnv* env, int argc,
             pe, 
             status);
     if (U_FAILURE(status)) {
-        return parse_error(env, status, &pe);
+        ERROR_PARSE(env, status, &pe);
     }
 
     res = (cloner*) enif_alloc_resource(regex_type, sizeof(cloner));

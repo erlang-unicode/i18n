@@ -51,6 +51,25 @@ inline static void append_atom(char * atom, UnicodeString& s)
 
 
 
+static UBool search_in_array(
+    const UnicodeString* arr,
+    int32_t count,
+    const UnicodeString& str,
+    unsigned int& i,
+    UErrorCode& status) {
+
+    if ((arr == NULL) || (count <= 0) || U_FAILURE(status)) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return FALSE;
+    }
+
+    for (i = 0; i < (unsigned int) count; i++) 
+        if ((str.compare(arr[i])) == 0)
+            return TRUE;
+
+    return FALSE;
+}
+
 
 #ifdef SKIP_MESSAGE_PATTERN
 /* Return TRUE if the elem was found. */
@@ -92,27 +111,73 @@ static UnicodeString* enum_to_array(
         delete[] arr;
         return NULL;
 }
-#endif
 
-static UBool search_in_array(
-    UnicodeString* arr,
-    int32_t count,
-    const UnicodeString& str,
-    unsigned int& i,
-    UErrorCode& status) {
+#else
 
-    if ((arr == NULL) || (count <= 0) || U_FAILURE(status)) {
-        status = U_ILLEGAL_ARGUMENT_ERROR;
-        return FALSE;
+static const int32_t 
+explicitTypesCount = 4;
+
+static const
+UnicodeString 
+explicitTypes[] = {
+    UnicodeString("number"),
+    UnicodeString("date"),
+    UnicodeString("time"),
+    UnicodeString("datetime"),
+};
+
+static const Formattable::Type
+explicitTypesIndex[] = {
+    Formattable::kDouble,
+    Formattable::kDate,
+    Formattable::kDate,
+    Formattable::kDate,
+};
+
+inline Formattable::Type
+parseArgType(
+    MessagePattern& p, 
+    const MessagePattern::Part& part, 
+    int32_t i,
+    UErrorCode& status) 
+{
+    UMessagePatternArgType argType = part.getArgType();
+
+    switch (argType) {
+    case UMSGPAT_ARG_TYPE_NONE:
+        return Formattable::kString;
+        break;
+    case UMSGPAT_ARG_TYPE_SIMPLE: { 
+        UnicodeString explicitType = 
+            p.getSubstring(p.getPart(i+2));
+
+        unsigned int index;
+        UBool
+        is_found = search_in_array(explicitTypes, explicitTypesCount, 
+            explicitType, index, status);
+       
+        if (U_FAILURE(status) || (is_found == FALSE)) {
+            status = U_INTERNAL_PROGRAM_ERROR;
+            return Formattable::kString;
+        }
+        
+        return explicitTypesIndex[index];
+        break;
     }
-
-    for (i = 0; i < (unsigned int) count; i++) 
-        if ((str.compare(arr[i])) == 0)
-            return TRUE;
-    
-
-    return FALSE;
+    case UMSGPAT_ARG_TYPE_CHOICE:
+    case UMSGPAT_ARG_TYPE_PLURAL:
+        return Formattable::kDouble;
+        break;
+    case UMSGPAT_ARG_TYPE_SELECT:
+        return Formattable::kString;
+        break;
+    default:
+        status = U_INTERNAL_PROGRAM_ERROR;  // Should be unreachable.
+        return Formattable::kString;
+        break;
+    }
 }
+#endif
 
 
 
@@ -136,19 +201,19 @@ static void getFormat(
 
     names = NULL; 
     types = NULL;
-
-    count = m.getArgTypeCount();
-    if (count == 0) 
-        return;
     
     UBool named = m.usesNamedArguments();
-    
+
 
 
 
     /* Before 4.8 */
 #ifdef SKIP_MESSAGE_PATTERN
     // Clone names
+
+    count = m.getArgTypeCount();
+    if (count == 0) 
+        return;
 
     if (named) {
         StringEnumeration* en;
@@ -184,38 +249,65 @@ static void getFormat(
 
     /* In 4.8 */
 
-    names = new UnicodeString[count];
-    types = new Formattable::Type[count];
 
+    if (!named) {
+        count = m.getArgTypeCount();
+        if (count == 0) 
+            return;
 
-    if (named) {
-        types = m.getArgTypeList(count);
+        types = new Formattable::Type[count];
+
+        const Formattable::Type* src_types;
+        src_types = m.getArgTypeList(count);
+
+        for (int i = 0; i<count; i++)
+            types[i] = src_types[i];
+
         names = NULL;
         return;
     }
+
+    
+
+    
     
 
     MessagePattern& p = m.msgPattern;
 
-    // The last two "parts" can at most be ARG_LIMIT and MSG_LIMIT
-    // which we need not examine.
-    int32_t limit = p.countParts() - 2;
+    int32_t limit = p.countParts();
 
-    // We also need not look at the first two "parts"
-    // (at most MSG_START and ARG_START) in this loop.
-    // We determine the argTypeCount first so that we can allocateArgTypes
-    // so that the next loop can set argTypes[argNumber].
-    // (This is for the C API which needs the argTypes to read its va_arg list.)
+    count = 0;
+    for (int32_t i = 0; i < limit; ++i) {
+        const MessagePattern::Part& part = p.getPart(i);
+
+        if (part.getType() ==  UMSGPAT_PART_TYPE_ARG_START)
+            count++;
+    }
+    
+    if (count == 0)
+        return;
+
+    names = new UnicodeString[count];
+    types = new Formattable::Type[count];
+
+    
 
     int32_t num = 0;
 
-    for (int32_t i = 2; i < limit && U_SUCCESS(status); ++i) {
+    for (int32_t i = 0; i < limit && U_SUCCESS(status); ++i) {
         const MessagePattern::Part& part = p.getPart(i);
 
         switch (part.getType()) {
+        case UMSGPAT_PART_TYPE_ARG_START:
+            types[num] = parseArgType(p, part, i, status);
+            break;
+
+        case UMSGPAT_PART_TYPE_ARG_LIMIT:
+            num++;
+            break;
+
         case UMSGPAT_PART_TYPE_ARG_NAME:
             names[num].append(p.getSubstring(part));
-            num++;
             break;
 
         case UMSGPAT_PART_TYPE_ARG_NUMBER:
@@ -223,7 +315,6 @@ static void getFormat(
             unsigned int value;
             value = (unsigned int) part.getValue(); 
             append_uint(value, names[num]);
-            num++;
             break;
             
         default:
@@ -231,8 +322,9 @@ static void getFormat(
         }
     };
 
-    if (num != count) {
+    if ((num != count) && U_SUCCESS(status)) {
         status = U_INTERNAL_PROGRAM_ERROR;
+        status = U_ILLEGAL_ARGUMENT_ERROR;
     }
 
     if (U_FAILURE(status)) {
@@ -251,7 +343,7 @@ U_NAMESPACE_USE
 
 
 
-ERL_NIF_TERM internal_format_num_id_test(ErlNifEnv* env, int /*argc*/, 
+ERL_NIF_TERM test_internal_format_num_id(ErlNifEnv* env, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
     UErrorCode status = U_ZERO_ERROR;
@@ -262,8 +354,7 @@ ERL_NIF_TERM internal_format_num_id_test(ErlNifEnv* env, int /*argc*/,
     MessageFormat diskForm(
         "The disk \"{1}\" contains {0} file(s).", status );
 
-    if (U_FAILURE(status))
-        return enif_make_badarg(env);
+    CHECK(env, status);
 
     MessageFormatAdapter::getFormat(
         diskForm, 
@@ -272,25 +363,24 @@ ERL_NIF_TERM internal_format_num_id_test(ErlNifEnv* env, int /*argc*/,
         count, 
         status);
 
-    if (U_FAILURE(status))
-        return enif_make_badarg(env);
+    CHECK(env, status);
 
     if (names != NULL)
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "Pointer must be NULL for number names.");
 
     if (count != 2)
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "Bad count value.");
 
     if (types[0] != Formattable::kString)
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "Bad Formattable::Type.");
 
     if (types[1] != Formattable::kString)
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "Bad Formattable::Type.");
 
     return ATOM_TRUE;
 }
 
-ERL_NIF_TERM internal_format_name_id_test(ErlNifEnv* env, int /*argc*/, 
+ERL_NIF_TERM test_internal_format_name_id(ErlNifEnv* env, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
 
@@ -302,8 +392,7 @@ ERL_NIF_TERM internal_format_name_id_test(ErlNifEnv* env, int /*argc*/,
     MessageFormat diskForm(
         "The disk \"{disk}\" contains {count} file(s).", status );
 
-    if (U_FAILURE(status))
-        return enif_make_badarg(env);
+    CHECK(env, status);
 
     MessageFormatAdapter::getFormat(
         diskForm, 
@@ -312,14 +401,13 @@ ERL_NIF_TERM internal_format_name_id_test(ErlNifEnv* env, int /*argc*/,
         count, 
         status);
 
-    if (U_FAILURE(status))
-        return enif_make_badarg(env);
+    CHECK(env, status);
 
     if (names == NULL)
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "Pointer must be not NULL for string names.");
 
     if (count != 2)
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "Bad count value.");
 
 
     UBool is_found;    
@@ -328,18 +416,29 @@ ERL_NIF_TERM internal_format_name_id_test(ErlNifEnv* env, int /*argc*/,
     UnicodeString goal = UnicodeString("disk");
     is_found = search_in_array(names, count, goal, index, status);
     if (U_FAILURE(status) || (is_found == FALSE) || (index != 0))
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "search_in_array failured.");
 
     goal = UnicodeString("count");
     is_found = search_in_array(names, count, goal, index, status);
     if (U_FAILURE(status) || (is_found == FALSE) || (index != 1))
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "search_in_array failured.");
 
     goal = UnicodeString("bomb");
     is_found = search_in_array(names, count, goal, index, status);
     if (U_FAILURE(status) || (is_found == TRUE))
-        return enif_make_badarg(env);
+        ERROR_STRING(env, "search_in_array failured.");
 
+    if (types[0] != Formattable::kString)
+        ERROR_STRING(env, "Bad Formattable::Type.");
+
+    if (types[1] != Formattable::kString)
+        ERROR_STRING(env, "Bad Formattable::Type.");
+
+    if (names[0] != UnicodeString("disk"))
+        ERROR_STRING(env, "Bad name.");
+
+    if (names[1] != UnicodeString("count"))
+        ERROR_STRING(env, "Bad name.");
 
     return ATOM_TRUE;
 }
@@ -447,7 +546,7 @@ ERL_NIF_TERM open_format(ErlNifEnv* env, int argc,
             &pe, 
             &status);
     if (U_FAILURE(status)) {
-        return parse_error(env, status, &pe);
+        ERROR_PARSE(env, status, &pe);
     }
 
 
@@ -765,7 +864,7 @@ ERL_NIF_TERM format(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
         delete[] args;
         if (names != NULL)
             delete[] names;
-        return list_element_error(env, argv[1], i);
+        ERROR_ELEMENT(env, status, argv[1], i);
 
     handle_error:
         /* Memory deallocation */

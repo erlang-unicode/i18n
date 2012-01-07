@@ -109,11 +109,11 @@ extern "C" {
 #include <string.h>
 
 #define CHECK(ENV, X) \
-    if (U_FAILURE(X)) return get_error_code(ENV, X); 
+    if (U_FAILURE(X)) return get_error_code(ENV, X, __FILE__, __LINE__); 
 
 /* If error, run the destructor DEST */
 #define CHECK_DEST(ENV, X, DEST) \
-    if (U_FAILURE(X)) {DEST; return get_error_code(ENV, X);}
+    if (U_FAILURE(X)) {DEST; return get_error_code(ENV, X, __FILE__, __LINE__);}
 
 
 /* Divide by 2 */
@@ -122,9 +122,8 @@ extern "C" {
 /* Multiply by 2 */
 #define FROM_ULEN(X) ((X) * sizeof(UChar))
 
-#define ERROR(ENV, X) return get_error_code(ENV, X);
+#define ERROR(ENV, X) return get_error_code(ENV, X, __FILE__, __LINE__);
 
-#define CHECK_RES(ENV, RES) if (RES == NULL) return res_error_term;
 
 
 
@@ -147,18 +146,35 @@ ERL_NIF_TERM reverse_list(ErlNifEnv *env, ERL_NIF_TERM list);
 
 
 /* Define an interface for errors. */
-ERL_NIF_TERM build_error(ErlNifEnv* env, ERL_NIF_TERM body);
-ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code);
+ERL_NIF_TERM build_error(ErlNifEnv* env, ERL_NIF_TERM body, 
+        const char *pszFile, long lLine);
+ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code, 
+        const char *pszFile, long lLine);
 ERL_NIF_TERM parse_error(ErlNifEnv* env, UErrorCode status, 
-        UParseError* e);
-ERL_NIF_TERM list_element_error(ErlNifEnv* env, 
-    const ERL_NIF_TERM list, int32_t num);
+        const UParseError* e, 
+        const char *pszFile, long lLine);
+ERL_NIF_TERM list_element_error(ErlNifEnv* env, UErrorCode status, 
+        const ERL_NIF_TERM list, int32_t num, 
+        const char *pszFile, long lLine);
+
+#define ERROR_TERM(ENV, X) \
+    return build_error(ENV, X, __FILE__, __LINE__);
+#define ERROR_STRING(ENV, X) \
+    return make_error(ENV, X, __FILE__, __LINE__);
+#define ERROR_PARSE(ENV, X, Y) \
+    return parse_error(ENV, X, Y, __FILE__, __LINE__);
+#define ERROR_ELEMENT(ENV, X, Y, Z) \
+    return list_element_error(ENV, X, Y, Z, __FILE__, __LINE__);
+
+#define CHECK_RES(ENV, RES) if (RES == NULL) ERROR_STRING(ENV, "bad_resource");
 
 /** 
  * http://icu-project.org/apiref/icu4c/utypes_8h.html#a3343c1c8a8377277046774691c98d78c
  */
-inline ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status) {
-    return make_error(env, u_errorName(status));
+inline ERL_NIF_TERM get_error_code(ErlNifEnv* env, UErrorCode status, 
+        const char *pszFile, long lLine) {
+    return make_error(env, u_errorName(status), 
+            pszFile, lLine);
 }
 
 ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en);

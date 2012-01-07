@@ -246,7 +246,7 @@ inline static ERL_NIF_TERM do_offset(ErlNifEnv* env,
     return calendar_to_double(env, (const UCalendar*) cal);
 
     bad_elem:
-        return list_element_error(env, in, i);
+        ERROR_ELEMENT(env, status, in, i);
 }
 
 static void do_ucal_set(UCalendar * cal,
@@ -383,7 +383,7 @@ ERL_NIF_TERM date_clear(ErlNifEnv* env, int argc,
     return calendar_to_double(env, (const UCalendar*) cal);
 
     bad_elem:
-        return list_element_error(env, argv[2], i);
+        ERROR_ELEMENT(env, status, argv[2], i);
 }
 
 

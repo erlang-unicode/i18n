@@ -71,24 +71,36 @@ ERL_NIF_TERM reverse_list(ErlNifEnv *env, ERL_NIF_TERM tail) {
 
 
 /* Define an interface for errors. */
-ERL_NIF_TERM build_error(ErlNifEnv* env, ERL_NIF_TERM body) {
-    return enif_make_tuple2(env, enif_make_atom(env, "i18n_error"), body);
+ERL_NIF_TERM build_error(ErlNifEnv* env, ERL_NIF_TERM body, 
+        const char *pszFile, long lLine) {
+    return enif_make_tuple4(env, 
+            enif_make_atom(env, "i18n_error"), 
+            body,
+            enif_make_tuple2(env,
+                enif_make_atom(env, "line"),
+                enif_make_long(env, lLine)),
+            enif_make_tuple2(env,
+                enif_make_atom(env, "file"),
+                enif_make_atom(env, pszFile)));
 }
 
 /**
  * Pass an error to Erlang code.
  * Error as a string will be converted to an atom.
  */
-ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code) {
+ERL_NIF_TERM make_error(ErlNifEnv* env, const char* code, 
+        const char *pszFile, long lLine) {
     return build_error(env,
-        enif_make_atom(env, code));
+        enif_make_atom(env, code),
+        pszFile, lLine);
 }
 
 /**
  * Convert an UErrorCode to an atom. 
  */
 ERL_NIF_TERM parse_error(ErlNifEnv* env, UErrorCode status, 
-        UParseError* e) {
+        const UParseError* e, 
+        const char *pszFile, long lLine) {
     return build_error(env, 
         enif_make_tuple3(env,
             enif_make_atom(env, u_errorName(status)),
@@ -98,25 +110,29 @@ ERL_NIF_TERM parse_error(ErlNifEnv* env, UErrorCode status,
             enif_make_tuple2(env,
                 enif_make_atom(env, "offset"),
                 enif_make_int(env, (int) e->offset))
-            ));
+            ),
+        pszFile, lLine);
 }
 
 /**
  * An element it the list has a bad type.
  * Used by i18n_message. 
  */
-ERL_NIF_TERM list_element_error(ErlNifEnv* env, 
-    const ERL_NIF_TERM list, int32_t num) {
+ERL_NIF_TERM list_element_error(ErlNifEnv* env, UErrorCode status, 
+    const ERL_NIF_TERM list, int32_t num, 
+        const char *pszFile, long lLine) {
     return build_error(env, 
-        enif_make_tuple3(env,
+        enif_make_tuple4(env,
             enif_make_atom(env, "bad_element"),
+            enif_make_atom(env, u_errorName(status)),
             enif_make_tuple2(env,
                 enif_make_atom(env, "list"),
                 list),
             enif_make_tuple2(env,
                 enif_make_atom(env, "index"),
                 enif_make_int(env, (int) num))
-            ));
+            ),
+        pszFile, lLine);
 }
 
 
@@ -149,8 +165,6 @@ int i18n_atom_load(ErlNifEnv* /*env*/, void ** /*priv_data*/,
 
     ATOM_ICU_VERSION = enif_make_atom(global_atom_env, U_ICU_VERSION);
     ATOM_UNICODE_VERSION = enif_make_atom(global_atom_env, U_UNICODE_VERSION);
-
-    res_error_term = make_error(global_atom_env, "resource_error");
 
     return 0;
 }
@@ -190,7 +204,7 @@ ERL_NIF_TERM enum_to_term(ErlNifEnv* env, UEnumeration* en) {
             return tail;
 
         if (len > 255) 
-            return make_error(env, "too_long_enum_element");
+            ERROR_STRING(env, "too_long_enum_element");
 
         head = enif_make_atom(env, buf);
         tail = enif_make_list_cell(env, head, tail);
@@ -218,7 +232,7 @@ ERL_NIF_TERM enum_to_term(ErlNifEnv* env, StringEnumeration* en) {
             return tail;
 
         if (len > 255) 
-            return make_error(env, "too_long_enum_element");
+            ERROR_STRING(env, "too_long_enum_element");
 
         head = enif_make_atom(env, buf);
         tail = enif_make_list_cell(env, head, tail);
@@ -311,7 +325,7 @@ static ERL_NIF_TERM test_list_element_error(ErlNifEnv* env, int /*argc*/,
     ERL_NIF_TERM list;
 
     list = enif_make_list(env, 0);
-    return list_element_error(env, list, 1);
+    ERROR_ELEMENT(env, U_INTERNAL_PROGRAM_ERROR, list, 1);
 }
 
 static ERL_NIF_TERM test_parse_error(ErlNifEnv* env, int /*argc*/, 
@@ -321,13 +335,13 @@ static ERL_NIF_TERM test_parse_error(ErlNifEnv* env, int /*argc*/,
     e.line = 0;
     e.offset = 0;
 
-    return parse_error(env, U_PARSE_ERROR, &e);
+    ERROR_PARSE(env, U_PARSE_ERROR, &e);
 }
 
 static ERL_NIF_TERM test_make_error(ErlNifEnv* env, int /*argc*/, 
     const ERL_NIF_TERM /*argv*/[])
 {
-    return make_error(env, "it_is_a_test_error");
+    ERROR_STRING(env, "it_is_a_test_error");
 }
 #endif
 
@@ -515,8 +529,8 @@ static ErlNifFunc nif_funcs[] =
     {"format",      2, format},
     {"format",      3, format},
 
-    {"internal_format_num_id_test", 0, internal_format_num_id_test},
-    {"internal_format_name_id_test", 0, internal_format_name_id_test},
+    {"test_internal_format_num_id",  0, test_internal_format_num_id},
+    {"test_internal_format_name_id", 0, test_internal_format_name_id},
 #endif
 
 

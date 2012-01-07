@@ -211,7 +211,7 @@ ERL_NIF_TERM get_collator(ErlNifEnv* env, int argc,
     if (argc == 2) {
         if (!do_iterator_options(env, col, argv[1], index)) {
             enif_release_resource(res);
-            return list_element_error(env, argv[1], index);
+            ERROR_ELEMENT(env, status, argv[1], index);
         }
     }
 
@@ -250,7 +250,7 @@ ERL_NIF_TERM get_rule_collator(ErlNifEnv* env, int argc,
         &pe,
         &status);
     if (U_FAILURE(status)) {
-        return parse_error(env, status, &pe);
+        ERROR_PARSE(env, status, &pe);
     }
 
     res = (cloner*) enif_alloc_resource(collator_type, sizeof(cloner));
@@ -267,7 +267,7 @@ ERL_NIF_TERM get_rule_collator(ErlNifEnv* env, int argc,
     if (argc == 2) {
         if (!do_iterator_options(env, col, argv[1], index)) {
             enif_release_resource(res);
-            return list_element_error(env, argv[1], index);
+            ERROR_ELEMENT(env, status, argv[1], index);
         }
     }
 

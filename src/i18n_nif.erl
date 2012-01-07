@@ -53,8 +53,10 @@
     search_index/2, search_match_all/2, search_test/2, search_match/2]).
 
 -export([open_format/2, format/2, format/3]).
--export([internal_format_num_id_test/0
-        ,internal_format_name_id_test/0
+
+%% Export to avoid optimization
+-export([test_internal_format_num_id/0
+        ,test_internal_format_name_id/0
         ]).
 
 -export([open_regex/1, regex_replace/3, regex_replace_all/3, 
@@ -247,13 +249,25 @@ format(_Mesage, _Parameters) ->
 format(_Mesage, _Parameters, _AppendTo) ->
     ?I18N_NIF_NOT_LOADED.
 
-internal_format_num_id_test() ->
+
+
+test_internal_format_num_id() ->
     ?I18N_NIF_NOT_LOADED.
+
+test_internal_format_name_id() ->
+    ?I18N_NIF_NOT_LOADED.
+
+
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+
+internal_format_num_id_test() ->
+    [?_assert(test_internal_format_num_id())].
 
 internal_format_name_id_test() ->
-    ?I18N_NIF_NOT_LOADED.
+    [?_assert(test_internal_format_name_id())].
 
-
+-endif.
 
 
 %%
