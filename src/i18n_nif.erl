@@ -258,17 +258,6 @@ test_internal_format_name_id() ->
     ?I18N_NIF_NOT_LOADED.
 
 
--ifdef(TEST).
--include_lib("eunit/include/eunit.hrl").
-
-internal_format_num_id_test() ->
-    [?_assert(test_internal_format_num_id())].
-
-internal_format_name_id_test() ->
-    [?_assert(test_internal_format_name_id())].
-
--endif.
-
 
 %%
 %% Regular Expressions

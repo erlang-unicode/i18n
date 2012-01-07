@@ -46,6 +46,21 @@ equal_test_() ->
     ,?_assert(not equal([1,1,3]))
     ].
 
+%%
+%% Set of tests from C++ code
+%%
+
+internal_format_num_id_test() ->
+    [?_assert(i18n_nif:test_internal_format_num_id())].
+
+internal_format_name_id_test() ->
+    [?_assert(i18n_nif:test_internal_format_name_id())].
+
+
+%%
+%% Tests for public API
+%%
+
 message_test_() ->
     M = i18n_message:open(?ISTR("Hello, {name}. Now {now, time, full}.")),
     R = i18n_message:format(M, [
