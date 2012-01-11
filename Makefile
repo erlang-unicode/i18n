@@ -3,6 +3,7 @@ PREFIX:=../
 DEST:=$(PREFIX)$(PROJECT)
 
 REBAR=./rebar  
+#REBAR=./rebar -v 
 #-include setenv.mk
 
 
@@ -31,4 +32,10 @@ dialyzer:
 
 app:
 	@$(REBAR) create template=mochiwebapp dest=$(DEST) appid=$(PROJECT)
+
+
+
+cover:
+	export I18N_REBAR_COVER="true"; $(REBAR) skip_deps=true clean compile eunit
+	gcov -p -o c_src c_src/*.cpp
 
