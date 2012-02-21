@@ -88,7 +88,7 @@
 get_timestamp_from_filename(Name) ->
     try
         List = re:replace(Name,
-                    "[^.]*\.([0-9]+)\.(dll|so)", "\\1", 
+                    ".*i18n_nif\.([0-9]+)\.(dll|so)", "\\1", 
                     [{return,list}]),
         case string:to_integer(List) of
         {Int, _Res} when is_integer(Int) ->
