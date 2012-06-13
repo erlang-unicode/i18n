@@ -110,8 +110,19 @@ init() ->
     Library = ?MODULE_STRING,
 
     Nif = ?I18N_NIF_PATH(Library),
-    Libs = filelib:wildcard(Nif ++ "*.{so,dll}"),
+    Libs     = filelib:wildcard(Nif ++ "*.{so,dll}"),
+    NoIdLibs = filelib:wildcard(Nif ++ ".{so,dll}"),
 
+    if
+        NoIdLibs =:= Libs ->
+            erlang:load_nif(Nif, 0);
+
+        true ->
+            load_latest_library(Library, Nif, Libs)
+        end.
+
+
+load_latest_library(Library, Nif, Libs) ->
     case try_max_or_0(
             lists:map(fun get_timestamp_from_filename/1, Libs)) of
     0 ->
