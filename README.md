@@ -335,7 +335,7 @@ Out:
 
 
 If you want to use ICU messages with gettext, then see
-[l10n](https://github.com/freeakk/l10n/).
+[l10n](https://github.com/erlang-unicode/l10n/).
 
 
 Using Unicode strings in source code
@@ -353,13 +353,13 @@ Unicode strings in your code:
 Modules
 -------
 
-* [i18n_calendar](https://github.com/freeakk/i18n/blob/master/doc/i18n_calendar.md)
-* [i18n_collation](https://github.com/freeakk/i18n/blob/master/doc/i18n_collation.md)
-* [i18n_date](https://github.com/freeakk/i18n/blob/master/doc/i18n_date.md)
-* [i18n_iterator](https://github.com/freeakk/i18n/blob/master/doc/i18n_iterator.md)
-* [i18n_locale](https://github.com/freeakk/i18n/blob/master/doc/i18n_locale.md)
-* [i18n_message](https://github.com/freeakk/i18n/blob/master/doc/i18n_message.md)
-* [i18n_regex](https://github.com/freeakk/i18n/blob/master/doc/i18n_regex.md)
-* [i18n_search](https://github.com/freeakk/i18n/blob/master/doc/i18n_search.md)
-* [i18n_string](https://github.com/freeakk/i18n/blob/master/doc/i18n_string.md)
-* [i18n_transliteration](https://github.com/freeakk/i18n/blob/master/doc/i18n_transliteration.md)
+* [i18n_calendar](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_calendar.md)
+* [i18n_collation](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_collation.md)
+* [i18n_date](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_date.md)
+* [i18n_iterator](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_iterator.md)
+* [i18n_locale](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_locale.md)
+* [i18n_message](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_message.md)
+* [i18n_regex](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_regex.md)
+* [i18n_search](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_search.md)
+* [i18n_string](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_string.md)
+* [i18n_transliteration](https://github.com/erlang-unicode/i18n/blob/master/doc/i18n_transliteration.md)

@@ -37,5 +37,8 @@ app:
 
 cover:
 	export I18N_REBAR_COVER="true"; $(REBAR) skip_deps=true clean compile eunit
+	rm -rf c_cov
+	mkdir c_cov
 	gcov -p -o c_src c_src/*.cpp
+	mv *.gcov c_cov
 
