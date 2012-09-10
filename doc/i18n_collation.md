@@ -12,7 +12,7 @@
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -32,7 +32,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_collator() = [resource()](#type-resource)</pre>
+<pre>i18n_collator() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -92,7 +92,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>available_locales() -&gt; [[i18n_locale_id()](#type-i18n_locale_id)]</pre>
+<pre>available_locales() -> [<a href="#type-i18n_locale_id">i18n_locale_id()</a>]</pre>
 <br></br>
 
 
@@ -103,7 +103,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>compare(C::[i18n_collator()](#type-i18n_collator), S1::[i18n_string()](#type-i18n_string), S2::[i18n_string()](#type-i18n_string)) -&gt; [i18n_compare_result()](#type-i18n_compare_result)</pre>
+<pre>compare(C::<a href="#type-i18n_collator">i18n_collator()</a>, S1::<a href="#type-i18n_string">i18n_string()</a>, S2::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_compare_result">i18n_compare_result()</a></pre>
 <br></br>
 
 
@@ -132,7 +132,7 @@ F produces a sort keys.<a name="open-0"></a>
 
 
 
-<pre>open() -&gt; [i18n_collator()](#type-i18n_collator)</pre>
+<pre>open() -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
 <br></br>
 
 
@@ -143,7 +143,7 @@ F produces a sort keys.<a name="open-0"></a>
 
 
 
-<pre>open(L::[i18n_locale_id()](#type-i18n_locale_id)) -&gt; [i18n_collator()](#type-i18n_collator)</pre>
+<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
 <br></br>
 
 
@@ -154,7 +154,7 @@ F produces a sort keys.<a name="open-0"></a>
 
 
 
-<pre>open(L::[i18n_locale_id()](#type-i18n_locale_id), Options::[[i18n_collation_option()](#type-i18n_collation_option)]) -&gt; [i18n_collator()](#type-i18n_collator)</pre>
+<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, Options::[<a href="#type-i18n_collation_option">i18n_collation_option()</a>]) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
 <br></br>
 
 
@@ -165,7 +165,7 @@ F produces a sort keys.<a name="open-0"></a>
 
 
 
-<pre>open_rules(Rules::[i18n_string()](#type-i18n_string)) -&gt; [i18n_collator()](#type-i18n_collator)</pre>
+<pre>open_rules(Rules::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
 <br></br>
 
 
@@ -178,7 +178,7 @@ Get a rules-based collator.<a name="open_rules-2"></a>
 
 
 
-<pre>open_rules(Rules::[i18n_string()](#type-i18n_string), Options::[[i18n_collation_option()](#type-i18n_collation_option)]) -&gt; [i18n_collator()](#type-i18n_collator)</pre>
+<pre>open_rules(Rules::<a href="#type-i18n_string">i18n_string()</a>, Options::[<a href="#type-i18n_collation_option">i18n_collation_option()</a>]) -> <a href="#type-i18n_collator">i18n_collator()</a></pre>
 <br></br>
 
 
@@ -192,7 +192,7 @@ Get a rule-based collator with options.
 
 
 
-<pre>sort(C::[i18n_collator()](#type-i18n_collator), Ss::[[i18n_string()](#type-i18n_string)]) -&gt; [[i18n_string()](#type-i18n_string)]</pre>
+<pre>sort(C::<a href="#type-i18n_collator">i18n_collator()</a>, Ss::[<a href="#type-i18n_string">i18n_string()</a>]) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
 <br></br>
 
 
@@ -203,7 +203,7 @@ Get a rule-based collator with options.
 
 
 
-<pre>sort_key(C::[i18n_collator()](#type-i18n_collator), S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_sort_key()](#type-i18n_sort_key)</pre>
+<pre>sort_key(C::<a href="#type-i18n_collator">i18n_collator()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_sort_key">i18n_sort_key()</a></pre>
 <br></br>
 
 

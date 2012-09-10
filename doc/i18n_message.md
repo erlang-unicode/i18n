@@ -12,7 +12,7 @@
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -40,7 +40,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_msg_format() = [resource()](#type-resource)</pre>
+<pre>i18n_msg_format() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -48,7 +48,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_msg_param() = {atom(), [i18n_msg_arg()](#type-i18n_msg_arg)}</pre>
+<pre>i18n_msg_param() = {atom(), <a href="#type-i18n_msg_arg">i18n_msg_arg()</a>}</pre>
 
 
 
@@ -84,7 +84,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>format(M::[i18n_msg_format()](#type-i18n_msg_format), P::[[i18n_msg_param()](#type-i18n_msg_param)]) -&gt; [i18n_string()](#type-i18n_string)</pre>
+<pre>format(M::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, P::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>]) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
@@ -95,7 +95,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>format(M::[i18n_msg_format()](#type-i18n_msg_format), P::[[i18n_msg_param()](#type-i18n_msg_param)], A::[i18n_string()](#type-i18n_string)) -&gt; [i18n_string()](#type-i18n_string)</pre>
+<pre>format(M::<a href="#type-i18n_msg_format">i18n_msg_format()</a>, P::[<a href="#type-i18n_msg_param">i18n_msg_param()</a>], A::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
@@ -106,7 +106,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_msg_format()](#type-i18n_msg_format)</pre>
+<pre>open(S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_msg_format">i18n_msg_format()</a></pre>
 <br></br>
 
 
@@ -117,7 +117,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(L::[i18n_locale_id()](#type-i18n_locale_id), S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_msg_format()](#type-i18n_msg_format)</pre>
+<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_msg_format">i18n_msg_format()</a></pre>
 <br></br>
 
 

@@ -13,7 +13,7 @@ This module containg functions to manage the locale of the process.
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -46,7 +46,7 @@ there is no call of <code>set_locale/1</code>.</td></tr><tr><td valign="top"><a 
 
 
 
-<pre>base_name(LocaleId::[i18n_locale_id()](#type-i18n_locale_id)) -&gt; [i18n_locale_id()](#type-i18n_locale_id)</pre>
+<pre>base_name(LocaleId::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_locale_id">i18n_locale_id()</a></pre>
 <br></br>
 
 
@@ -59,7 +59,7 @@ there is no call of <code>set_locale/1</code>.</td></tr><tr><td valign="top"><a 
 
 
 
-<pre>get_locale() -&gt; [i18n_locale_id()](#type-i18n_locale_id)</pre>
+<pre>get_locale() -> <a href="#type-i18n_locale_id">i18n_locale_id()</a></pre>
 <br></br>
 
 
@@ -72,7 +72,7 @@ Extract the locale of this process<a name="parent_locale-1"></a>
 
 
 
-<pre>parent_locale(Locale::[i18n_locale_id()](#type-i18n_locale_id)) -&gt; [i18n_locale_id()](#type-i18n_locale_id)</pre>
+<pre>parent_locale(Locale::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_locale_id">i18n_locale_id()</a></pre>
 <br></br>
 
 
@@ -85,7 +85,7 @@ Extract the locale of this process<a name="parent_locale-1"></a>
 
 
 
-<pre>set_default_locale(Value::[i18n_locale_id()](#type-i18n_locale_id)) -&gt; [i18n_locale_id()](#type-i18n_locale_id)</pre>
+<pre>set_default_locale(Value::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_locale_id">i18n_locale_id()</a></pre>
 <br></br>
 
 
@@ -99,7 +99,7 @@ there is no call of `set_locale/1`.<a name="set_locale-1"></a>
 
 
 
-<pre>set_locale(Value::[i18n_locale_id()](#type-i18n_locale_id)) -&gt; [i18n_locale_id()](#type-i18n_locale_id)</pre>
+<pre>set_locale(Value::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_locale_id">i18n_locale_id()</a></pre>
 <br></br>
 
 

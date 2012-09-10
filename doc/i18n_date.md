@@ -12,7 +12,7 @@
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -32,7 +32,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>fields() = [{[i18n_date_field()](#type-i18n_date_field), [double()](#type-double)}]</pre>
+<pre>fields() = [{<a href="#type-i18n_date_field">i18n_date_field()</a>, <a href="#type-double">double()</a>}]</pre>
 
 
 
@@ -40,7 +40,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_calendar() = [resource()](#type-resource)</pre>
+<pre>i18n_calendar() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -48,7 +48,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_date() = [double()](#type-double)</pre>
+<pre>i18n_date() = <a href="#type-double">double()</a></pre>
 
 
 
@@ -70,8 +70,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 ##Function Index##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add-1">add/1</a></td><td>Append <code>double()</code> to the field value.</td></tr><tr><td valign="top"><a href="#add-2">add/2</a></td><td></td></tr><tr><td valign="top"><a href="#add-3">add/3</a></td><td></td></tr><tr><td valign="top"><a href="#clear-2">clear/2</a></td><td>Clear the field value (values).</td></tr><tr><td valign="top"><a href="#clear-3">clear/3</a></td><td>Clear the field value (values).</td></tr><tr><td valign="top"><a href="#get-1">get/1</a></td><td>Get the value of the field or fields.</td></tr><tr><td valign="top"><a href="#get-2">get/2</a></td><td></td></tr><tr><td valign="top"><a href="#get-3">get/3</a></td><td></td></tr><tr><td valign="top"><a href="#is_weekend-0">is_weekend/0</a></td><td>Returns the atom <code>true</code> if there is weekend now.</td></tr><tr><td valign="top"><a href="#is_weekend-1">is_weekend/1</a></td><td>Check if the date is weekend.</td></tr><tr><td valign="top"><a href="#is_weekend-2">is_weekend/2</a></td><td>Returns the atom <code>true</code> if the given date is in the weekend in this
-calendar system.</td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td>Create date from fields' values (YMD).</td></tr><tr><td valign="top"><a href="#new-4">new/4</a></td><td>Create date from fields' values (YMD).</td></tr><tr><td valign="top"><a href="#new-6">new/6</a></td><td>Create date from fields' values (YMDHMS).</td></tr><tr><td valign="top"><a href="#new-7">new/7</a></td><td>Create date from fields' values (YMDHMS).</td></tr><tr><td valign="top"><a href="#now-0">now/0</a></td><td>Return the timestamp
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#add-1">add/1</a></td><td>Append <code>double()</code> to the field value.</td></tr><tr><td valign="top"><a href="#add-2">add/2</a></td><td></td></tr><tr><td valign="top"><a href="#add-3">add/3</a></td><td></td></tr><tr><td valign="top"><a href="#clear-2">clear/2</a></td><td>Clear the field value (values).</td></tr><tr><td valign="top"><a href="#clear-3">clear/3</a></td><td>Clear the field value (values).</td></tr><tr><td valign="top"><a href="#compare-3">compare/3</a></td><td></td></tr><tr><td valign="top"><a href="#compare-4">compare/4</a></td><td>If D1 and D2 are too close, then they are equal with the precision of Field.</td></tr><tr><td valign="top"><a href="#difference-3">difference/3</a></td><td></td></tr><tr><td valign="top"><a href="#difference-4">difference/4</a></td><td></td></tr><tr><td valign="top"><a href="#get-1">get/1</a></td><td>Get the value of the field or fields.</td></tr><tr><td valign="top"><a href="#get-2">get/2</a></td><td></td></tr><tr><td valign="top"><a href="#get-3">get/3</a></td><td></td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><td>Create date from fields' values (YMD).</td></tr><tr><td valign="top"><a href="#new-4">new/4</a></td><td>Create date from fields' values (YMD).</td></tr><tr><td valign="top"><a href="#new-6">new/6</a></td><td>Create date from fields' values (YMDHMS).</td></tr><tr><td valign="top"><a href="#new-7">new/7</a></td><td>Create date from fields' values (YMDHMS).</td></tr><tr><td valign="top"><a href="#now-0">now/0</a></td><td>Return the timestamp
 (count of milliseconds from starting of the 1970 year).</td></tr><tr><td valign="top"><a href="#roll-1">roll/1</a></td><td>This function and <code>add</code> function are same, but
 <code>roll</code> will not modify more significant fields in the calendar.</td></tr><tr><td valign="top"><a href="#roll-2">roll/2</a></td><td></td></tr><tr><td valign="top"><a href="#roll-3">roll/3</a></td><td></td></tr><tr><td valign="top"><a href="#set-1">set/1</a></td><td>Set the value of the field or fields for now().</td></tr><tr><td valign="top"><a href="#set-2">set/2</a></td><td>Set the value of the field or fields for date.</td></tr><tr><td valign="top"><a href="#set-3">set/3</a></td><td>Set the value of the field or fields for date.</td></tr></table>
 
@@ -87,7 +86,7 @@ calendar system.</td></tr><tr><td valign="top"><a href="#new-3">new/3</a></td><t
 
 
 
-<pre>add(Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>add(Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -100,7 +99,7 @@ Append `double()` to the field value.<a name="add-2"></a>
 
 
 
-<pre>add(Date::[i18n_calendar()](#type-i18n_calendar) | [i18n_date()](#type-i18n_date), Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>add(Date::<a href="#type-i18n_calendar">i18n_calendar()</a> | <a href="#type-i18n_date">i18n_date()</a>, Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -111,7 +110,7 @@ Append `double()` to the field value.<a name="add-2"></a>
 
 
 
-<pre>add(Cal::[i18n_calendar()](#type-i18n_calendar), Date::[i18n_date()](#type-i18n_date), Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>add(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Date::<a href="#type-i18n_date">i18n_date()</a>, Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -122,7 +121,7 @@ Append `double()` to the field value.<a name="add-2"></a>
 
 
 
-<pre>clear(Date::[i18n_date()](#type-i18n_date), Fields::[[i18n_date_field()](#type-i18n_date_field)]) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>clear(Date::<a href="#type-i18n_date">i18n_date()</a>, Fields::[<a href="#type-i18n_date_field">i18n_date_field()</a>]) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -135,20 +134,64 @@ Clear the field value (values).<a name="clear-3"></a>
 
 
 
-<pre>clear(Cal::[i18n_calendar()](#type-i18n_calendar), Date::[i18n_date()](#type-i18n_date), Fields::[[i18n_date_field()](#type-i18n_date_field)]) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>clear(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Date::<a href="#type-i18n_date">i18n_date()</a>, Fields::[<a href="#type-i18n_date_field">i18n_date_field()</a>]) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
 
 
-Clear the field value (values).<a name="get-1"></a>
+Clear the field value (values).<a name="compare-3"></a>
+
+###compare/3##
+
+
+
+
+<pre>compare(Field::<a href="#type-i18n_date_field">i18n_date_field()</a>, D1::<a href="#type-i18n_date">i18n_date()</a>, D2::<a href="#type-i18n_date">i18n_date()</a>) -> boolean()</pre>
+<br></br>
+
+
+<a name="compare-4"></a>
+
+###compare/4##
+
+
+
+
+<pre>compare(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Field::<a href="#type-i18n_date_field">i18n_date_field()</a>, D1::<a href="#type-i18n_date">i18n_date()</a>, D2::<a href="#type-i18n_date">i18n_date()</a>) -> boolean()</pre>
+<br></br>
+
+
+
+
+If D1 and D2 are too close, then they are equal with the precision of Field.<a name="difference-3"></a>
+
+###difference/3##
+
+
+
+
+`difference(FromDate, ToDate, Fields) -> any()`
+
+<a name="difference-4"></a>
+
+###difference/4##
+
+
+
+
+<pre>difference(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, FromDate::<a href="#type-i18n_date">i18n_date()</a>, ToDate::<a href="#type-i18n_date">i18n_date()</a>, Field::[<a href="#type-i18n_date_field">i18n_date_field()</a>] | <a href="#type-i18n_date_field">i18n_date_field()</a>) -> [{<a href="#type-i18n_date_field">i18n_date_field()</a>, integer()}] | integer()</pre>
+<br></br>
+
+
+<a name="get-1"></a>
 
 ###get/1##
 
 
 
 
-<pre>get(Fields::[[i18n_date_field()](#type-i18n_date_field)] | [i18n_date_field()](#type-i18n_date_field)) -&gt; [integer()] | integer()</pre>
+<pre>get(Fields::[<a href="#type-i18n_date_field">i18n_date_field()</a>] | <a href="#type-i18n_date_field">i18n_date_field()</a>) -> [integer()] | integer()</pre>
 <br></br>
 
 
@@ -161,7 +204,7 @@ Get the value of the field or fields.<a name="get-2"></a>
 
 
 
-<pre>get(Date::[i18n_calendar()](#type-i18n_calendar) | [i18n_date()](#type-i18n_date), Fields::[[i18n_date_field()](#type-i18n_date_field)] | [i18n_date_field()](#type-i18n_date_field)) -&gt; [integer()] | integer()</pre>
+<pre>get(Date::<a href="#type-i18n_calendar">i18n_calendar()</a> | <a href="#type-i18n_date">i18n_date()</a>, Fields::[<a href="#type-i18n_date_field">i18n_date_field()</a>] | <a href="#type-i18n_date_field">i18n_date_field()</a>) -> [integer()] | integer()</pre>
 <br></br>
 
 
@@ -172,61 +215,18 @@ Get the value of the field or fields.<a name="get-2"></a>
 
 
 
-<pre>get(Cal::[i18n_calendar()](#type-i18n_calendar), Date::[i18n_date()](#type-i18n_date), Fields::[[i18n_date_field()](#type-i18n_date_field)] | [i18n_date_field()](#type-i18n_date_field)) -&gt; [integer()] | integer()</pre>
+<pre>get(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Date::<a href="#type-i18n_date">i18n_date()</a>, Fields::[<a href="#type-i18n_date_field">i18n_date_field()</a>] | <a href="#type-i18n_date_field">i18n_date_field()</a>) -> [integer()] | integer()</pre>
 <br></br>
 
 
-<a name="is_weekend-0"></a>
-
-###is_weekend/0##
-
-
-
-
-<pre>is_weekend() -&gt; boolean()</pre>
-<br></br>
-
-
-
-
-Returns the atom `true` if there is weekend now.
-Function is locale-sensitive: the calendar will be selected
-according this process locale.<a name="is_weekend-1"></a>
-
-###is_weekend/1##
-
-
-
-
-<pre>is_weekend(Date::[i18n_calendar()](#type-i18n_calendar) | [i18n_date()](#type-i18n_date)) -&gt; boolean()</pre>
-<br></br>
-
-
-
-
-Check if the date is weekend. If Arg1 is the calendar, then the date is
-`now()`.<a name="is_weekend-2"></a>
-
-###is_weekend/2##
-
-
-
-
-<pre>is_weekend(Cal::[i18n_calendar()](#type-i18n_calendar), Date::[i18n_date()](#type-i18n_date)) -&gt; boolean()</pre>
-<br></br>
-
-
-
-
-Returns the atom `true` if the given date is in the weekend in this
-calendar system.<a name="new-3"></a>
+<a name="new-3"></a>
 
 ###new/3##
 
 
 
 
-<pre>new(Year::integer(), Month::integer(), Day::integer()) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>new(Year::integer(), Month::integer(), Day::integer()) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -239,7 +239,7 @@ Create date from fields' values (YMD).<a name="new-4"></a>
 
 
 
-<pre>new(Cal::[i18n_calendar()](#type-i18n_calendar), Year::integer(), Month::integer(), Day::integer()) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>new(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Year::integer(), Month::integer(), Day::integer()) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -252,7 +252,7 @@ Create date from fields' values (YMD).<a name="new-6"></a>
 
 
 
-<pre>new(Year::integer(), Month::integer(), Day::integer(), Hour::integer(), Minute::integer(), Second::integer()) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>new(Year::integer(), Month::integer(), Day::integer(), Hour::integer(), Minute::integer(), Second::integer()) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -265,7 +265,7 @@ Create date from fields' values (YMDHMS).<a name="new-7"></a>
 
 
 
-<pre>new(Cal::[i18n_calendar()](#type-i18n_calendar), Year::integer(), Month::integer(), Day::integer(), Hour::integer(), Minute::integer(), Second::integer()) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>new(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Year::integer(), Month::integer(), Day::integer(), Hour::integer(), Minute::integer(), Second::integer()) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -278,7 +278,7 @@ Create date from fields' values (YMDHMS).<a name="now-0"></a>
 
 
 
-<pre>now() -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>now() -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -292,7 +292,7 @@ Return the timestamp
 
 
 
-<pre>roll(Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>roll(Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -306,7 +306,7 @@ This function and `add` function are same, but
 
 
 
-<pre>roll(Date::[i18n_calendar()](#type-i18n_calendar) | [i18n_date()](#type-i18n_date), Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>roll(Date::<a href="#type-i18n_calendar">i18n_calendar()</a> | <a href="#type-i18n_date">i18n_date()</a>, Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -317,7 +317,7 @@ This function and `add` function are same, but
 
 
 
-<pre>roll(Cal::[i18n_calendar()](#type-i18n_calendar), Date::[i18n_date()](#type-i18n_date), Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>roll(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Date::<a href="#type-i18n_date">i18n_date()</a>, Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -328,7 +328,7 @@ This function and `add` function are same, but
 
 
 
-<pre>set(Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>set(Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -341,7 +341,7 @@ Set the value of the field or fields for now().<a name="set-2"></a>
 
 
 
-<pre>set(Date::[i18n_calendar()](#type-i18n_calendar) | [i18n_date()](#type-i18n_date), Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>set(Date::<a href="#type-i18n_calendar">i18n_calendar()</a> | <a href="#type-i18n_date">i18n_date()</a>, Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 
@@ -354,7 +354,7 @@ Set the value of the field or fields for date.<a name="set-3"></a>
 
 
 
-<pre>set(Cal::[i18n_calendar()](#type-i18n_calendar), Date::[i18n_date()](#type-i18n_date), Fields::[fields()](#type-fields)) -&gt; [i18n_date()](#type-i18n_date)</pre>
+<pre>set(Cal::<a href="#type-i18n_calendar">i18n_calendar()</a>, Date::<a href="#type-i18n_date">i18n_date()</a>, Fields::<a href="#type-fields">fields()</a>) -> <a href="#type-i18n_date">i18n_date()</a></pre>
 <br></br>
 
 

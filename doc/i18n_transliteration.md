@@ -13,7 +13,7 @@ Text Trasliteration.
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -41,7 +41,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_transliterator() = [resource()](#type-resource)</pre>
+<pre>i18n_transliterator() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -77,7 +77,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>available_ids() -&gt; [[i18n_transliterator_id()](#type-i18n_transliterator_id)]</pre>
+<pre>available_ids() -> [<a href="#type-i18n_transliterator_id">i18n_transliterator_id()</a>]</pre>
 <br></br>
 
 
@@ -88,7 +88,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>do(T::[i18n_transliterator()](#type-i18n_transliterator), S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_string()](#type-i18n_string)</pre>
+<pre>do(T::<a href="#type-i18n_transliterator">i18n_transliterator()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
@@ -99,7 +99,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(Id::[i18n_transliterator_id()](#type-i18n_transliterator_id)) -&gt; [i18n_transliterator()](#type-i18n_transliterator)</pre>
+<pre>open(Id::<a href="#type-i18n_transliterator_id">i18n_transliterator_id()</a>) -> <a href="#type-i18n_transliterator">i18n_transliterator()</a></pre>
 <br></br>
 
 
@@ -110,7 +110,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(Id::[i18n_transliterator_id()](#type-i18n_transliterator_id), Dir::[i18n_direction()](#type-i18n_direction)) -&gt; [i18n_transliterator()](#type-i18n_transliterator)</pre>
+<pre>open(Id::<a href="#type-i18n_transliterator_id">i18n_transliterator_id()</a>, Dir::<a href="#type-i18n_direction">i18n_direction()</a>) -> <a href="#type-i18n_transliterator">i18n_transliterator()</a></pre>
 <br></br>
 
 

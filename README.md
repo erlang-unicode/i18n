@@ -6,7 +6,7 @@ i18n: ICU for Erlang
 
 __License__: [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-__Author__: Uvarov Michael ([`freeakk@gmail.com`](mailto:freeakk@gmail.com))
+__Author__: Uvarov Michael ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com))
 
 
 Module for working with strings and dates.

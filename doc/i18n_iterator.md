@@ -13,7 +13,7 @@ Text Boundary Analysis (Break Iteration).
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -25,7 +25,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_iterator() = [resource()](#type-resource)</pre>
+<pre>i18n_iterator() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -69,7 +69,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>available_locales() -&gt; [[i18n_locale_id()](#type-i18n_locale_id)]</pre>
+<pre>available_locales() -> [<a href="#type-i18n_locale_id">i18n_locale_id()</a>]</pre>
 <br></br>
 
 
@@ -80,7 +80,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(T::[i18n_string_iterator_type()](#type-i18n_string_iterator_type)) -&gt; [i18n_iterator()](#type-i18n_iterator)</pre>
+<pre>open(T::<a href="#type-i18n_string_iterator_type">i18n_string_iterator_type()</a>) -> <a href="#type-i18n_iterator">i18n_iterator()</a></pre>
 <br></br>
 
 
@@ -91,7 +91,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(L::[i18n_locale_id()](#type-i18n_locale_id), T::[i18n_string_iterator_type()](#type-i18n_string_iterator_type)) -&gt; [i18n_iterator()](#type-i18n_iterator)</pre>
+<pre>open(L::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, T::<a href="#type-i18n_string_iterator_type">i18n_string_iterator_type()</a>) -> <a href="#type-i18n_iterator">i18n_iterator()</a></pre>
 <br></br>
 
 

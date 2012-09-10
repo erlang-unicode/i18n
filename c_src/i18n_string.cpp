@@ -19,7 +19,7 @@
  *  $Id$
  * 
  *  @copyright 2010-2011 Michael Uvarov
- *  @author Michael Uvarov <freeakk@gmail.com>
+ *  @author Michael Uvarov <arcusfelis@gmail.com>
  *  =====================================================================
  */
 

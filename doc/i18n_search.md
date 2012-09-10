@@ -12,7 +12,7 @@
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -24,7 +24,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_collator() = [resource()](#type-resource)</pre>
+<pre>i18n_collator() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -32,7 +32,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_searcher() = [resource()](#type-resource)</pre>
+<pre>i18n_searcher() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -68,7 +68,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>index(Searcher::[i18n_searcher()](#type-i18n_searcher), String::[i18n_string()](#type-i18n_string)) -&gt; [{Start::non_neg_integer(), Length::non_neg_integer()}]</pre>
+<pre>index(Searcher::<a href="#type-i18n_searcher">i18n_searcher()</a>, String::<a href="#type-i18n_string">i18n_string()</a>) -> [{Start::non_neg_integer(), Length::non_neg_integer()}]</pre>
 <br></br>
 
 
@@ -79,7 +79,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>match(Searcher::[i18n_searcher()](#type-i18n_searcher), String::[i18n_string()](#type-i18n_string)) -&gt; [i18n_string()](#type-i18n_string) | false</pre>
+<pre>match(Searcher::<a href="#type-i18n_searcher">i18n_searcher()</a>, String::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a> | false</pre>
 <br></br>
 
 
@@ -90,7 +90,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>match_all(Searcher::[i18n_searcher()](#type-i18n_searcher), String::[i18n_string()](#type-i18n_string)) -&gt; [[i18n_string()](#type-i18n_string)]</pre>
+<pre>match_all(Searcher::<a href="#type-i18n_searcher">i18n_searcher()</a>, String::<a href="#type-i18n_string">i18n_string()</a>) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
 <br></br>
 
 
@@ -101,7 +101,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(Col::[i18n_collator()](#type-i18n_collator), Pattern::[i18n_string()](#type-i18n_string)) -&gt; [i18n_searcher()](#type-i18n_searcher)</pre>
+<pre>open(Col::<a href="#type-i18n_collator">i18n_collator()</a>, Pattern::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_searcher">i18n_searcher()</a></pre>
 <br></br>
 
 
@@ -112,7 +112,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>test(Searcher::[i18n_searcher()](#type-i18n_searcher), String::[i18n_string()](#type-i18n_string)) -&gt; boolean()</pre>
+<pre>test(Searcher::<a href="#type-i18n_searcher">i18n_searcher()</a>, String::<a href="#type-i18n_string">i18n_string()</a>) -> boolean()</pre>
 <br></br>
 
 

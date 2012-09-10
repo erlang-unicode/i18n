@@ -12,7 +12,7 @@
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -24,7 +24,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_calendar() = [resource()](#type-resource)</pre>
+<pre>i18n_calendar() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -56,7 +56,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_timezone() = atom() | [i18n_string()](#type-i18n_string)</pre>
+<pre>i18n_timezone() = atom() | <a href="#type-i18n_string">i18n_string()</a></pre>
 
 
 
@@ -70,7 +70,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 ##Function Index##
 
 
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#available_locales-0">available_locales/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-0">open/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td></td></tr><tr><td valign="top"><a href="#open-3">open/3</a></td><td></td></tr></table>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#available_locales-0">available_locales/0</a></td><td></td></tr><tr><td valign="top"><a href="#available_timezones-0">available_timezones/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-0">open/0</a></td><td></td></tr><tr><td valign="top"><a href="#open-1">open/1</a></td><td></td></tr><tr><td valign="top"><a href="#open-2">open/2</a></td><td></td></tr><tr><td valign="top"><a href="#open-3">open/3</a></td><td></td></tr></table>
 
 
 <a name="functions"></a>
@@ -84,7 +84,18 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>available_locales() -&gt; [[i18n_locale_id()](#type-i18n_locale_id)]</pre>
+<pre>available_locales() -> [<a href="#type-i18n_locale_id">i18n_locale_id()</a>]</pre>
+<br></br>
+
+
+<a name="available_timezones-0"></a>
+
+###available_timezones/0##
+
+
+
+
+<pre>available_timezones() -> [<a href="#type-i18n_timezone">i18n_timezone()</a>]</pre>
 <br></br>
 
 
@@ -95,7 +106,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open() -&gt; [i18n_calendar()](#type-i18n_calendar)</pre>
+<pre>open() -> <a href="#type-i18n_calendar">i18n_calendar()</a></pre>
 <br></br>
 
 
@@ -106,7 +117,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(Locale::[i18n_locale_id()](#type-i18n_locale_id)) -&gt; [i18n_calendar()](#type-i18n_calendar)</pre>
+<pre>open(Locale::<a href="#type-i18n_locale_id">i18n_locale_id()</a>) -> <a href="#type-i18n_calendar">i18n_calendar()</a></pre>
 <br></br>
 
 
@@ -117,7 +128,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(Locale::[i18n_locale_id()](#type-i18n_locale_id), TZ::[i18n_timezone()](#type-i18n_timezone)) -&gt; [i18n_calendar()](#type-i18n_calendar)</pre>
+<pre>open(Locale::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, TZ::<a href="#type-i18n_timezone">i18n_timezone()</a>) -> <a href="#type-i18n_calendar">i18n_calendar()</a></pre>
 <br></br>
 
 
@@ -128,7 +139,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>open(Locale::[i18n_locale_id()](#type-i18n_locale_id), TZ::[i18n_timezone()](#type-i18n_timezone), Type::[i18n_calendar_type()](#type-i18n_calendar_type)) -&gt; [i18n_calendar()](#type-i18n_calendar)</pre>
+<pre>open(Locale::<a href="#type-i18n_locale_id">i18n_locale_id()</a>, TZ::<a href="#type-i18n_timezone">i18n_timezone()</a>, Type::<a href="#type-i18n_calendar_type">i18n_calendar_type()</a>) -> <a href="#type-i18n_calendar">i18n_calendar()</a></pre>
 <br></br>
 
 

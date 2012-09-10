@@ -12,7 +12,7 @@
 
 Copyright (c) 2010-2011 Michael Uvarov
 
-__Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
+__Authors:__ Michael Uvarov ([`arcusfelis@gmail.com`](mailto:arcusfelis@gmail.com)).
 <a name="types"></a>
 
 ##Data Types##
@@ -24,7 +24,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>i18n_regex() = [resource()](#type-resource)</pre>
+<pre>i18n_regex() = <a href="#type-resource">resource()</a></pre>
 
 
 
@@ -60,7 +60,7 @@ __Authors:__ Michael Uvarov ([`freeakk@gmail.com`](mailto:freeakk@gmail.com)).
 
 
 
-<pre>match(Re::[i18n_regex()](#type-i18n_regex), S::[i18n_string()](#type-i18n_string)) -&gt; [[i18n_string()](#type-i18n_string)]</pre>
+<pre>match(Re::<a href="#type-i18n_regex">i18n_regex()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
 <br></br>
 
 
@@ -73,7 +73,7 @@ Return first match as a list.<a name="match_all-2"></a>
 
 
 
-<pre>match_all(Re::[i18n_regex()](#type-i18n_regex), S::[i18n_string()](#type-i18n_string)) -&gt; [[[i18n_string()](#type-i18n_string)]]</pre>
+<pre>match_all(Re::<a href="#type-i18n_regex">i18n_regex()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [[<a href="#type-i18n_string">i18n_string()</a>]]</pre>
 <br></br>
 
 
@@ -86,7 +86,7 @@ Return all matches as a list of lists.<a name="open-1"></a>
 
 
 
-<pre>open(S::[i18n_string()](#type-i18n_string)) -&gt; [i18n_regex()](#type-i18n_regex)</pre>
+<pre>open(S::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_regex">i18n_regex()</a></pre>
 <br></br>
 
 
@@ -99,7 +99,7 @@ Parse a message to a resourse.<a name="replace-3"></a>
 
 
 
-<pre>replace(Re::[i18n_regex()](#type-i18n_regex), Pattern::[i18n_string()](#type-i18n_string), Source::[i18n_string()](#type-i18n_string)) -&gt; [i18n_string()](#type-i18n_string)</pre>
+<pre>replace(Re::<a href="#type-i18n_regex">i18n_regex()</a>, Pattern::<a href="#type-i18n_string">i18n_string()</a>, Source::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
@@ -112,7 +112,7 @@ Replace first element of the text by the pattern.<a name="replace_all-3"></a>
 
 
 
-<pre>replace_all(Re::[i18n_regex()](#type-i18n_regex), Pattern::[i18n_string()](#type-i18n_string), Source::[i18n_string()](#type-i18n_string)) -&gt; [i18n_string()](#type-i18n_string)</pre>
+<pre>replace_all(Re::<a href="#type-i18n_regex">i18n_regex()</a>, Pattern::<a href="#type-i18n_string">i18n_string()</a>, Source::<a href="#type-i18n_string">i18n_string()</a>) -> <a href="#type-i18n_string">i18n_string()</a></pre>
 <br></br>
 
 
@@ -125,7 +125,7 @@ Replace all finded elements.<a name="split-2"></a>
 
 
 
-<pre>split(Re::[i18n_regex()](#type-i18n_regex), S::[i18n_string()](#type-i18n_string)) -&gt; [[i18n_string()](#type-i18n_string)]</pre>
+<pre>split(Re::<a href="#type-i18n_regex">i18n_regex()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> [<a href="#type-i18n_string">i18n_string()</a>]</pre>
 <br></br>
 
 
@@ -138,7 +138,7 @@ Split a string to a list.<a name="test-2"></a>
 
 
 
-<pre>test(Re::[i18n_regex()](#type-i18n_regex), S::[i18n_string()](#type-i18n_string)) -&gt; boolean()</pre>
+<pre>test(Re::<a href="#type-i18n_regex">i18n_regex()</a>, S::<a href="#type-i18n_string">i18n_string()</a>) -> boolean()</pre>
 <br></br>
 
 
