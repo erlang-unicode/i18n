@@ -4,7 +4,7 @@
 -module(i18n_expand).
 -export([parse_transform/2]).
 
--import(ct_expand, [function/4]).
+-import(i18n_ct_expand, [function/4]).
 
 
 parse_transform(Forms, Options) ->

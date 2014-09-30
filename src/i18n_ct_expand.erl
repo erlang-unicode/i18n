@@ -19,7 +19,8 @@
 %%% ------------------------------------------------------------------
 
 %%% @private
--module(ct_expand).
+%%% Copy of ct_expand for i18n
+-module(i18n_ct_expand).
 -id('').
 -vsn('').
 -date('2006-08-22').

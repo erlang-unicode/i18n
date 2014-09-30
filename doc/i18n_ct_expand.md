@@ -1,8 +1,8 @@
-Module ct_expand
+Module i18n_ct_expand
 ================
 
 
-<h1>Module ct_expand</h1>
+<h1>Module i18n_ct_expand</h1>
 
 * [Function Index](#index)
 * [Function Details](#functions)
