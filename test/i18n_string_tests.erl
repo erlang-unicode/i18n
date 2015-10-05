@@ -187,7 +187,8 @@ prop_get_iterator_parallel() ->
    	?FORALL({Xs},{?UBINARY}, FF(F, Xs)).
 
 normalization_test_() ->
-    [?_assertEqual(i18n_string:to_nfc(i18n_string:to_nfd(<<199,0>>)),
+    [?_assertEqual(<<67,0,39,3>>, i18n_string:to_nfd(<<199,0>>)),
+     ?_assertEqual(i18n_string:to_nfc(i18n_string:to_nfd(<<199,0>>)),
                    i18n_string:to_nfc(<<199,0>>))
     ].
 
