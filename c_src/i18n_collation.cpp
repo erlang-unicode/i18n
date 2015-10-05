@@ -349,7 +349,7 @@ ERL_NIF_TERM sort_key(ErlNifEnv* env, int argc,
         do_sort_key(in, out, len, col, status);
     }
     CHECK(env, status);
-    return enif_make_binary(env, &out);
+    return enif_make_compact_binary(env, &out);
 }
 
 ERL_NIF_TERM compare(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])

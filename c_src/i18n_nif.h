@@ -47,6 +47,8 @@
 #define LOCALE_LEN      255
 #define ATOM_LEN        16
 
+#define I18N_ERL_ONHEAP_BIN_LIMIT 64 // from erts/emulator/beam/erl_binary.h
+
 
 #if I18N_INFO
 #ifdef __GNUC__
@@ -210,6 +212,18 @@ inline UnicodeString binary_to_string(const ErlNifBinary& in) {
         false,
         (const UChar*) in.data,
         TO_ULEN(in.size));
+}
+
+inline ERL_NIF_TERM enif_make_compact_binary(ErlNifEnv* env, ErlNifBinary* in)
+{
+    size_t len = in->size;
+    if (len <= I18N_ERL_ONHEAP_BIN_LIMIT) {
+        ERL_NIF_TERM out;
+        unsigned char* buf = enif_make_new_binary(env, len, &out);
+        memcpy((char*)buf, (const char *) (in->data), len);
+        return out;
+    }
+    return enif_make_binary(env, in);
 }
 
 #if I18N_DATE
