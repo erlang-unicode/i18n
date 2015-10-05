@@ -30,6 +30,10 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("triq/include/triq.hrl").
 
+-define(_assertEqualUtf16(X,Y),
+        ?_assertEqual(X,Y),
+        ?_assertEqual(i18n:to(X), i18n:to(Y))).
+
 equal([H, H|T]) ->
     equal([H|T]);
 equal([]) ->
@@ -129,24 +133,25 @@ prop_message_date() ->
     ?FORALL({Xs}, {real()}, F(Xs)).
 
 message_order_test_() ->
+    i18n_locale:set_locale('POSIX'),
     OF = fun i18n_message:open/1,
     FF = fun i18n_message:format/2,
     Date = i18n_date:new(2011,12,8),
     MNums = OF(?ISTR("{0,date} {1,number}")),
     MNames = OF(?ISTR("{d,date} {n,number}")),
-    Res1 = ?ISTR("2011 12 8 3.3"),
+    Res1 = ?ISTR("Dec 8, 2011 3.3"),
 
-    [?_assertEqual(Res1, FF(MNums, [Date, 3.3]))
-    ,?_assertEqual(Res1, FF(MNums, [{0, Date}, {1, 3.3}]))
-    ,?_assertEqual(Res1, FF(MNums, [{'0', Date}, {'1', 3.3}]))
-    ,?_assertEqual(Res1, FF(MNums, 
+    [?_assertEqualUtf16(Res1, FF(MNums, [Date, 3.3]))
+    ,?_assertEqualUtf16(Res1, FF(MNums, [{0, Date}, {1, 3.3}]))
+    ,?_assertEqualUtf16(Res1, FF(MNums, [{'0', Date}, {'1', 3.3}]))
+    ,?_assertEqualUtf16(Res1, FF(MNums, 
                         [{?ISTR("0"), Date}, {?ISTR("1"), 3.3}]))
-    ,?_assertEqual(Res1, FF(MNums, [{'1', 3.3}, {'0', Date}]))
-    ,?_assertEqual(Res1, FF(MNums, [{?ISTR("1"), 3.3}, {?ISTR("0"), Date}]))
+    ,?_assertEqualUtf16(Res1, FF(MNums, [{'1', 3.3}, {'0', Date}]))
+    ,?_assertEqualUtf16(Res1, FF(MNums, [{?ISTR("1"), 3.3}, {?ISTR("0"), Date}]))
 
-    ,?_assertEqual(Res1, FF(MNames, [{d, Date}, {n, 3.3}]))
-    ,?_assertEqual(Res1, FF(MNames, [{n, 3.3}, {d, Date}]))
-    ,?_assertEqual(Res1, FF(MNames, [{?ISTR("n"), 3.3}, {?ISTR("d"), Date}]))
+    ,?_assertEqualUtf16(Res1, FF(MNames, [{d, Date}, {n, 3.3}]))
+    ,?_assertEqualUtf16(Res1, FF(MNames, [{n, 3.3}, {d, Date}]))
+    ,?_assertEqualUtf16(Res1, FF(MNames, [{?ISTR("n"), 3.3}, {?ISTR("d"), Date}]))
     ].
 
 -endif.
