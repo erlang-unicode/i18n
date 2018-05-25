@@ -3,7 +3,7 @@
 -define(IM, i18n_nif).
 -define(TRY_STR(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> error(Y) end end).
 -define(TRY_LIST(X), begin Y = (X), try true=is_list(Y),    Y catch error:{badmatch, _V} -> error(Y) end end).
--define(TRY_RES(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> error(Y) end end).
+-define(TRY_RES(X),  begin Y = (X), case is_binary(Y) orelse is_reference(Y) of true -> Y; false -> error(Y) end end).
 -define(TRY_BIN(X),  begin Y = (X), try true=is_binary(Y),  Y catch error:{badmatch, _V} -> error(Y) end end).
 -define(TRY_ATOM(X), begin Y = (X), try true=is_atom(Y),    Y catch error:{badmatch, _V} -> error(Y) end end).
 -define(TRY_OK(X),   begin Y = (X), try ok=Y,               Y catch error:{badmatch, _V} -> error(Y) end end).
