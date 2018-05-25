@@ -214,6 +214,7 @@ inline UnicodeString binary_to_string(const ErlNifBinary& in) {
         TO_ULEN(in.size));
 }
 
+/* Don't use in after calling the function! */
 inline ERL_NIF_TERM enif_make_compact_binary(ErlNifEnv* env, ErlNifBinary* in)
 {
     size_t len = in->size;
@@ -221,6 +222,7 @@ inline ERL_NIF_TERM enif_make_compact_binary(ErlNifEnv* env, ErlNifBinary* in)
         ERL_NIF_TERM out;
         unsigned char* buf = enif_make_new_binary(env, len, &out);
         memcpy((char*)buf, (const char *) (in->data), len);
+        enif_release_binary(in);
         return out;
     }
     return enif_make_binary(env, in);
